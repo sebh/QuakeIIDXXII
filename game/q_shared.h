@@ -20,9 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	
 // q_shared.h -- included first by ALL program modules
 
-// SebH: let the compiler know we do not care about those
-#define _CRT_SECURE_NO_WARNINGS
-
 #ifdef _WIN32
 // unknown pragmas are SUPPOSED to be ignored, but....
 #pragma warning(disable : 4244)     // MIPS
