@@ -2,17 +2,25 @@ quake2.VC.db
 quake2.VC.VC.opendb
 release
 debug
+releaseAXP
+debugAXP
 game/debug
 game/release
 ctf/debug
 ctf/release
 Backup
 ref_gl/debug
+ref_gl/debugAXP
 ref_gl/release
+ref_gl/releaseAXP
 ref_soft/debug
+ref_soft/debugAXP
 ref_soft/release
+ref_soft/releaseAXP
 ref_dx12/debug
+ref_dx12/debugAXP
 ref_dx12/release
+ref_dx12/releaseAXP
 .vs
 baseq2
 
