@@ -376,3 +376,7 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+
+# We want to track this for the user to understand he need to change this path
+!quake2.vcxproj.user
