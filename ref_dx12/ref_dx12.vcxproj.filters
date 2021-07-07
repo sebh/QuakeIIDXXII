@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Dx12">
+      <UniqueIdentifier>{46f6ce3b-b35b-4df7-84b4-9366068e2aa2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -26,6 +29,18 @@
     </ClInclude>
     <ClInclude Include="..\game\q_shared.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx12Device.h">
+      <Filter>Dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx12Math.h">
+      <Filter>Dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Dx12RayTracing.h">
+      <Filter>Dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dx12.h">
+      <Filter>Dx12</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +58,12 @@
     </ClCompile>
     <ClCompile Include="..\win32\q_shwin.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx12RayTracing.cpp">
+      <Filter>Dx12</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx12Device.cpp">
+      <Filter>Dx12</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
