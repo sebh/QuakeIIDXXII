@@ -674,6 +674,8 @@ void VID_CheckChanges (void)
 		//Com_sprintf( name, sizeof(name), "ref_dx12.dll" );	// SebH force dx12 backend for now
 		if ( !VID_LoadRefresh( name ) )
 		{
+			DWORD LastError = GetLastError();
+
 			if ( strcmp (vid_ref->string, "soft") == 0 )
 				Com_Error (ERR_FATAL, "Couldn't fall back to software refresh!");
 			Cvar_Set( "vid_ref", "soft" );
