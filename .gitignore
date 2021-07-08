@@ -1,7 +1,5 @@
 quake2.VC.db
 quake2.VC.VC.opendb
-release
-debug
 releaseAXP
 debugAXP
 game/debug
@@ -45,9 +43,9 @@ baseq2
 mono_crash.*
 
 # Build results
-[Dd]ebug/
+[Dd]ebug/*
 [Dd]ebugPublic/
-[Rr]elease/
+[Rr]elease/*
 [Rr]eleases/
 x64/
 x86/
@@ -380,3 +378,15 @@ MigrationBackup/
 
 # We want to track this for the user to understand he need to change this path
 !quake2.vcxproj.user
+
+# We explicitely include the dxil.dll and dxcompiler.dll in debug and release folders for the used SDK version otherwise the ref_dx12 dll cannot load.
+# for instance, these dlls can be found in C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x86
+
+debug/*
+!debug/dxcompiler.dll
+!debug/dxil.dll
+
+release/*
+!release/dxcompiler.dll
+!release/dxil.dll
+
