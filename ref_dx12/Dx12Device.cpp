@@ -149,11 +149,11 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 		char tmp[128];
 		OutputDebugStringA("---------- Device info ----------\n");
 		OutputDebugStringA("Description                = "); OutputDebugStringW(mAdapterDesc.Description); OutputDebugStringA("\n");
-		OutputDebugStringA("DedicatedVideoMemory       = "); sprintf_s(tmp, "%llu", mAdapterDesc.DedicatedVideoMemory / (1024 * 1024)); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
-		OutputDebugStringA("DedicatedSystemMemory      = "); sprintf_s(tmp, "%llu", mAdapterDesc.DedicatedSystemMemory / (1024 * 1024)); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
-		OutputDebugStringA("SharedSystemMemory         = "); sprintf_s(tmp, "%llu", mAdapterDesc.SharedSystemMemory / (1024 * 1024)); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
-		OutputDebugStringA("Target OS provided budget  = "); sprintf_s(tmp, "%llu", mVideoMemInfo.Budget / (1024 * 1024)); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
-		OutputDebugStringA("Available for reservation  = "); sprintf_s(tmp, "%llu", mVideoMemInfo.AvailableForReservation / (1024 * 1024)); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
+		OutputDebugStringA("DedicatedVideoMemory       = "); sprintf_s(tmp, "%llu", (UINT64)(mAdapterDesc.DedicatedVideoMemory / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
+		OutputDebugStringA("DedicatedSystemMemory      = "); sprintf_s(tmp, "%llu", (UINT64)(mAdapterDesc.DedicatedSystemMemory / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
+		OutputDebugStringA("SharedSystemMemory         = "); sprintf_s(tmp, "%llu", (UINT64)(mAdapterDesc.SharedSystemMemory / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
+		OutputDebugStringA("Target OS provided budget  = "); sprintf_s(tmp, "%llu", (UINT64)(mVideoMemInfo.Budget / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
+		OutputDebugStringA("Available for reservation  = "); sprintf_s(tmp, "%llu", (UINT64)(mVideoMemInfo.AvailableForReservation / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
 	}
 
 	// Get some information about ray tracing support
@@ -661,7 +661,7 @@ bool ShaderBase::TryCompile(const TCHAR* filename, const TCHAR* entryFunction, c
 	HRESULT hr;
 	uint32_t codePage = CP_UTF8;
 	CComPtr<IDxcBlobEncoding> sourceBlob;
-	hr = g_dx12Device->getDxcLibrary()->CreateBlobFromFile(A2W(filename), &codePage, &sourceBlob);
+	hr = g_dx12Device->getDxcLibrary()->CreateBlobFromFile(A2W((LPCSTR)filename), &codePage, &sourceBlob);
 	if (FAILED(hr))
 	{
 		OutputDebugStringA("\nERROR cannot create DxcLibrary BlobFromFile\n");
@@ -682,9 +682,9 @@ bool ShaderBase::TryCompile(const TCHAR* filename, const TCHAR* entryFunction, c
 	CComPtr<IDxcOperationResult> result;
 	hr = g_dx12Device->getDxcCompiler()->Compile(
 		sourceBlob,								// pSource
-		A2W(filename),							// pSourceName
-		A2W(entryFunction),						// pEntryPoint
-		A2W(profile),							// pTargetProfile
+		A2W((LPCSTR)filename),					// pSourceName
+		A2W((LPCSTR)entryFunction),				// pEntryPoint
+		A2W((LPCSTR)profile),					// pTargetProfile
 		DxcArgs, DxcArgCount,					// pArguments, argCount
 		shaderMacros, MacrosCount,				// pDefines, defineCount
 		g_dx12Device->getDxcIncludeHandler(),	// pIncludeHandler
@@ -716,9 +716,9 @@ bool ShaderBase::TryCompile(const TCHAR* filename, const TCHAR* entryFunction, c
 	// https://asawicki.info/news_1719_two_shader_compilers_of_direct3d_12
 	// https://posts.tanki.ninja/2019/07/11/Using-DXC-In-Practice/
 
-	TODO
-		- path to lib
-		- error
+//	TODO
+//		- path to lib
+//		- error
 }
 
 void ShaderBase::ReCompileIfNeeded()
@@ -737,19 +737,19 @@ void ShaderBase::ReCompileIfNeeded()
 }
 
 VertexShader::VertexShader(const TCHAR* filename, const TCHAR* entryFunction, const Macros* macros)
-	: ShaderBase(filename, entryFunction, "vs_6_1", macros)
+	: ShaderBase(filename, entryFunction, (const TCHAR*)"vs_6_1", macros)
 {
 }
 VertexShader::~VertexShader() { }
 
 PixelShader::PixelShader(const TCHAR* filename, const TCHAR* entryFunction, const Macros* macros)
-	: ShaderBase(filename, entryFunction, "ps_6_1", macros)
+	: ShaderBase(filename, entryFunction, (const TCHAR*)"ps_6_1", macros)
 {
 }
 PixelShader::~PixelShader() { }
 
 ComputeShader::ComputeShader(const TCHAR* filename, const TCHAR* entryFunction, const Macros* macros)
-	: ShaderBase(filename, entryFunction, "cs_6_1", macros)
+	: ShaderBase(filename, entryFunction, (const TCHAR*)"cs_6_1", macros)
 {
 }
 ComputeShader::~ComputeShader() { }
@@ -1129,7 +1129,8 @@ void RenderBufferGeneric::Upload(void* InitData)
 
 		void* p;
 		mUploadHeap->Map(0, nullptr, &p);
-		memcpy(p, InitData, GetSizeInBytes());
+		ATLASSERT(GetSizeInBytes() <= UINT_MAX);
+		memcpy(p, InitData, (uint)GetSizeInBytes());
 		mUploadHeap->Unmap(0, nullptr);
 
 		auto commandList = g_dx12Device->getFrameCommandList();

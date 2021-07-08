@@ -33,7 +33,8 @@
 #include "pix3.h"
 #endif 
 
-#define INVALID_DESCRIPTOR_HANDLE 0xFFFFFFFFFFFFFFFF
+// Truncate to SIZE_T to handle 32 and 64 bits systems
+#define INVALID_DESCRIPTOR_HANDLE ((SIZE_T)0xFFFFFFFFFFFFFFFF)
 
 class RootSignature;
 class DescriptorHeap;
