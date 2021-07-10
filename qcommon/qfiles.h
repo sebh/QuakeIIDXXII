@@ -250,7 +250,7 @@ typedef struct miptex_s
 // key / value pair sizes
 
 #define	MAX_KEY		32
-#define	MAX_VALUE	1024
+//#define	MAX_VALUE	1024	// SebH prevent some other file to compile while it is unused
 
 //=============================================================================
 
