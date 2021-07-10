@@ -25,8 +25,8 @@
 #define DXDEBUG 0
 #endif
 
-// TODO FIXME
-#define D_ENABLE_PIX 1
+// Disable because PIX markers are only supported on x64 platforms
+#define D_ENABLE_PIX 0
 #if D_ENABLE_PIX
 // See https://devblogs.microsoft.com/pix/winpixeventruntime/
 #define USE_PIX 1
