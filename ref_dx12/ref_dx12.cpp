@@ -3,11 +3,7 @@
 
 #include "stdafx.h"
 
-
-extern "C"
-{
-#include "../client/ref.h"
-}
+#include "dx_local.h"
 
 #include "Dx12Device.h"
 
@@ -342,11 +338,15 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	// let the sound and input subsystems know about the new window
 	ri.Vid_NewWindow(vid.width, vid.height);
 
+	LoadAllShaders();
+
 	return true;
 }
 
 void R_DX12_Shutdown(void)
 {
+	UnloadAllShaders();
+
 	g_dx12Device->closeBufferedFramesBeforeShutdown();
 
 	CachedPSOManager::shutdown();

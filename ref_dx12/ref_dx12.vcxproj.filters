@@ -71,6 +71,9 @@
     <ClCompile Include="dx_image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dx_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ref_dx12.def">
