@@ -272,10 +272,12 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 	mGfxRootSignature->setDebugName(L"DefaultGfxRootSignature");
 	mCptRootSignature = new RootSignature(RootSignatureType_Global);
 	mCptRootSignature->setDebugName(L"DefaultCptRootSignature");
+#if D_ENABLE_RT
 	mRtGlobalRootSignature = new RootSignature(RootSignatureType_Global_RT);
 	mRtGlobalRootSignature->setDebugName(L"DefaultRtGlobalRootSignature");
 	mRtLocalRootSignature = new RootSignature(RootSignatureType_Local_RT);
 	mRtLocalRootSignature->setDebugName(L"DefaultRtLocalRootSignature");
+#endif
 
 	const uint AllocatedResourceDescriptorCount = 1024;
 	const uint FrameDispatchDrawCallResourceDescriptorCount = 1024;
@@ -289,7 +291,9 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 		mFrameDispatchDrawCallDescriptorHeapGPU[i] = new DescriptorHeap(true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, FrameDispatchDrawCallResourceDescriptorCount);
 		mFrameConstantBuffers[i] = new FrameConstantBuffers(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT * 2);
 
+#if D_ENABLE_RT
 		mDispatchRaysCallSBTHeapCPU[i] = new DispatchRaysCallSBTHeapCPU(FrameSBTSizeBytes);
+#endif
 	}
 
 	// Now allocate data used for GPU performance tracking
@@ -359,8 +363,10 @@ void Dx12Device::internalShutdown()
 
 	resetPtr(&mGfxRootSignature);
 	resetPtr(&mCptRootSignature);
+#if D_ENABLE_RT
 	resetPtr(&mRtGlobalRootSignature);
 	resetPtr(&mRtLocalRootSignature);
+#endif
 
 	for (int i = 0; i < frameBufferCount; i++)
 	{
@@ -372,7 +378,9 @@ void Dx12Device::internalShutdown()
 
 		resetPtr(&mDispatchDrawCallDescriptorHeapCPU[i]);
 
+#if D_ENABLE_RT
 		resetPtr(&mDispatchRaysCallSBTHeapCPU[i]);
+#endif
 	}
 	resetPtr(&mAllocatedResourcesDecriptorHeapCPU);
 
@@ -438,8 +446,10 @@ void Dx12Device::beginFrame()
 	// Start the recodring of draw/dispatch call resource table.
 	getDispatchDrawCallCpuDescriptorHeap().BeginRecording();
 
+#if D_ENABLE_RT
 	// Begin the recording of SBT and enqueue a copy command to upload SBT to fast GPU memory from upload heap.
 	getDispatchRaysCallCpuSBTHeap().BeginRecording(*mCommandList[0]);
+#endif
 
 	// Start the constant buffer creation process, map memory to write constant
 	getFrameConstantBuffers().BeginRecording();
@@ -456,8 +466,10 @@ void Dx12Device::endFrameAndSwap(bool vsyncEnabled)
 
 	mCommandList[0]->ResolveQueryData(mFrameTimeStampQueryHeaps[mFrameIndex], D3D12_QUERY_TYPE_TIMESTAMP, 0, 256 * 2, mFrameTimeStampQueryReadBackBuffers[mFrameIndex]->getD3D12Resource(), 0);
 
+#if D_ENABLE_RT
 	// Stop recoring SBT
 	getDispatchRaysCallCpuSBTHeap().EndRecording();
+#endif
 
 	// Close the command now that we are done with this frame
 	hr = mCommandList[0]->Close();
@@ -530,6 +542,7 @@ void Dx12Device::waitForPreviousFrame(int frameIndex)
 	mFrameFenceValue[mFrameIndex]++;
 
 	// Garbage collector
+#if D_ENABLE_RT
 	{
 		FrameGarbageCollector* FGC = &mFrameGarbageCollector[mFrameIndex];
 
@@ -545,6 +558,7 @@ void Dx12Device::waitForPreviousFrame(int frameIndex)
 		}
 		FGC->mRayTracingPipelineStateClosestAndAnyHit.clear();
 	}
+#endif
 }
 
 

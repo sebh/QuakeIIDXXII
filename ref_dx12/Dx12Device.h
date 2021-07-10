@@ -31,7 +31,10 @@
 // See https://devblogs.microsoft.com/pix/winpixeventruntime/
 #define USE_PIX 1
 #include "pix3.h"
-#endif 
+#endif
+
+// Disable RT, it seems it cannot be enabled when using dx12 x86 dll.
+#define D_ENABLE_RT 0
 
 // Truncate to SIZE_T to handle 32 and 64 bits systems
 #define INVALID_DESCRIPTOR_HANDLE ((SIZE_T)0xFFFFFFFFFFFFFFFF)
@@ -44,8 +47,10 @@ class DispatchRaysCallSBTHeapCPU;
 class FrameConstantBuffers;
 class RenderResource;
 class RenderBufferGeneric;
+#if D_ENABLE_RT
 class RayTracingPipelineStateSimple;
 class RayTracingPipelineStateClosestAndAnyHit;
+#endif
 
 static const int frameBufferCount = 2; // number of buffers we want, 2 for double buffering, 3 for tripple buffering...
 static const int GPUTimerMaxCount = 256;
@@ -76,8 +81,10 @@ public:
 
 	const RootSignature& GetDefaultGraphicRootSignature() const { return *mGfxRootSignature; }
 	const RootSignature& GetDefaultComputeRootSignature() const { return *mCptRootSignature; }
+#if D_ENABLE_RT
 	const RootSignature& GetDefaultRayTracingGlobalRootSignature() const { return *mRtGlobalRootSignature; }
 	const RootSignature& GetDefaultRayTracingLocalRootSignature() const { return *mRtLocalRootSignature; }
+#endif
 
 	uint getCbSrvUavDescriptorSize() const { return mCbSrvUavDescriptorSize; }
 	uint getSamplerDescriptorSize() const { return mSamplerDescriptorSize; }
@@ -87,7 +94,9 @@ public:
 	AllocatedResourceDecriptorHeap& getAllocatedResourceDecriptorHeap() { return *mAllocatedResourcesDecriptorHeapCPU; }
 	DispatchDrawCallCpuDescriptorHeap& getDispatchDrawCallCpuDescriptorHeap() { return *mDispatchDrawCallDescriptorHeapCPU[mFrameIndex]; }
 
+#if D_ENABLE_RT
 	DispatchRaysCallSBTHeapCPU& getDispatchRaysCallCpuSBTHeap() { return *mDispatchRaysCallSBTHeapCPU[mFrameIndex]; }
+#endif
 
 	const DescriptorHeap* getFrameDispatchDrawCallGpuDescriptorHeap() { return mFrameDispatchDrawCallDescriptorHeapGPU[mFrameIndex]; }
 
@@ -112,8 +121,10 @@ public:
 	};
 	GPUTimersReport GetGPUTimerReport();
 
+#if D_ENABLE_RT
 	void AppendToGarbageCollector(RayTracingPipelineStateSimple* ToBeRemoved) { mFrameGarbageCollector[mFrameIndex].mRayTracingPipelineStateSimple.push_back(ToBeRemoved); }
 	void AppendToGarbageCollector(RayTracingPipelineStateClosestAndAnyHit* ToBeRemoved) { mFrameGarbageCollector[mFrameIndex].mRayTracingPipelineStateClosestAndAnyHit.push_back(ToBeRemoved); }
+#endif
 
 private:
 	Dx12Device();
@@ -160,15 +171,19 @@ private:
 
 	RootSignature*								mGfxRootSignature;							// Graphics default root signature
 	RootSignature*								mCptRootSignature;							// Compute default root signature
+#if D_ENABLE_RT
 	RootSignature*								mRtGlobalRootSignature;						// Ray tracing global root signature
 	RootSignature*								mRtLocalRootSignature;						// Ray tracing local root signature
+#endif
 
 	AllocatedResourceDecriptorHeap*				mAllocatedResourcesDecriptorHeapCPU;		// All loaded resources allocate UAV/SRV if required in this CPU heap.
 
 	DispatchDrawCallCpuDescriptorHeap*			mDispatchDrawCallDescriptorHeapCPU[frameBufferCount];// All dispatch and draw calls have their descriptors set in this CPU heap.
 	DescriptorHeap*								mFrameDispatchDrawCallDescriptorHeapGPU[frameBufferCount];// GPU version of dispatch and draw calls descriptors.
 
+#if D_ENABLE_RT
 	DispatchRaysCallSBTHeapCPU*					mDispatchRaysCallSBTHeapCPU[frameBufferCount];// All dispatch rays have SBT generated using this. No SBT caching happens today.
+#endif
 
 	FrameConstantBuffers*						mFrameConstantBuffers[frameBufferCount];	// Descriptor heaps for constant buffers.
 
@@ -187,6 +202,7 @@ private:
 	GPUTimer									mLastValidGPUTimers[GPUTimerMaxCount];
 	uint64										mLastValidTimeStampTickPerSeconds;
 
+#if D_ENABLE_RT
 	// This is in fact a dumb garbage collector since the application must register the garbage to be deleted.
 	struct FrameGarbageCollector
 	{
@@ -194,6 +210,7 @@ private:
 		std::vector<RayTracingPipelineStateClosestAndAnyHit*>	mRayTracingPipelineStateClosestAndAnyHit;
 	};
 	FrameGarbageCollector mFrameGarbageCollector[frameBufferCount];
+#endif
 };
 
 extern Dx12Device* g_dx12Device;
