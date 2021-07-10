@@ -26,7 +26,7 @@
 #endif
 
 // TODO FIXME
-#define D_ENABLE_PIX 0
+#define D_ENABLE_PIX 1
 #if D_ENABLE_PIX
 // See https://devblogs.microsoft.com/pix/winpixeventruntime/
 #define USE_PIX 1

@@ -70,5 +70,6 @@
     <None Include="ref_dx12.def">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
