@@ -251,19 +251,19 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	}
 
 	vid.ClientRect.left = -1;
-	vid.ClientRect.bottom = -1;
+	vid.ClientRect.top = -1;
 	if (fullscreen)
 	{
 		vid.ClientRect.left = 0;
-		vid.ClientRect.bottom = 0;
+		vid.ClientRect.top = 0;
 	}
 	else
 	{
 		vid.ClientRect.left = ri.Cvar_Get("vid_xpos", "0", 0)->value;
-		vid.ClientRect.bottom = ri.Cvar_Get("vid_ypos", "0", 0)->value;
+		vid.ClientRect.top = ri.Cvar_Get("vid_ypos", "0", 0)->value;
 	}
 	vid.ClientRect.right = vid.ClientRect.left + vid.width;
-	vid.ClientRect.top = vid.ClientRect.bottom + vid.height;
+	vid.ClientRect.bottom = vid.ClientRect.top + vid.height;
 
 
 	DWORD style = 0;// (WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX); // WS_OVERLAPPEDWINDOW, add simple style as paramter
@@ -284,7 +284,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	AdjustWindowRect(&vid.ClientRect, style, menu);
 	//Get the required window dimensions
 	vid.width = vid.ClientRect.right - vid.ClientRect.left; //Required width
-	vid.height = vid.ClientRect.top - vid.ClientRect.bottom; //Required height
+	vid.height = vid.ClientRect.bottom - vid.ClientRect.top; //Required height
 
 	// clear out the window class for use
 	ZeroMemory(&vid.Wc, sizeof(WNDCLASSEX));
@@ -310,8 +310,8 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 		vid.Wc.lpszClassName,				// name of the window class
 		L"Quake 2",							// title of the window
 		style,								// not resizable
-		vid.ClientRect.top,					// x-position of the window
-		vid.ClientRect.left,				// y-position of the window
+		vid.ClientRect.left,				// x-position of the window
+		vid.ClientRect.top,					// y-position of the window
 		vid.width,							// width of the window
 		vid.height,							// height of the window
 		NULL,								// we have no parent window, NULL
