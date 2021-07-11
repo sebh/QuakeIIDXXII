@@ -675,7 +675,7 @@ bool ShaderBase::TryCompile(const TCHAR* filename, const TCHAR* entryFunction, c
 	HRESULT hr;
 	uint32_t codePage = CP_UTF8;
 	CComPtr<IDxcBlobEncoding> sourceBlob;
-	hr = g_dx12Device->getDxcLibrary()->CreateBlobFromFile(A2W((LPCSTR)filename), &codePage, &sourceBlob);
+	hr = g_dx12Device->getDxcLibrary()->CreateBlobFromFile(filename, &codePage, &sourceBlob);
 	if (FAILED(hr))
 	{
 		OutputDebugStringA("\nERROR cannot create DxcLibrary BlobFromFile\n");
@@ -696,9 +696,9 @@ bool ShaderBase::TryCompile(const TCHAR* filename, const TCHAR* entryFunction, c
 	CComPtr<IDxcOperationResult> result;
 	hr = g_dx12Device->getDxcCompiler()->Compile(
 		sourceBlob,								// pSource
-		A2W((LPCSTR)filename),					// pSourceName
-		A2W((LPCSTR)entryFunction),				// pEntryPoint
-		A2W((LPCSTR)profile),					// pTargetProfile
+		filename,								// pSourceName
+		entryFunction,							// pEntryPoint
+		profile,								// pTargetProfile
 		DxcArgs, DxcArgCount,					// pArguments, argCount
 		shaderMacros, MacrosCount,				// pDefines, defineCount
 		g_dx12Device->getDxcIncludeHandler(),	// pIncludeHandler
@@ -751,19 +751,19 @@ void ShaderBase::ReCompileIfNeeded()
 }
 
 VertexShader::VertexShader(const TCHAR* filename, const TCHAR* entryFunction, const Macros* macros)
-	: ShaderBase(filename, entryFunction, (const TCHAR*)"vs_6_1", macros)
+	: ShaderBase(filename, entryFunction, L"vs_6_1", macros)
 {
 }
 VertexShader::~VertexShader() { }
 
 PixelShader::PixelShader(const TCHAR* filename, const TCHAR* entryFunction, const Macros* macros)
-	: ShaderBase(filename, entryFunction, (const TCHAR*)"ps_6_1", macros)
+	: ShaderBase(filename, entryFunction, L"ps_6_1", macros)
 {
 }
 PixelShader::~PixelShader() { }
 
 ComputeShader::ComputeShader(const TCHAR* filename, const TCHAR* entryFunction, const Macros* macros)
-	: ShaderBase(filename, entryFunction, (const TCHAR*)"cs_6_1", macros)
+	: ShaderBase(filename, entryFunction, L"cs_6_1", macros)
 {
 }
 ComputeShader::~ComputeShader() { }

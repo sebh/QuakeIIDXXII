@@ -4,6 +4,7 @@ extern "C"
 #include "../client/ref.h"
 }
 
+#include "Dx12Device.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,3 +52,21 @@ image_t	*Draw_FindPic(char *name);
 
 void LoadAllShaders();
 void UnloadAllShaders();
+
+
+extern VertexShader* ImageDrawVertexShader;
+extern PixelShader*  ImageDrawPixelShader;
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// States
+
+void CreateAllStates();
+void ReleaseAllStates();
+
+extern InputLayout* NullInputLayout;
+
+extern RenderBufferGeneric* vertexBuffer;
+extern RenderBufferGeneric* indexBuffer;
+

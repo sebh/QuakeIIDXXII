@@ -1,23 +1,24 @@
 
 #include "dx_local.h"
-#include "Dx12Device.h"
 
 
 
-VertexShader* ImageDrawVertexShader;
-PixelShader*  ImageDrawPixelShader;
+VertexShader* ImageDrawVertexShader = nullptr;
+PixelShader*  ImageDrawPixelShader = nullptr;
 
 
 void LoadAllShaders()
 {
-//	ImageDrawVertexShader = new VertexShader(filename, entryFunction, &macros);
-//	ImageDrawPixelShader = new PixelShader(filename, entryFunction, &macros);
+	Macros Macros;
+
+	ImageDrawVertexShader = new VertexShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"ColorVertexShader", &Macros);
+	ImageDrawPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"ColorPixelShader", &Macros);
 }
 
 void UnloadAllShaders()
 {
-//	delete ImageDrawVertexShader;
-//	delete ImageDrawPixelShader;
+	delete ImageDrawVertexShader;
+	delete ImageDrawPixelShader;
 }
 
 
