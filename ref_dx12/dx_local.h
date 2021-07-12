@@ -66,8 +66,6 @@ bool AreAllStatesCreated();
 void CreateAllStates();
 void ReleaseAllStates();
 
-extern InputLayout* NullInputLayout;
-
 extern RenderBufferGeneric* IndexBuffer;
 
 

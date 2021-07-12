@@ -3,8 +3,6 @@
 
 static bool bAllStatesCreated = false;
 
-InputLayout* NullInputLayout = nullptr;
-
 RenderBufferGeneric* IndexBuffer = nullptr;
 
 bool AreAllStatesCreated()
@@ -14,7 +12,6 @@ bool AreAllStatesCreated()
 
 void CreateAllStates()
 {
-	NullInputLayout = new InputLayout();
 
 	uint Indices[3];
 	Indices[0] = 0;
@@ -31,8 +28,6 @@ void ReleaseAllStates()
 {
 	if (!bAllStatesCreated)
 		return;
-
-	delete NullInputLayout;
 
 	delete IndexBuffer;
 }

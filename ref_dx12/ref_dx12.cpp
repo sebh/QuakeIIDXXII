@@ -159,7 +159,7 @@ void R_DX12_RenderFrame(refdef_t *fd)
 		// Set PSO and render targets
 		CachedRasterPsoDesc PSODesc;
 		PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
-		PSODesc.mLayout = NullInputLayout;
+		PSODesc.mLayout = nullptr;
 		PSODesc.mVS = ImageDrawVertexShader;
 		PSODesc.mPS = ImageDrawPixelShader;
 		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
