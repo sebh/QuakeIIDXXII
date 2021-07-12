@@ -33,8 +33,8 @@
 #include "pix3.h"
 #endif
 
-// Disable RT, it seems it cannot be enabled when using dx12 x86 dll.
-#define D_ENABLE_RT 0
+// This is interesting to disable in case one wants to capture using renderdoc. Otherwise, NSight Graphics will be required.
+#define D_ENABLE_DXRT 0
 
 // Truncate to SIZE_T to handle 32 and 64 bits systems
 #define INVALID_DESCRIPTOR_HANDLE ((SIZE_T)0xFFFFFFFFFFFFFFFF)
@@ -47,7 +47,7 @@ class DispatchRaysCallSBTHeapCPU;
 class FrameConstantBuffers;
 class RenderResource;
 class RenderBufferGeneric;
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 class RayTracingPipelineStateSimple;
 class RayTracingPipelineStateClosestAndAnyHit;
 #endif
@@ -81,7 +81,7 @@ public:
 
 	const RootSignature& GetDefaultGraphicRootSignature() const { return *mGfxRootSignature; }
 	const RootSignature& GetDefaultComputeRootSignature() const { return *mCptRootSignature; }
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	const RootSignature& GetDefaultRayTracingGlobalRootSignature() const { return *mRtGlobalRootSignature; }
 	const RootSignature& GetDefaultRayTracingLocalRootSignature() const { return *mRtLocalRootSignature; }
 #endif
@@ -94,9 +94,7 @@ public:
 	AllocatedResourceDecriptorHeap& getAllocatedResourceDecriptorHeap() { return *mAllocatedResourcesDecriptorHeapCPU; }
 	DispatchDrawCallCpuDescriptorHeap& getDispatchDrawCallCpuDescriptorHeap() { return *mDispatchDrawCallDescriptorHeapCPU[mFrameIndex]; }
 
-#if D_ENABLE_RT
 	DispatchRaysCallSBTHeapCPU& getDispatchRaysCallCpuSBTHeap() { return *mDispatchRaysCallSBTHeapCPU[mFrameIndex]; }
-#endif
 
 	const DescriptorHeap* getFrameDispatchDrawCallGpuDescriptorHeap() { return mFrameDispatchDrawCallDescriptorHeapGPU[mFrameIndex]; }
 
@@ -121,7 +119,7 @@ public:
 	};
 	GPUTimersReport GetGPUTimerReport();
 
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	void AppendToGarbageCollector(RayTracingPipelineStateSimple* ToBeRemoved) { mFrameGarbageCollector[mFrameIndex].mRayTracingPipelineStateSimple.push_back(ToBeRemoved); }
 	void AppendToGarbageCollector(RayTracingPipelineStateClosestAndAnyHit* ToBeRemoved) { mFrameGarbageCollector[mFrameIndex].mRayTracingPipelineStateClosestAndAnyHit.push_back(ToBeRemoved); }
 #endif
@@ -171,7 +169,7 @@ private:
 
 	RootSignature*								mGfxRootSignature;							// Graphics default root signature
 	RootSignature*								mCptRootSignature;							// Compute default root signature
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	RootSignature*								mRtGlobalRootSignature;						// Ray tracing global root signature
 	RootSignature*								mRtLocalRootSignature;						// Ray tracing local root signature
 #endif
@@ -181,9 +179,7 @@ private:
 	DispatchDrawCallCpuDescriptorHeap*			mDispatchDrawCallDescriptorHeapCPU[frameBufferCount];// All dispatch and draw calls have their descriptors set in this CPU heap.
 	DescriptorHeap*								mFrameDispatchDrawCallDescriptorHeapGPU[frameBufferCount];// GPU version of dispatch and draw calls descriptors.
 
-#if D_ENABLE_RT
 	DispatchRaysCallSBTHeapCPU*					mDispatchRaysCallSBTHeapCPU[frameBufferCount];// All dispatch rays have SBT generated using this. No SBT caching happens today.
-#endif
 
 	FrameConstantBuffers*						mFrameConstantBuffers[frameBufferCount];	// Descriptor heaps for constant buffers.
 
@@ -202,7 +198,7 @@ private:
 	GPUTimer									mLastValidGPUTimers[GPUTimerMaxCount];
 	uint64										mLastValidTimeStampTickPerSeconds;
 
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	// This is in fact a dumb garbage collector since the application must register the garbage to be deleted.
 	struct FrameGarbageCollector
 	{
@@ -569,7 +565,7 @@ public:
 		D3D12_CLEAR_VALUE* ClearValue = nullptr,
 		unsigned int initDataCopySizeByte  = 0, void* initData = nullptr);
 
-//	RenderTexture(const wchar_t* szFileName, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
+	//RenderTexture(const wchar_t* szFileName, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
 	virtual ~RenderTexture();
 

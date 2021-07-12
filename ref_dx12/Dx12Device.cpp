@@ -156,6 +156,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 		OutputDebugStringA("Available for reservation  = "); sprintf_s(tmp, "%llu", (UINT64)(mVideoMemInfo.AvailableForReservation / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
 	}
 
+#if D_ENABLE_DXRT
 	// Get some information about ray tracing support
 	{
 		D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
@@ -166,6 +167,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 		else
 			OutputDebugStringA("Ray tracing 1.0 not supported.\n");
 	}
+#endif
 
 	//
 	// Create the direct command queue for our single GPU device
@@ -272,7 +274,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 	mGfxRootSignature->setDebugName(L"DefaultGfxRootSignature");
 	mCptRootSignature = new RootSignature(RootSignatureType_Global);
 	mCptRootSignature->setDebugName(L"DefaultCptRootSignature");
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	mRtGlobalRootSignature = new RootSignature(RootSignatureType_Global_RT);
 	mRtGlobalRootSignature->setDebugName(L"DefaultRtGlobalRootSignature");
 	mRtLocalRootSignature = new RootSignature(RootSignatureType_Local_RT);
@@ -291,7 +293,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 		mFrameDispatchDrawCallDescriptorHeapGPU[i] = new DescriptorHeap(true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, FrameDispatchDrawCallResourceDescriptorCount);
 		mFrameConstantBuffers[i] = new FrameConstantBuffers(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT * 2);
 
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 		mDispatchRaysCallSBTHeapCPU[i] = new DispatchRaysCallSBTHeapCPU(FrameSBTSizeBytes);
 #endif
 	}
@@ -363,7 +365,7 @@ void Dx12Device::internalShutdown()
 
 	resetPtr(&mGfxRootSignature);
 	resetPtr(&mCptRootSignature);
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	resetPtr(&mRtGlobalRootSignature);
 	resetPtr(&mRtLocalRootSignature);
 #endif
@@ -378,7 +380,7 @@ void Dx12Device::internalShutdown()
 
 		resetPtr(&mDispatchDrawCallDescriptorHeapCPU[i]);
 
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 		resetPtr(&mDispatchRaysCallSBTHeapCPU[i]);
 #endif
 	}
@@ -446,7 +448,7 @@ void Dx12Device::beginFrame()
 	// Start the recodring of draw/dispatch call resource table.
 	getDispatchDrawCallCpuDescriptorHeap().BeginRecording();
 
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	// Begin the recording of SBT and enqueue a copy command to upload SBT to fast GPU memory from upload heap.
 	getDispatchRaysCallCpuSBTHeap().BeginRecording(*mCommandList[0]);
 #endif
@@ -466,7 +468,7 @@ void Dx12Device::endFrameAndSwap(bool vsyncEnabled)
 
 	mCommandList[0]->ResolveQueryData(mFrameTimeStampQueryHeaps[mFrameIndex], D3D12_QUERY_TYPE_TIMESTAMP, 0, 256 * 2, mFrameTimeStampQueryReadBackBuffers[mFrameIndex]->getD3D12Resource(), 0);
 
-#if D_ENABLE_RT
+#if D_ENABLE_DXRT
 	// Stop recoring SBT
 	getDispatchRaysCallCpuSBTHeap().EndRecording();
 #endif
@@ -541,8 +543,8 @@ void Dx12Device::waitForPreviousFrame(int frameIndex)
 	// increment fenceValue for next frame
 	mFrameFenceValue[mFrameIndex]++;
 
+#if D_ENABLE_DXRT
 	// Garbage collector
-#if D_ENABLE_RT
 	{
 		FrameGarbageCollector* FGC = &mFrameGarbageCollector[mFrameIndex];
 
@@ -655,14 +657,13 @@ ShaderBase::~ShaderBase()
 
 bool ShaderBase::TryCompile(const TCHAR* filename, const TCHAR* entryFunction, const TCHAR* profile, const Macros& mMacros, IDxcBlob** ShaderBytecode)
 {
-	USES_CONVERSION;
 #define MAX_SHADER_MACRO 64
 	DxcDefine shaderMacros[MAX_SHADER_MACRO];
 	uint MacrosCount = (uint)mMacros.size();
 	if (MacrosCount > MAX_SHADER_MACRO)
 	{
 		OutputDebugStringA("\nMacro count is too high for shader ");
-		OutputDebugStringA((LPCSTR)filename);
+		OutputDebugStringW(filename);
 		OutputDebugStringA("\n");
 		return false;
 	}
@@ -729,10 +730,6 @@ bool ShaderBase::TryCompile(const TCHAR* filename, const TCHAR* entryFunction, c
 	// Good posts about dxc
 	// https://asawicki.info/news_1719_two_shader_compilers_of_direct3d_12
 	// https://posts.tanki.ninja/2019/07/11/Using-DXC-In-Practice/
-
-//	TODO
-//		- path to lib
-//		- error
 }
 
 void ShaderBase::ReCompileIfNeeded()
@@ -1810,7 +1807,7 @@ const DepthStencilState& getDepthStencilState_Disabled()
 	DepthStencilState_Disabled = getDepthStencilState_Default();
 	DepthStencilState_Disabled.DepthEnable = FALSE;
 	DepthStencilState_Disabled.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
-	DepthStencilState_Disabled.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	DepthStencilState_Disabled.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 	DepthStencilState_Disabled.StencilEnable = FALSE;
 	return DepthStencilState_Disabled;
 }
@@ -1870,7 +1867,7 @@ PipelineStateObject::PipelineStateObject(const CachedRasterPsoDesc& PSODesc)
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 
 	psoDesc.pRootSignature = PSODesc.mRootSign->getRootsignature();
-	psoDesc.InputLayout = *PSODesc.mLayout->getLayoutDesc();
+	psoDesc.InputLayout = PSODesc.mLayout != nullptr ? *PSODesc.mLayout->getLayoutDesc() : D3D12_INPUT_LAYOUT_DESC{nullptr, 0};
 	psoDesc.VS.BytecodeLength = PSODesc.mVS->GetShaderByteCodeSize();
 	psoDesc.VS.pShaderBytecode = PSODesc.mVS->GetShaderByteCode();
 	psoDesc.PS.BytecodeLength = PSODesc.mPS->GetShaderByteCodeSize();
