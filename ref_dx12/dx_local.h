@@ -62,11 +62,12 @@ extern PixelShader*  ImageDrawPixelShader;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // States
 
+bool AreAllStatesCreated();
 void CreateAllStates();
 void ReleaseAllStates();
 
 extern InputLayout* NullInputLayout;
 
-extern RenderBufferGeneric* vertexBuffer;
-extern RenderBufferGeneric* indexBuffer;
+extern RenderBufferGeneric* IndexBuffer;
+
 

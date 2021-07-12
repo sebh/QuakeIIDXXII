@@ -162,51 +162,22 @@ void R_DX12_RenderFrame(refdef_t *fd)
 		PSODesc.mLayout = NullInputLayout;
 		PSODesc.mVS = ImageDrawVertexShader;
 		PSODesc.mPS = ImageDrawPixelShader;
-		PSODesc.mDepthStencilState = &getDepthStencilState_Default();
+		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
 		PSODesc.mRasterizerState = &getRasterizerState_Default();
 		PSODesc.mBlendState = &getBlendState_Default();
 		PSODesc.mRenderTargetCount = 1;
 		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 		PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//	PSODesc.mDepthTextureDescriptor = DepthTextureDSV;
-	//	PSODesc.mDepthTextureFormat = DepthTexture->getClearColor().Format;
 		g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
 
 		// Set other raster properties
-		CommandList->RSSetScissorRects(1, &ScissorRect);							// set the scissor rects
 		CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
 
-		// Set mesh buffers
-		//CommandList->IASetVertexBuffers(0, 1, &SphereVertexBufferView);
-		//CommandList->IASetVertexBuffers(1, 1, &SphereVertexBufferView);
-		//CommandList->IASetVertexBuffers(2, 1, &SphereVertexBufferView);
-		//CommandList->IASetIndexBuffer(&SphereIndexBufferView);
+		IndexBuffer->resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
+		D3D12_INDEX_BUFFER_VIEW IndexBufferView = IndexBuffer->getIndexBufferView(DXGI_FORMAT_R32_UINT);
+		CommandList->IASetIndexBuffer(&IndexBufferView);
 
-		/*struct MeshConstantBuffer
-		{
-			float4x4 ViewProjectionMatrix;
-			float4x4 MeshWorldMatrix;
-		};*/
-
-		// Mesh 0
-		{
-			/*
-			// Set constants
-			FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(MeshConstantBuffer));
-			MeshConstantBuffer* MeshCB = (MeshConstantBuffer*)CB.getCPUMemory();
-			MeshCB->ViewProjectionMatrix = viewProjMatrix;
-			MeshCB->MeshWorldMatrix = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
-
-			// Set constants and constant buffer
-			DispatchDrawCallCpuDescriptorHeap::Call CallDescriptors = DrawDispatchCallCpuDescriptorHeap.AllocateCall(g_dx12Device->GetDefaultGraphicRootSignature());
-			CallDescriptors.SetSRV(0, *texture);
-			*/
-
-			// Set root signature data and draw
-		//	CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
-		//	CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
-			CommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
-		}
+		CommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
 	}
 
 	// Make back-buffer presentable.
@@ -393,7 +364,6 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	// let the sound and input subsystems know about the new window
 	ri.Vid_NewWindow(vid.width, vid.height);
 
-	CreateAllStates();
 	LoadAllShaders();
 
 	return true;
@@ -401,10 +371,10 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 
 void R_DX12_Shutdown(void)
 {
+	g_dx12Device->closeBufferedFramesBeforeShutdown();
+
 	UnloadAllShaders();
 	ReleaseAllStates();
-
-	g_dx12Device->closeBufferedFramesBeforeShutdown();
 
 	CachedPSOManager::shutdown();
 	Dx12Device::shutdown();
@@ -415,6 +385,11 @@ void R_DX12_BeginFrame(float camera_separation)
 	DEBUGPRINT("R_DX12_BeginFrame\n");
 	//	SCOPED_GPU_TIMER(BeginFrame, 100, 100, 100);
 	g_dx12Device->beginFrame();
+
+	if (!AreAllStatesCreated())
+	{
+		CreateAllStates();
+	}
 }
 
 void R_DX12_EndFrame(void)
