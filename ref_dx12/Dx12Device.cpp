@@ -1355,7 +1355,7 @@ RenderTexture::RenderTexture(
 	unsigned int width, unsigned int height, unsigned int depth,
 	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags,
 	D3D12_CLEAR_VALUE* ClearValue,
-	unsigned int initDataCopySizeByte, void* initData)
+	unsigned int initDataCopySizeByte, unsigned int RowPitchByte, unsigned int SlicePitchByte, void* initData)
 	: RenderResource()
 	, mRTVHeap(nullptr)
 {
@@ -1427,26 +1427,71 @@ RenderTexture::RenderTexture(
 
 	if (initData)
 	{
-		ATLASSERT(!IsDepthTexture);
-		D3D12_HEAP_PROPERTIES uploadHeap = getUploadMemoryHeapProperties();
-		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-		resourceDesc.Format = DXGI_FORMAT_UNKNOWN;	// ??
+		uint64 textureUploadBufferSize = 0;
+		dev->GetCopyableFootprints(&resourceDesc, 0, 1, 0, nullptr, nullptr, nullptr, &textureUploadBufferSize);
 
-		dev->CreateCommittedResource(&uploadHeap,
+		D3D12_RESOURCE_DESC uploadBufferDesc;							// TODO upload buffer desc
+		uploadBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+		uploadBufferDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+		uploadBufferDesc.Width = textureUploadBufferSize;
+		uploadBufferDesc.Height = uploadBufferDesc.DepthOrArraySize = uploadBufferDesc.MipLevels = 1;
+		uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+		uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+		uploadBufferDesc.SampleDesc.Count = 1;
+		uploadBufferDesc.SampleDesc.Quality = 0;
+		D3D12_HEAP_PROPERTIES uploadHeapProperties = getUploadMemoryHeapProperties();
+		dev->CreateCommittedResource(&uploadHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
+			&uploadBufferDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&mUploadHeap));
-		setDxDebugName(mUploadHeap, L"RenderBufferUploadHeap");
+		setDxDebugName(mUploadHeap, L"RenderTextureUploadHeap");
 
+#if 0
+		// Using explicit code. TODO: the memcpy to mapped memory might be wrong as it does not take into account the rowPitch
 		void* p;
 		mUploadHeap->Map(0, nullptr, &p);
-		memcpy(p, initData, initDataCopySizeByte);
+		memcpy(p, texData.decodedData.get(), texData.dataSizeInByte);
 		mUploadHeap->Unmap(0, nullptr);
 
+		D3D12_BOX srcBox;
+		srcBox.left = 0;
+		srcBox.right = texData.width;
+		srcBox.top = 0;
+		srcBox.bottom = texData.height;
+		srcBox.front = 0;
+		srcBox.back = 1;
+
+		D3D12_TEXTURE_COPY_LOCATION cpSrcBuffer;
+		cpSrcBuffer.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		cpSrcBuffer.pResource = mUploadHeap;
+		dev->GetCopyableFootprints(&textureDesc, 0, 1, 0, &cpSrcBuffer.PlacedFootprint, nullptr, nullptr, nullptr); // Using the texture format here! not buffer (otherwise does not work)
+		D3D12_TEXTURE_COPY_LOCATION cpDstTexture;
+		cpDstTexture.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		cpDstTexture.pResource = mResource;
+		dev->GetCopyableFootprints(&textureDesc, 0, 1, 0, &cpDstTexture.PlacedFootprint, nullptr, nullptr, nullptr);
+		commandList->CopyTextureRegion(&cpDstTexture, 0, 0, 0, &cpSrcBuffer, &srcBox);
+
+#else
 		auto commandList = g_dx12Device->getFrameCommandList();
-		commandList->CopyBufferRegion(mResource, 0, mUploadHeap, 0, initDataCopySizeByte);
+
+		D3D12_SUBRESOURCE_DATA SubResourceData;
+		SubResourceData.pData = initData;
+		SubResourceData.RowPitch = RowPitchByte;
+		SubResourceData.SlicePitch= SlicePitchByte;
+
+		// using helper
+		UpdateSubresources<1>(
+			commandList,
+			mResource,
+			mUploadHeap,
+			0,
+			0,
+			1,
+			&SubResourceData);
+#endif
 
 		resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}

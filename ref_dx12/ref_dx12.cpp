@@ -77,9 +77,7 @@ struct image_s* R_DX12_RegisterSkin(char* skin)
 struct image_s* R_DX12_Draw_FindPic(char* name)
 {
 	DEBUGPRINTF("R_DX12_Draw_FindPic - %s\n", name);
-	// TODO
-	int i = 0;
-	return nullptr;
+	return Draw_FindPic(name);
 }
 
 void R_DX12_SetSky(char* name, float rotate, vec3_t axis)
@@ -375,6 +373,7 @@ void R_DX12_Shutdown(void)
 
 	UnloadAllShaders();
 	ReleaseAllStates();
+	UnloadAllTextures();
 
 	CachedPSOManager::shutdown();
 	Dx12Device::shutdown();
@@ -390,6 +389,8 @@ void R_DX12_BeginFrame(float camera_separation)
 	{
 		CreateAllStates();
 	}
+
+	UploadAllTextures();
 }
 
 void R_DX12_EndFrame(void)

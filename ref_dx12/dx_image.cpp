@@ -9,6 +9,9 @@ static ImageMapType ImageMap;
 static uint AllocatedImageCount = 0;
 static image_t Images[D_MAX_IMAGE_COUNT];
 
+static bool bImageInitialised = false;
+static image_t* r_notexture;
+
 /*
 ==============
 LoadPCX
@@ -344,8 +347,15 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 		//Image->paletted = uploaded_paletted;
 		Image->upload_width = width;
 		Image->upload_height = height;
+		Image->width = width;
+		Image->height = height;
+		Image->type = type;
 
-		// TODO create a texture from the data
+		if (strlen(name) >= sizeof(Image->name))
+			ri.Sys_Error(ERR_DROP, "Draw_LoadPic: \"%s\" is too long", name);
+		strcpy(Image->name, name);
+
+		Image->RenderTexture = nullptr;
 	}
 
 	return Image;
@@ -437,7 +447,7 @@ GL_LoadWal
 */
 image_t *GL_LoadWal(char *name)
 {
-/*	miptex_t	*mt;
+	miptex_t	*mt;
 	int			width, height, ofs;
 	image_t		*image;
 
@@ -445,7 +455,9 @@ image_t *GL_LoadWal(char *name)
 	if (!mt)
 	{
 		ri.Con_Printf(PRINT_ALL, "GL_FindImage: can't load %s\n", name);
-		return r_notexture;
+		ri.Sys_Error(ERR_DROP, "GL_FindImage: can't load %s\n", name);
+		//return r_notexture;
+		return nullptr;
 	}
 
 	width = LittleLong(mt->width);
@@ -456,16 +468,17 @@ image_t *GL_LoadWal(char *name)
 
 	ri.FS_FreeFile((void *)mt);
 
-	return image;*/
-	return nullptr;
+	return image;
 }
 
 
 //Finds or loads the given image
 image_t* FindImage(char *name, imagetype_t type)
 {
+	return r_notexture;	// SEBH TEMP
+
 	image_t	*image = nullptr;
-	int		i, len;
+	int		len;
 	byte	*pic, *palette;
 	int		width, height;
 
@@ -483,14 +496,6 @@ image_t* FindImage(char *name, imagetype_t type)
 	{
 		return it->second;
 	}
-/*	for (i = 0, image = gltextures; i < numgltextures; i++, image++)
-	{
-		if (!strcmp(name, image->name))
-		{
-			image->registration_sequence = registration_sequence;
-			return image;
-		}
-	}*/
 
 	//
 	// load the pic from disk
@@ -499,21 +504,27 @@ image_t* FindImage(char *name, imagetype_t type)
 	palette = NULL;
 	if (!strcmp(name + len - 4, ".pcx"))
 	{
-		//LoadPCX(name, &pic, &palette, &width, &height);
-		//if (!pic)
-		//	return NULL; // ri.Sys_Error (ERR_DROP, "GL_FindImage: can't load %s", name);
-		//image = GL_LoadPic(name, pic, width, height, type, 8);
+		LoadPCX(name, &pic, &palette, &width, &height);
+		if (!pic)
+		{
+			ri.Sys_Error(ERR_DROP, "GL_FindImage: can't load %s", name);
+			return NULL;
+		}
+		image = GL_LoadPic(name, pic, width, height, type, 8);
 	}
 	else if (!strcmp(name + len - 4, ".wal"))
 	{
-		//image = GL_LoadWal(name);
+		image = GL_LoadWal(name);
 	}
 	else if (!strcmp(name + len - 4, ".tga"))
 	{
-		//LoadTGA(name, &pic, &width, &height);
-		//if (!pic)
-		//	return NULL; // ri.Sys_Error (ERR_DROP, "GL_FindImage: can't load %s", name);
-		//image = GL_LoadPic(name, pic, width, height, type, 32);
+		LoadTGA(name, &pic, &width, &height);
+		if (!pic)
+		{
+			ri.Sys_Error(ERR_DROP, "GL_FindImage: can't load %s", name);
+			return NULL;
+		}
+		image = GL_LoadPic(name, pic, width, height, type, 32);
 	}
 	else
 		return NULL;	//	ri.Sys_Error (ERR_DROP, "GL_FindImage: bad extension on: %s", name);
@@ -546,3 +557,55 @@ image_t	*Draw_FindPic(char *name)
 }
 
 
+
+
+
+
+void UploadAllTextures()
+{
+	if (!bImageInitialised)
+	{
+		byte dottexture[8][8] =
+		{
+			{0,0,0,0,0,0,0,0},
+			{0,0,1,1,0,0,0,0},
+			{0,1,1,1,1,0,0,0},
+			{0,1,1,1,1,0,0,0},
+			{0,0,1,1,0,0,0,0},
+			{0,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,0},
+			{0,0,0,0,0,0,0,0},
+		};
+
+		byte data[8][8][4];
+		for (int x = 0; x < 8; x++)
+		{
+			for (int y = 0; y < 8; y++)
+			{
+				data[y][x][0] = dottexture[x & 3][y & 3] * 255;
+				data[y][x][1] = 0;
+				data[y][x][2] = 0;
+				data[y][x][3] = 255;
+			}
+		}
+		r_notexture = GL_LoadPic("***r_notexture***", (byte *)data, 8, 8, it_wall, 32);
+
+		r_notexture->RenderTexture = new RenderTexture(
+			r_notexture->upload_width, r_notexture->upload_height,
+			1, DXGI_FORMAT_R8_UNORM,
+			D3D12_RESOURCE_FLAG_NONE,
+			nullptr,
+			32, 8, 32, data);
+	}
+
+	bImageInitialised = true;
+}
+
+void UnloadAllTextures()
+{
+	delete r_notexture->RenderTexture;
+
+	// TODO delete render textures
+
+	bImageInitialised = false;
+}

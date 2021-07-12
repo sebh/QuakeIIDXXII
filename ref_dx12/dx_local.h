@@ -41,10 +41,15 @@ typedef struct image_s
 	struct msurface_s	*texturechain;	// for sort-by-texture world drawing
 	int		texnum;						// texture binding
 	bool	has_alpha;
+
+	RenderTexture* RenderTexture;
 } image_t;
 
 image_t	*Draw_FindPic(char *name);
 
+
+void UploadAllTextures();
+void UnloadAllTextures();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

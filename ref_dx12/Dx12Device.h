@@ -563,7 +563,7 @@ public:
 		unsigned int depth, DXGI_FORMAT format,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
 		D3D12_CLEAR_VALUE* ClearValue = nullptr,
-		unsigned int initDataCopySizeByte  = 0, void* initData = nullptr);
+		unsigned int initDataCopySizeByte = 0, unsigned int RowPitchByte = 0, unsigned int SlicePitchByte = 0, void* initData = nullptr);
 
 	//RenderTexture(const wchar_t* szFileName, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
