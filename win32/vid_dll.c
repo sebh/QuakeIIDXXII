@@ -670,8 +670,8 @@ void VID_CheckChanges (void)
 		cl.refresh_prepped = false;
 		cls.disable_screen = true;
 		
-		Com_sprintf( name, sizeof(name), "ref_%s.dll", vid_ref->string );
-		//Com_sprintf( name, sizeof(name), "ref_dx12.dll" );	// SebH force dx12 backend for now
+		//Com_sprintf( name, sizeof(name), "ref_%s.dll", vid_ref->string );
+		Com_sprintf( name, sizeof(name), "ref_dx12.dll" );	// SebH force dx12 backend for now
 		if ( !VID_LoadRefresh( name ) )
 		{
 			DWORD LastError = GetLastError();
