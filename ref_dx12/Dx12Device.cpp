@@ -1491,6 +1491,8 @@ RenderTexture::RenderTexture(
 			0,
 			1,
 			&SubResourceData);
+		// UpdateSubresources changes the resources state
+		mResourceState = D3D12_RESOURCE_STATE_COPY_DEST;
 #endif
 
 		resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
