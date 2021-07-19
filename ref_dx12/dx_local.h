@@ -59,6 +59,9 @@ void LoadAllShaders();
 void UnloadAllShaders();
 
 
+extern VertexShader* TestVertexShader;
+extern PixelShader*  TestPixelShader;
+
 extern VertexShader* ImageDrawVertexShader;
 extern PixelShader*  ImageDrawPixelShader;
 
