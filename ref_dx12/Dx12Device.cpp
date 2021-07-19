@@ -291,7 +291,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 	{
 		mDispatchDrawCallDescriptorHeapCPU[i] = new DispatchDrawCallCpuDescriptorHeap(FrameDispatchDrawCallResourceDescriptorCount);
 		mFrameDispatchDrawCallDescriptorHeapGPU[i] = new DescriptorHeap(true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, FrameDispatchDrawCallResourceDescriptorCount);
-		mFrameConstantBuffers[i] = new FrameConstantBuffers(D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT * 2);
+		mFrameConstantBuffers[i] = new FrameConstantBuffers(512 * 1024); // 512KB
 
 #if D_ENABLE_DXRT
 		mDispatchRaysCallSBTHeapCPU[i] = new DispatchRaysCallSBTHeapCPU(FrameSBTSizeBytes);
