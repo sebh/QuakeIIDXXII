@@ -81,11 +81,15 @@ extern RenderBufferGeneric* IndexBuffer;
 enum class DrawImageCallType
 {
 	Draw_Pic,
-	Draw_StretchPic
+	Draw_StretchPic,
+	Draw_Char,
+	Draw_TileClear,
+	Draw_Fill,
 };
 
 struct DrawImageCall
 {
+	DrawImageCallType Type;
 	image_t* Image;
 
 	struct Draw_Pic

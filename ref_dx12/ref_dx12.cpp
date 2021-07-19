@@ -111,56 +111,7 @@ void R_DX12_RenderFrame(refdef_t *fd)
 
 	SCOPED_GPU_TIMER(Quake2Frame, 100, 100, 100);
 
-	ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
-	ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
-	D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
-	float AspectRatioXOverY = float(BackBuffer->GetDesc().Width) / float(BackBuffer->GetDesc().Height);
-
-	// Set defaults graphic and compute root signatures
-	CommandList->SetGraphicsRootSignature(g_dx12Device->GetDefaultGraphicRootSignature().getRootsignature());
-	CommandList->SetComputeRootSignature(g_dx12Device->GetDefaultComputeRootSignature().getRootsignature());
-
-	// Set the common descriptor heap
-	std::vector<ID3D12DescriptorHeap*> descriptorHeaps;
-	descriptorHeaps.push_back(g_dx12Device->getFrameDispatchDrawCallGpuDescriptorHeap()->getHeap());
-	CommandList->SetDescriptorHeaps(uint(descriptorHeaps.size()), descriptorHeaps.data());
-
-	// Set the Viewport
-	D3D12_VIEWPORT Viewport;
-	Viewport.TopLeftX = 0;
-	Viewport.TopLeftY = 0;
-	Viewport.Width = vid.width;
-	Viewport.Height = vid.height;
-	Viewport.MinDepth = 0.0f;
-	Viewport.MaxDepth = 1.0f;
-	CommandList->RSSetViewports(1, &Viewport);
-	D3D12_RECT ScissorRect;
-	ScissorRect.left = 0;
-	ScissorRect.top = 0;
-	ScissorRect.right = vid.width;
-	ScissorRect.bottom = vid.height;
-	CommandList->RSSetScissorRects(1, &ScissorRect);
-
-	// Make back buffer targetable and set it
-	D3D12_RESOURCE_BARRIER BarrierPresentToRt = {};
-	BarrierPresentToRt.Transition.pResource = BackBuffer;
-	BarrierPresentToRt.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-	BarrierPresentToRt.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	BarrierPresentToRt.Transition.Subresource = 0;
-	CommandList->ResourceBarrier(1, &BarrierPresentToRt);
-
-	FLOAT BackBufferClearColor[4] = { 1.0f, 0.5f, 0.5f, 1.0f };
-	CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 0, nullptr);
-
-	DrawAllImages(vid.width, vid.height);
-
-	// Make back-buffer presentable.
-	D3D12_RESOURCE_BARRIER BarrierRtToPresent = {};
-	BarrierRtToPresent.Transition.pResource = BackBuffer;
-	BarrierRtToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	BarrierRtToPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-	BarrierRtToPresent.Transition.Subresource = 0;
-	CommandList->ResourceBarrier(1, &BarrierRtToPresent);
+	// TODO render the world
 }
 
 void R_DX12_Draw_GetPicSize(int *w, int *h, char *name)
@@ -180,34 +131,63 @@ void R_DX12_Draw_GetPicSize(int *w, int *h, char *name)
 void R_DX12_Draw_Pic(int x, int y, char *name)
 {
 	DEBUGPRINTF("R_DX12_Draw_Pic - %s\n", name);
-	// TODO
-	int i = 0;
+	DrawImageCall dic;
+	dic.Image = Draw_FindPic(name);
+	dic.Type = DrawImageCallType::Draw_Pic;
+	dic.DrawPic.x = x;
+	dic.DrawPic.y = y;
+	AddDrawImage(dic);
 }
 
 void R_DX12_Draw_StretchPic(int x, int y, int w, int h, char *name)
 {
 	DEBUGPRINTF("R_DX12_Draw_StretchPic - %s\n", name);
-	// TODO
-	int i = 0;
+	DrawImageCall dic;
+	dic.Image = Draw_FindPic(name);
+	dic.Type = DrawImageCallType::Draw_StretchPic;
+	dic.DrawStretchPic.x = x;
+	dic.DrawStretchPic.y = y;
+	dic.DrawStretchPic.w = w;
+	dic.DrawStretchPic.h = h;
+	AddDrawImage(dic);
 }
 
 void R_DX12_Draw_Char(int x, int y, int c)
 {
 	DEBUGPRINTF("R_DX12_Draw_Char - %i\n", c);
-	// TODO
-	int i = 0;
+	DrawImageCall dic;
+	dic.Image = nullptr;
+	dic.Type = DrawImageCallType::Draw_Char;
+	dic.DrawChar.x = x;
+	dic.DrawChar.y = y;
+	dic.DrawChar.c = c;
+	AddDrawImage(dic);
 }
 
 void R_DX12_Draw_TileClear(int x, int y, int w, int h, char *name)
 {
-	// TODO
-	int i = 0;
+	DrawImageCall dic;
+	dic.Image = Draw_FindPic(name);
+	dic.Type = DrawImageCallType::Draw_TileClear;
+	dic.DrawTileClear.x = x;
+	dic.DrawTileClear.y = y;
+	dic.DrawTileClear.w = w;
+	dic.DrawTileClear.h = h;
+	AddDrawImage(dic);
 }
 
 void R_DX12_Draw_Fill(int x, int y, int w, int h, int c)
 {
-	// TODO
-	int i = 0;
+	DEBUGPRINTF("R_DX12_Draw_Char - %i\n", c);
+	DrawImageCall dic;
+	dic.Image = nullptr;
+	dic.Type = DrawImageCallType::Draw_Fill;
+	dic.DrawFill.x = x;
+	dic.DrawFill.y = y;
+	dic.DrawFill.w = w;
+	dic.DrawFill.h = h;
+	dic.DrawFill.c = c;
+	AddDrawImage(dic);
 }
 
 void R_DX12_Draw_FadeScreen(void)
@@ -369,18 +349,58 @@ void R_DX12_BeginFrame(float camera_separation)
 	//	SCOPED_GPU_TIMER(BeginFrame, 100, 100, 100);
 	g_dx12Device->beginFrame();
 
-	if (!AreAllStatesCreated())
 	{
-		CreateAllStates();
+		SCOPED_GPU_TIMER(BeginFrame, 100, 100, 100);
+
+		if (!AreAllStatesCreated())
+		{
+			CreateAllStates();
+		}
+
+		UploadAllTextures();
+
+		DrawBeginFrame();
+
+		// Get device resources
+		ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
+		ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
+		D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
+		float AspectRatioXOverY = float(BackBuffer->GetDesc().Width) / float(BackBuffer->GetDesc().Height);
+
+		// Make back buffer targetable and set it
+		D3D12_RESOURCE_BARRIER BarrierPresentToRt = {};
+		BarrierPresentToRt.Transition.pResource = BackBuffer;
+		BarrierPresentToRt.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		BarrierPresentToRt.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		BarrierPresentToRt.Transition.Subresource = 0;
+		CommandList->ResourceBarrier(1, &BarrierPresentToRt);
+
+		FLOAT BackBufferClearColor[4] = { 1.0f, 0.5f, 0.5f, 1.0f };
+		CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 0, nullptr);
 	}
-
-	UploadAllTextures();
-
-	DrawBeginFrame();
 }
 
 void R_DX12_EndFrame(void)
 {
+	{
+		SCOPED_GPU_TIMER(EndFrame, 100, 100, 100);
+
+		// Get device resources
+		ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
+		ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
+
+		// Draw_pic and co are called after RenderFrame so image draw must happen here
+		DrawAllImages(vid.width, vid.height);
+
+		// Make back-buffer presentable.
+		D3D12_RESOURCE_BARRIER BarrierRtToPresent = {};
+		BarrierRtToPresent.Transition.pResource = BackBuffer;
+		BarrierRtToPresent.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		BarrierRtToPresent.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		BarrierRtToPresent.Transition.Subresource = 0;
+		CommandList->ResourceBarrier(1, &BarrierRtToPresent);
+	}
+
 	DEBUGPRINT("R_DX12_EndFrame\n");
 	//	SCOPED_GPU_TIMER(EndFrame, 100, 100, 100);
 	const bool VSyncEnabled = true;
