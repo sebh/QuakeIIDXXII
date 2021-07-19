@@ -80,6 +80,9 @@
     <ClCompile Include="dx_state.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dx_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ref_dx12.def">

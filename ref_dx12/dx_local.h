@@ -76,6 +76,71 @@ extern RenderBufferGeneric* IndexBuffer;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Draw
+
+enum class DrawImageCallType
+{
+	Draw_Pic,
+	Draw_StretchPic
+};
+
+struct DrawImageCall
+{
+	image_t* Image;
+
+	struct Draw_Pic
+	{
+		int x;
+		int y;
+	};
+	struct Draw_StretchPic
+	{
+		int x;
+		int y;
+		int w;
+		int h;
+	};
+	struct Draw_Char
+	{
+		int x;
+		int y;
+		int c;
+	};
+	struct Draw_TileClear
+	{
+		int x;
+		int y;
+		int w;
+		int h;
+	};
+	struct Draw_Fill
+	{
+		int x;
+		int y;
+		int w;
+		int h;
+		int c;
+	};
+
+	union
+	{
+		Draw_Pic		DrawPic;
+		Draw_StretchPic	DrawStretchPic;
+		Draw_Char		DrawChar;
+		Draw_TileClear	DrawTileClear;
+		Draw_Fill		DrawFill;
+	};
+};
+
+void DrawBeginFrame();
+void AddDrawImage(DrawImageCall& DrawImageCall);
+void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Others
 
 extern	refimport_t	ri;
+
+

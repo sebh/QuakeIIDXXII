@@ -540,7 +540,7 @@ image_t* FindImage(char *name, imagetype_t type)
 
 
 
-image_t	*Draw_FindPic(char *name)
+image_t* Draw_FindPic(char *name)
 {
 	image_t *Image;
 	char	fullname[MAX_QPATH];
