@@ -333,7 +333,14 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 		// TODO
 		//Image->texnum = TEXNUM_IMAGES + (image - gltextures);
 
-		Image->has_alpha = false;
+		// Copy the data for deferred upload
+		const int PicSize = width * height * (bits / 8);
+		Image->pic = new byte[PicSize];
+		memcpy_s(Image->pic, PicSize, pic, PicSize);
+		Image->bits = bits;
+		Image->has_alpha = true;
+		Image->uploaded = false;
+		Image->RenderTexture = nullptr;
 
 		// TODO
 		//if (bits == 8)
@@ -354,8 +361,6 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 		if (strlen(name) >= sizeof(Image->name))
 			ri.Sys_Error(ERR_DROP, "Draw_LoadPic: \"%s\" is too long", name);
 		strcpy(Image->name, name);
-
-		Image->RenderTexture = nullptr;
 	}
 
 	return Image;
@@ -568,44 +573,52 @@ void UploadAllTextures()
 		byte dottexture[8][8] =
 		{
 			{0,0,0,0,0,0,0,0},
-			{0,0,1,1,0,0,0,0},
-			{0,1,1,1,1,0,0,0},
-			{0,1,1,1,1,0,0,0},
-			{0,0,1,1,0,0,0,0},
+			{0,0,255,255,0,0,0,0},
+			{0,255,255,255,255,0,0,0},
+			{0,255,255,255,255,0,0,0},
+			{0,0,255,255,0,0,0,0},
 			{0,0,0,0,0,0,0,0},
 			{0,0,0,0,0,0,0,0},
 			{0,0,0,0,0,0,0,0},
 		};
+		r_notexture = GL_LoadPic("***r_notexture***", (byte *)dottexture, 8, 8, it_wall, 8);
 
-		byte data[8][8][4];
-		for (int x = 0; x < 8; x++)
-		{
-			for (int y = 0; y < 8; y++)
-			{
-				data[y][x][0] = dottexture[x & 3][y & 3] * 255;
-				data[y][x][1] = 0;
-				data[y][x][2] = 0;
-				data[y][x][3] = 255;
-			}
-		}
-		r_notexture = GL_LoadPic("***r_notexture***", (byte *)data, 8, 8, it_wall, 32);
-
-		r_notexture->RenderTexture = new RenderTexture(
-			r_notexture->upload_width, r_notexture->upload_height,
-			1, DXGI_FORMAT_R8_UNORM,
-			D3D12_RESOURCE_FLAG_NONE,
-			nullptr,
-			32, 8, 32, data);
+		bImageInitialised = true;
 	}
 
-	bImageInitialised = true;
+	for (auto& it : ImageMap)
+	{
+		if (!it.second->uploaded)
+		{
+			if (it.second->bits != 8 && it.second->bits != 32)
+			{
+				ri.Sys_Error(ERR_DROP, "UploadAllTextures : Unsopported image format\n");
+			}
+
+			const int PicSizeBytes  = it.second->upload_width * it.second->upload_height * it.second->bits / 8;
+			const int RowPitchBytes = it.second->upload_width * it.second->bits / 8;
+			const int SlicePitchBytes = PicSizeBytes;
+
+			it.second->RenderTexture = new RenderTexture(
+				it.second->upload_width, it.second->upload_height,
+				1, it.second->bits==8 ? DXGI_FORMAT_R8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM,
+				D3D12_RESOURCE_FLAG_NONE,
+				nullptr,
+				PicSizeBytes, RowPitchBytes, SlicePitchBytes, it.second->pic);
+			it.second->uploaded = true;
+		}
+	}
 }
 
 void UnloadAllTextures()
 {
-	delete r_notexture->RenderTexture;
-
-	// TODO delete render textures
+	for (auto& it : ImageMap)
+	{
+		delete [] it.second->pic;
+		it.second->pic = nullptr;
+		delete it.second->RenderTexture;
+		it.second->RenderTexture = nullptr;
+	}
 
 	bImageInitialised = false;
 }

@@ -40,8 +40,11 @@ typedef struct image_s
 	int		registration_sequence;		// 0 = free
 	struct msurface_s	*texturechain;	// for sort-by-texture world drawing
 	int		texnum;						// texture binding
-	bool	has_alpha;
 
+	bool	uploaded;
+	bool	has_alpha;
+	int		bits;
+	byte*	pic;
 	RenderTexture* RenderTexture;
 } image_t;
 
@@ -62,6 +65,13 @@ void UnloadAllShaders();
 extern VertexShader* TestVertexShader;
 extern PixelShader*  TestPixelShader;
 
+struct ImageDrawConstantBuffer
+{
+	float	OutputWidthAndInv[2];
+	float	OutputHeightAndInv[2];
+	float	ImageBottomLeft[2];
+	float	ImageSize[2];
+};
 extern VertexShader* ImageDrawVertexShader;
 extern PixelShader*  ImageDrawPixelShader;
 
