@@ -50,6 +50,7 @@ typedef struct image_s
 
 image_t	*Draw_FindPic(char *name);
 
+extern image_t* r_charstexture;
 extern unsigned d_8to24table[256];
 
 void UploadAllTextures();
@@ -78,6 +79,7 @@ extern VertexShader* ImageDrawVertexShader;
 extern PixelShader*  ImageDrawPixelShader;
 extern PixelShader*  TiledImageDrawPixelShader;
 extern PixelShader*  ColorDrawPixelShader;
+extern PixelShader*  CharDrawPixelShader;
 
 
 

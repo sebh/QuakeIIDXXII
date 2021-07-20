@@ -12,6 +12,7 @@ static image_t Images[D_MAX_IMAGE_COUNT];
 static bool bImageInitialised = false;
 static image_t* r_notexture;
 
+image_t* r_charstexture;
 unsigned d_8to24table[256];
 
 /*
@@ -614,6 +615,10 @@ void UploadAllTextures()
 
 			free(pic);
 			free(pal);
+		}
+
+		{
+			r_charstexture = FindImage("pics/conchars.pcx", it_pic);
 		}
 
 		bImageInitialised = true;

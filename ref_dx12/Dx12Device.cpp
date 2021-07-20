@@ -282,8 +282,8 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 #endif
 
 	const uint AllocatedResourceDescriptorCount = 1024;
-	const uint FrameDispatchDrawCallResourceDescriptorCount = 1024;
-	const uint FrameSBTSizeBytes = 4096;
+	const uint FrameDispatchDrawCallResourceDescriptorCount = 10*1024;
+	const uint FrameSBTSizeBytes = 10 * 1024;
 
 	mAllocatedResourcesDecriptorHeapCPU = new AllocatedResourceDecriptorHeap(AllocatedResourceDescriptorCount);
 

@@ -10,6 +10,7 @@ VertexShader* ImageDrawVertexShader = nullptr;
 PixelShader*  ImageDrawPixelShader = nullptr;
 PixelShader*  TiledImageDrawPixelShader = nullptr;
 PixelShader*  ColorDrawPixelShader = nullptr;
+PixelShader*  CharDrawPixelShader = nullptr;
 
 
 void LoadAllShaders()
@@ -27,6 +28,7 @@ void LoadAllShaders()
 		ImageDrawPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"ImageDrawPixelShader", &Macros);
 		TiledImageDrawPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"TiledImageDrawPixelShader", &Macros);
 		ColorDrawPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"ColorDrawPixelShader", &Macros);
+		CharDrawPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"CharDrawPixelShader", &Macros);
 	}
 }
 
@@ -39,6 +41,7 @@ void UnloadAllShaders()
 	delete ImageDrawPixelShader;
 	delete TiledImageDrawPixelShader;
 	delete ColorDrawPixelShader;
+	delete CharDrawPixelShader;
 }
 
 

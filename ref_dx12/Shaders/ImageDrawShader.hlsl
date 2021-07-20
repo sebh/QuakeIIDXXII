@@ -70,12 +70,19 @@ float4 ImageDrawPixelShader(VertexOutput input) : SV_TARGET
 
 float4 TiledImageDrawPixelShader(VertexOutput input) : SV_TARGET
 {
-	return ImageTexture.Sample(SamplerLinearRepeat, input.position.xy / 64.0f);
+	return ImageTexture.Sample(SamplerPointRepeat, input.position.xy / 64.0f);
 }
 
 float4 ColorDrawPixelShader(VertexOutput input) : SV_TARGET
 {
 	return ColorAlpha;
+}
+
+float4 CharDrawPixelShader(VertexOutput input) : SV_TARGET
+{
+	const float2 UvOffset = ColorAlpha.xy;
+	const float2 UvSize = ColorAlpha.zw;
+	return ImageTexture.Sample(SamplerPointRepeat, input.uv * UvSize + UvOffset);
 }
 
 #endif // DRAW2DSHADER

@@ -84,6 +84,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 #endif
 
 	// Draw the 2d images
+	// TODO one draw call for all the same types instead of per element
 	for (auto& dic : DrawImageCalls)
 	{
 		CachedRasterPsoDesc PSODesc;
@@ -152,8 +153,41 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		}
 		case DrawImageCallType::Draw_Char:
 		{
-			// TODO
-			continue;
+			int				row, col;
+			float			frow, fcol, size;
+
+			int num = dic.c & 255;
+
+			if ((num & 127) == 32)
+				return;		// space
+
+			if (dic.y <= -8)
+				return;		// totally off screen
+
+			row = num >> 4;
+			col = num & 15;
+
+			frow = row * 0.0625;
+			fcol = col * 0.0625;
+			size = 0.0625;
+
+			PSODesc.mVS = ImageDrawVertexShader;
+			PSODesc.mPS = CharDrawPixelShader;
+
+			CBData->ImageBottomLeft[0] = dic.x;
+			CBData->ImageBottomLeft[1] = dic.y;
+			CBData->ImageSize[0] = 8;
+			CBData->ImageSize[1] = 8;
+
+			// Reusing color input for uv data assuming font is always white
+			CBData->ColorAlpha[0] = fcol;
+			CBData->ColorAlpha[1] = frow;
+			CBData->ColorAlpha[2] = size;
+			CBData->ColorAlpha[3] = size;
+
+			DispatchDrawCallCpuDescriptorHeap::Call CallDescriptors = DrawDispatchCallCpuDescriptorHeap.AllocateCall(g_dx12Device->GetDefaultGraphicRootSignature());
+			CallDescriptors.SetSRV(0, *r_charstexture->RenderTexture);
+			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
 			break;
 		}
 		case DrawImageCallType::Draw_TileClear:
