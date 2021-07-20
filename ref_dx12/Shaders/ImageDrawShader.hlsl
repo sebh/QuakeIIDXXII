@@ -32,7 +32,7 @@ float4 TestPixelShader(VertexOutput input) : SV_TARGET
 
 
 
-#if IMAGEDRAWSHADER
+#if DRAW2DSHADER
 
 cbuffer ImageDrawConstantBuffer : register(b0)
 {
@@ -40,6 +40,7 @@ cbuffer ImageDrawConstantBuffer : register(b0)
 	float2	OutputHeightAndInv;
 	float2	ImageBottomLeft;
 	float2	ImageSize;
+	float4	ColorAlpha;
 }
 
 Texture2D ImageTexture : register(t0);
@@ -67,4 +68,9 @@ float4 ImageDrawPixelShader(VertexOutput input) : SV_TARGET
 	return ImageTexture.Sample(SamplerLinearClamp, float2(input.uv));
 }
 
-#endif // IMAGEDRAWSHADER
+float4 ColorDrawPixelShader(VertexOutput input) : SV_TARGET
+{
+	return ColorAlpha;
+}
+
+#endif // DRAW2DSHADER

@@ -134,8 +134,10 @@ void R_DX12_Draw_Pic(int x, int y, char *name)
 	DrawImageCall dic;
 	dic.Image = Draw_FindPic(name);
 	dic.Type = DrawImageCallType::Draw_Pic;
-	dic.DrawPic.x = x;
-	dic.DrawPic.y = y;
+	dic.x = x;
+	dic.y = y;
+	dic.w = dic.Image->width;
+	dic.h = dic.Image->height;
 	AddDrawImage(dic);
 }
 
@@ -144,11 +146,11 @@ void R_DX12_Draw_StretchPic(int x, int y, int w, int h, char *name)
 	DEBUGPRINTF("R_DX12_Draw_StretchPic - %s\n", name);
 	DrawImageCall dic;
 	dic.Image = Draw_FindPic(name);
-	dic.Type = DrawImageCallType::Draw_StretchPic;
-	dic.DrawStretchPic.x = x;
-	dic.DrawStretchPic.y = y;
-	dic.DrawStretchPic.w = w;
-	dic.DrawStretchPic.h = h;
+	dic.Type = DrawImageCallType::Draw_Pic;
+	dic.x = x;
+	dic.y = y;
+	dic.w = w;
+	dic.h = h;
 	AddDrawImage(dic);
 }
 
@@ -156,11 +158,10 @@ void R_DX12_Draw_Char(int x, int y, int c)
 {
 	DEBUGPRINTF("R_DX12_Draw_Char - %i\n", c);
 	DrawImageCall dic;
-	dic.Image = nullptr;
 	dic.Type = DrawImageCallType::Draw_Char;
-	dic.DrawChar.x = x;
-	dic.DrawChar.y = y;
-	dic.DrawChar.c = c;
+	dic.x = x;
+	dic.y = y;
+	dic.c = c;
 	AddDrawImage(dic);
 }
 
@@ -169,10 +170,10 @@ void R_DX12_Draw_TileClear(int x, int y, int w, int h, char *name)
 	DrawImageCall dic;
 	dic.Image = Draw_FindPic(name);
 	dic.Type = DrawImageCallType::Draw_TileClear;
-	dic.DrawTileClear.x = x;
-	dic.DrawTileClear.y = y;
-	dic.DrawTileClear.w = w;
-	dic.DrawTileClear.h = h;
+	dic.x = x;
+	dic.y = y;
+	dic.w = w;
+	dic.h = h;
 	AddDrawImage(dic);
 }
 
@@ -180,13 +181,12 @@ void R_DX12_Draw_Fill(int x, int y, int w, int h, int c)
 {
 	DEBUGPRINTF("R_DX12_Draw_Char - %i\n", c);
 	DrawImageCall dic;
-	dic.Image = nullptr;
 	dic.Type = DrawImageCallType::Draw_Fill;
-	dic.DrawFill.x = x;
-	dic.DrawFill.y = y;
-	dic.DrawFill.w = w;
-	dic.DrawFill.h = h;
-	dic.DrawFill.c = c;
+	dic.x = x;
+	dic.y = y;
+	dic.w = w;
+	dic.h = h;
+	dic.c = c;
 	AddDrawImage(dic);
 }
 

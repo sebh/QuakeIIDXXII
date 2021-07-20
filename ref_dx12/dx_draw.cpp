@@ -89,20 +89,12 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		CachedRasterPsoDesc PSODesc;
 		PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
 		PSODesc.mLayout = nullptr;
-		PSODesc.mVS = ImageDrawVertexShader;
-		PSODesc.mPS = ImageDrawPixelShader;
 		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
 		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 		PSODesc.mBlendState = &getBlendState_Default();
 		PSODesc.mRenderTargetCount = 1;
 		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 		PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
-
-		// Set other raster properties
-		CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
-
-		CommandList->IASetIndexBuffer(&QuadIndexBufferView);
 
 
 		FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(ImageDrawConstantBuffer));
@@ -116,23 +108,61 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		{
 		case DrawImageCallType::Draw_Pic:
 		{
-			CBData->ImageBottomLeft[0] = dic.DrawPic.x;
-			CBData->ImageBottomLeft[1] = dic.DrawPic.y;
-			CBData->ImageSize[0] = dic.Image->width;
-			CBData->ImageSize[1] = dic.Image->height;
+			PSODesc.mVS = ImageDrawVertexShader;
+			PSODesc.mPS = ImageDrawPixelShader;
+
+			CBData->ImageBottomLeft[0] = dic.x;
+			CBData->ImageBottomLeft[1] = dic.y;
+			CBData->ImageSize[0] = dic.w;
+			CBData->ImageSize[1] = dic.h;
 
 			DispatchDrawCallCpuDescriptorHeap::Call CallDescriptors = DrawDispatchCallCpuDescriptorHeap.AllocateCall(g_dx12Device->GetDefaultGraphicRootSignature());
 			CallDescriptors.SetSRV(0, *dic.Image->RenderTexture);
 			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
 			break;
 		}
-		default:
-		//	ErrorExit("DrawAllImages : unkown DrawImageCallType\n");
+		case DrawImageCallType::Draw_Fill:
+		{
+			PSODesc.mVS = ImageDrawVertexShader;
+			PSODesc.mPS = ColorDrawPixelShader;
+
+			CBData->ImageBottomLeft[0] = dic.x;
+			CBData->ImageBottomLeft[1] = dic.y;
+			CBData->ImageSize[0] = dic.w;
+			CBData->ImageSize[1] = dic.h;
+
+			union
+			{
+				unsigned	c;
+				byte		v[4];
+			} color;
+
+			if ((unsigned)dic.c > 255)
+			{
+				ErrorExit("Draw_Fill: bad color\n");
+			}
+
+			color.c = d_8to24table[dic.c];
+
+			CBData->ColorAlpha[0] = color.v[0] / 255.0f;
+			CBData->ColorAlpha[1] = color.v[1] / 255.0f;
+			CBData->ColorAlpha[2] = color.v[2] / 255.0f;
+			CBData->ColorAlpha[3] = 1.0f;
 			break;
 		}
+		case DrawImageCallType::Draw_Char:
+		case DrawImageCallType::Draw_TileClear:
+		default:
+			ErrorExit("DrawAllImages : unkown DrawImageCallType\n");
+			break;
+		}
+		
+		g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
+
+		CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
+		CommandList->IASetIndexBuffer(&QuadIndexBufferView);
 
 		CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
-
 
 		CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 	}

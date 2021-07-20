@@ -12,6 +12,8 @@ static image_t Images[D_MAX_IMAGE_COUNT];
 static bool bImageInitialised = false;
 static image_t* r_notexture;
 
+unsigned d_8to24table[256];
+
 /*
 ==============
 LoadPCX
@@ -570,6 +572,7 @@ void UploadAllTextures()
 {
 	if (!bImageInitialised)
 	{
+		// Upload a defaulttexture to GPU
 		byte dottexture[8][8] =
 		{
 			{000,000,000,255,255,000,000,000},
@@ -582,6 +585,36 @@ void UploadAllTextures()
 			{000,000,000,255,255,000,000,000},
 		};
 		r_notexture = GL_LoadPic("***r_notexture***", (byte *)dottexture, 8, 8, it_wall, 8);
+
+		// Load the color pallette
+		{
+			int		i;
+			int		r, g, b;
+			unsigned	v;
+			byte	*pic, *pal;
+			int		width, height;
+
+			// get the palette
+
+			LoadPCX("pics/colormap.pcx", &pic, &pal, &width, &height);
+			if (!pal)
+				ErrorExit("Couldn't load pics/colormap.pcx");
+
+			for (i = 0; i < 256; i++)
+			{
+				r = pal[i * 3 + 0];
+				g = pal[i * 3 + 1];
+				b = pal[i * 3 + 2];
+
+				v = (255 << 24) + (r << 0) + (g << 8) + (b << 16);
+				d_8to24table[i] = LittleLong(v);
+			}
+
+			d_8to24table[255] &= LittleLong(0xffffff);	// 255 is transparent
+
+			free(pic);
+			free(pal);
+		}
 
 		bImageInitialised = true;
 	}

@@ -50,6 +50,7 @@ typedef struct image_s
 
 image_t	*Draw_FindPic(char *name);
 
+extern unsigned d_8to24table[256];
 
 void UploadAllTextures();
 void UnloadAllTextures();
@@ -71,9 +72,11 @@ struct ImageDrawConstantBuffer
 	float	OutputHeightAndInv[2];
 	float	ImageBottomLeft[2];
 	float	ImageSize[2];
+	float	ColorAlpha[4];
 };
 extern VertexShader* ImageDrawVertexShader;
 extern PixelShader*  ImageDrawPixelShader;
+extern PixelShader*  ColorDrawPixelShader;
 
 
 
@@ -94,60 +97,34 @@ extern RenderBufferGeneric* IndexBufferQuadTris;
 
 enum class DrawImageCallType
 {
-	Draw_Pic,
-	Draw_StretchPic,
-	Draw_Char,
-	Draw_TileClear,
-	Draw_Fill,
+	Draw_Pic,		// Draw an image
+	Draw_Char,		// Draw a character
+	Draw_TileClear,	// tile the image over 64x64 pixel tiles
+	Draw_Fill,		// fill with a single color
 };
 
 struct DrawImageCall
 {
 	DrawImageCallType Type;
+
 	image_t* Image;
+	int c;
 
-	struct Draw_Pic
-	{
-		int x;
-		int y;
-	};
-	struct Draw_StretchPic
-	{
-		int x;
-		int y;
-		int w;
-		int h;
-	};
-	struct Draw_Char
-	{
-		int x;
-		int y;
-		int c;
-	};
-	struct Draw_TileClear
-	{
-		int x;
-		int y;
-		int w;
-		int h;
-	};
-	struct Draw_Fill
-	{
-		int x;
-		int y;
-		int w;
-		int h;
-		int c;
-	};
+	int x;
+	int y;
+	int w;
+	int h;
 
-	union
+	DrawImageCall()
 	{
-		Draw_Pic		DrawPic;
-		Draw_StretchPic	DrawStretchPic;
-		Draw_Char		DrawChar;
-		Draw_TileClear	DrawTileClear;
-		Draw_Fill		DrawFill;
-	};
+		Type = DrawImageCallType::Draw_Pic;
+		Image = nullptr;
+		c = -1;
+		x = -1;
+		y = -1;
+		w = -1;
+		h = -1;
+	}
 };
 
 void DrawBeginFrame();
