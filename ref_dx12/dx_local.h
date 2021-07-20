@@ -76,6 +76,7 @@ struct ImageDrawConstantBuffer
 };
 extern VertexShader* ImageDrawVertexShader;
 extern PixelShader*  ImageDrawPixelShader;
+extern PixelShader*  TiledImageDrawPixelShader;
 extern PixelShader*  ColorDrawPixelShader;
 
 

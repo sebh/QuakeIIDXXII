@@ -68,6 +68,11 @@ float4 ImageDrawPixelShader(VertexOutput input) : SV_TARGET
 	return ImageTexture.Sample(SamplerLinearClamp, float2(input.uv));
 }
 
+float4 TiledImageDrawPixelShader(VertexOutput input) : SV_TARGET
+{
+	return ImageTexture.Sample(SamplerLinearRepeat, input.position.xy / 64.0f);
+}
+
 float4 ColorDrawPixelShader(VertexOutput input) : SV_TARGET
 {
 	return ColorAlpha;

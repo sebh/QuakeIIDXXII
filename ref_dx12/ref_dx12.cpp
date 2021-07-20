@@ -167,6 +167,7 @@ void R_DX12_Draw_Char(int x, int y, int c)
 
 void R_DX12_Draw_TileClear(int x, int y, int w, int h, char *name)
 {
+	DEBUGPRINTF("R_DX12_Draw_TileClear - %s\n", name);
 	DrawImageCall dic;
 	dic.Image = Draw_FindPic(name);
 	dic.Type = DrawImageCallType::Draw_TileClear;
@@ -179,7 +180,7 @@ void R_DX12_Draw_TileClear(int x, int y, int w, int h, char *name)
 
 void R_DX12_Draw_Fill(int x, int y, int w, int h, int c)
 {
-	DEBUGPRINTF("R_DX12_Draw_Char - %i\n", c);
+	DEBUGPRINTF("R_DX12_Draw_Fill - %i\n", c);
 	DrawImageCall dic;
 	dic.Type = DrawImageCallType::Draw_Fill;
 	dic.x = x;

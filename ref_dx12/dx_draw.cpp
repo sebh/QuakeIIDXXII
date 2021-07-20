@@ -151,7 +151,26 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 			break;
 		}
 		case DrawImageCallType::Draw_Char:
+		{
+			// TODO
+			continue;
+			break;
+		}
 		case DrawImageCallType::Draw_TileClear:
+		{
+			PSODesc.mVS = ImageDrawVertexShader;
+			PSODesc.mPS = TiledImageDrawPixelShader;
+
+			CBData->ImageBottomLeft[0] = dic.x;
+			CBData->ImageBottomLeft[1] = dic.y;
+			CBData->ImageSize[0] = dic.w;
+			CBData->ImageSize[1] = dic.h;
+
+			DispatchDrawCallCpuDescriptorHeap::Call CallDescriptors = DrawDispatchCallCpuDescriptorHeap.AllocateCall(g_dx12Device->GetDefaultGraphicRootSignature());
+			CallDescriptors.SetSRV(0, *dic.Image->RenderTexture);
+			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
+			break;
+		}
 		default:
 			ErrorExit("DrawAllImages : unkown DrawImageCallType\n");
 			break;
