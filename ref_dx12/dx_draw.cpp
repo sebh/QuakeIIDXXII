@@ -66,7 +66,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		PSODesc.mVS = TestVertexShader;
 		PSODesc.mPS = TestPixelShader;
 		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
-		PSODesc.mRasterizerState = &getRasterizerState_Default();
+		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 		PSODesc.mBlendState = &getBlendState_Default();
 		PSODesc.mRenderTargetCount = 1;
 		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
