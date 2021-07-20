@@ -84,7 +84,8 @@ bool AreAllStatesCreated();
 void CreateAllStates();
 void ReleaseAllStates();
 
-extern RenderBufferGeneric* IndexBuffer;
+extern RenderBufferGeneric* IndexBufferSingleTri;
+extern RenderBufferGeneric* IndexBufferQuadTris;
 
 
 
@@ -159,5 +160,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
 // Others
 
 extern	refimport_t	ri;
+
+void ErrorExit(char* Text);
 
 

@@ -592,7 +592,7 @@ void UploadAllTextures()
 		{
 			if (it.second->bits != 8 && it.second->bits != 32)
 			{
-				ri.Sys_Error(ERR_DROP, "UploadAllTextures : Unsopported image format\n");
+				ErrorExit("UploadAllTextures : Unsupported image format\n");
 			}
 
 			const int PicSizeBytes  = it.second->upload_width * it.second->upload_height * it.second->bits / 8;
