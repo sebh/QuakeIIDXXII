@@ -59,7 +59,7 @@ class Dx12Device
 {
 public:
 
-	static void initialise(const HWND& hWnd);
+	static void initialise(const HWND& hWnd, uint BackBufferWidth, uint BackBufferHeight);
 	static void shutdown();
 
 	ID3D12Device5*							getDevice() const { return mDev; }
@@ -132,7 +132,7 @@ private:
 
 	void EnableShaderBasedValidationIfNeeded(uint& dxgiFactoryFlags);
 
-	void internalInitialise(const HWND& hWnd);
+	void internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint BackBufferHeight);
 	void internalShutdown();
 
 	void waitForPreviousFrame(int frameIndex = -1);

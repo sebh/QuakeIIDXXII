@@ -58,6 +58,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 	D3D12_INDEX_BUFFER_VIEW IndexBufferView = IndexBuffer->getIndexBufferView(DXGI_FORMAT_R32_UINT);
 
 	// Some rendering tests
+#if 0
 	{
 		// Set PSO and render targets
 		CachedRasterPsoDesc PSODesc;
@@ -80,6 +81,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 
 		CommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
 	}
+#endif
 
 	// Draw the 2d images
 	for (auto& dic : DrawImageCalls)
@@ -90,7 +92,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		PSODesc.mVS = ImageDrawVertexShader;
 		PSODesc.mPS = ImageDrawPixelShader;
 		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
-		PSODesc.mRasterizerState = &getRasterizerState_Default();
+		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 		PSODesc.mBlendState = &getBlendState_Default();
 		PSODesc.mRenderTargetCount = 1;
 		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;

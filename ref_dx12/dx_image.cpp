@@ -480,7 +480,7 @@ image_t *GL_LoadWal(char *name)
 //Finds or loads the given image
 image_t* FindImage(char *name, imagetype_t type)
 {
-	return r_notexture;	// SEBH TEMP
+	//return r_notexture;	// SEBH TEMP
 
 	image_t	*image = nullptr;
 	int		len;

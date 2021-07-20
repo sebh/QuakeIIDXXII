@@ -42,12 +42,12 @@ Dx12Device::~Dx12Device()
 	internalShutdown();
 }
 
-void Dx12Device::initialise(const HWND& hWnd)
+void Dx12Device::initialise(const HWND& hWnd, uint BackBufferWidth, uint BackBufferHeight)
 {
 	Dx12Device::shutdown();
 
 	g_dx12Device = new Dx12Device();
-	g_dx12Device->internalInitialise(hWnd);
+	g_dx12Device->internalInitialise(hWnd, BackBufferWidth, BackBufferHeight);
 }
 
 void Dx12Device::shutdown()
@@ -91,7 +91,7 @@ void Dx12Device::EnableShaderBasedValidationIfNeeded(uint& dxgiFactoryFlags)
 #endif
 }
 
-void Dx12Device::internalInitialise(const HWND& hWnd)
+void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint BackBufferHeight)
 {
 	HRESULT hr;
 
@@ -184,8 +184,8 @@ void Dx12Device::internalInitialise(const HWND& hWnd)
 	//
 
 	DXGI_MODE_DESC backBufferDesc = {};
-	backBufferDesc.Width = 1280;
-	backBufferDesc.Height = 720;
+	backBufferDesc.Width = BackBufferWidth;
+	backBufferDesc.Height = BackBufferHeight;
 	backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	DXGI_SAMPLE_DESC sampleDesc = {};
 	sampleDesc.Count = 1;

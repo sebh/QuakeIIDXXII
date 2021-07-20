@@ -311,7 +311,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	UpdateWindow(vid.HWnd);
 
 	// Create the d3d device 
-	Dx12Device::initialise(vid.HWnd);
+	Dx12Device::initialise(vid.HWnd, vid.width, vid.height);
 	CachedPSOManager::initialise();
 
 	if (g_dx12Device->getDevice() == nullptr)
@@ -375,7 +375,7 @@ void R_DX12_BeginFrame(float camera_separation)
 		BarrierPresentToRt.Transition.Subresource = 0;
 		CommandList->ResourceBarrier(1, &BarrierPresentToRt);
 
-		FLOAT BackBufferClearColor[4] = { 1.0f, 0.5f, 0.5f, 1.0f };
+		FLOAT BackBufferClearColor[4] = { 0.1f, 0.05f, 0.025, 1.0f };
 		CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 0, nullptr);
 	}
 }
@@ -388,6 +388,8 @@ void R_DX12_EndFrame(void)
 		// Get device resources
 		ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
 		ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
+
+		UploadAllTextures();
 
 		// Draw_pic and co are called after RenderFrame so image draw must happen here
 		DrawAllImages(vid.width, vid.height);
