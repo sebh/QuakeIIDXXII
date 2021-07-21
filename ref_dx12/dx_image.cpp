@@ -341,7 +341,7 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 		Image->pic = new byte[PicSize];
 		memcpy_s(Image->pic, PicSize, pic, PicSize);
 		Image->bits = bits;
-		Image->has_alpha = true;
+		Image->has_alpha = false;
 		Image->uploaded = false;
 		Image->RenderTexture = nullptr;
 
@@ -374,6 +374,7 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 					pic32[i * 4 + 1] = 0;
 					pic32[i * 4 + 2] = 0;
 					pic32[i * 4 + 3] = 0;
+					Image->has_alpha = true;
 				}
 			}
 
