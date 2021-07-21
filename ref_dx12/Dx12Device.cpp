@@ -282,7 +282,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 #endif
 
 	const uint AllocatedResourceDescriptorCount = 1024;
-	const uint FrameDispatchDrawCallResourceDescriptorCount = 10*1024;
+	const uint FrameDispatchDrawCallResourceDescriptorCount = 512 * 1024;
 	const uint FrameSBTSizeBytes = 10 * 1024;
 
 	mAllocatedResourcesDecriptorHeapCPU = new AllocatedResourceDecriptorHeap(AllocatedResourceDescriptorCount);
@@ -291,7 +291,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 	{
 		mDispatchDrawCallDescriptorHeapCPU[i] = new DispatchDrawCallCpuDescriptorHeap(FrameDispatchDrawCallResourceDescriptorCount);
 		mFrameDispatchDrawCallDescriptorHeapGPU[i] = new DescriptorHeap(true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, FrameDispatchDrawCallResourceDescriptorCount);
-		mFrameConstantBuffers[i] = new FrameConstantBuffers(512 * 1024); // 512KB
+		mFrameConstantBuffers[i] = new FrameConstantBuffers(10 * 1024 * 1024); // 10MB
 
 #if D_ENABLE_DXRT
 		mDispatchRaysCallSBTHeapCPU[i] = new DispatchRaysCallSBTHeapCPU(FrameSBTSizeBytes);
@@ -1913,6 +1913,28 @@ const BlendState& getBlendState_Default()
 	}
 
 	return BlendState_Default;
+}
+
+static BlendState BlendState_PremultipledAlpha;
+const BlendState& getBlendState_PremultipledAlpha()
+{
+	BlendState_PremultipledAlpha.AlphaToCoverageEnable = FALSE;
+	BlendState_PremultipledAlpha.IndependentBlendEnable = FALSE;
+	for (uint i = 0; i < 8; ++i)
+	{
+		BlendState_PremultipledAlpha.RenderTarget[i].BlendEnable = TRUE;
+		BlendState_PremultipledAlpha.RenderTarget[i].LogicOpEnable = FALSE;
+		BlendState_PremultipledAlpha.RenderTarget[i].SrcBlend = D3D12_BLEND_ONE;
+		BlendState_PremultipledAlpha.RenderTarget[i].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		BlendState_PremultipledAlpha.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
+		BlendState_PremultipledAlpha.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ZERO;
+		BlendState_PremultipledAlpha.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+		BlendState_PremultipledAlpha.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		BlendState_PremultipledAlpha.RenderTarget[i].LogicOp = D3D12_LOGIC_OP_NOOP;
+		BlendState_PremultipledAlpha.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	}
+
+	return BlendState_PremultipledAlpha;
 }
 
 static RasterizerState RasterizerState_Default;
