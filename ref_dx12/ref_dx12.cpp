@@ -43,7 +43,7 @@ cvar_t *vid_gamma;
 cvar_t *vid_ref;
 cvar_t *r_norefresh;
 
-#if _DEBUG
+#if _DEBUGxxx
 #define DEBUGPRINTF(A, B) {char text[128]; sprintf_s(text, 128, A, B); OutputDebugStringA(text);}
 #define DEBUGPRINT(A) {OutputDebugStringA(A);}
 #else
@@ -55,8 +55,6 @@ void R_DX12_BeginRegistration(char* map)
 {
 	DEBUGPRINTF("R_DX12_BeginRegistration - %s\n", map);
 	// TODO
-	int i = 0;
-
 	WorldMapLoaded = true;
 }
 
@@ -64,7 +62,6 @@ struct model_s* R_DX12_RegisterModel(char* model)
 {
 	DEBUGPRINTF("R_DX12_RegisterModel - %s\n", model);
 	// TODO
-	int i = 0;
 	return nullptr;
 }
 
@@ -84,14 +81,11 @@ void R_DX12_SetSky(char* name, float rotate, vec3_t axis)
 {
 	DEBUGPRINTF("R_DX12_SetSky - %s\n", name);
 	// TODO
-	int i = 0;
 }
 
 void R_DX12_EndRegistration(void)
 {
 	DEBUGPRINT("R_DX12_EndRegistration\n");
-	// TODO
-	int i = 0;
 }
 
 void R_DX12_RenderFrame(refdef_t *fd)
@@ -193,14 +187,14 @@ void R_DX12_Draw_Fill(int x, int y, int w, int h, int c)
 
 void R_DX12_Draw_FadeScreen(void)
 {
+	DEBUGPRINTF("R_DX12_Draw_FadeScreen\n");
 	// TODO
-	int i = 0;
 }
 
 void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte *data)
 {
+	DEBUGPRINTF("R_DX12_Draw_StretchRaw\n");
 	// TODO
-	int i = 0;
 }
 
 qboolean R_DX12_Init(void *hinstance, void *hWnd)
@@ -421,8 +415,8 @@ void R_DX12_EndFrame(void)
 
 void R_DX12_CinematicSetPalette(const unsigned char *palette)
 {
+	DEBUGPRINTF("R_DX12_CinematicSetPalette\n");
 	// TODO
-	int i = 0;
 }
 
 void R_DX12_AppActivate(qboolean active)
