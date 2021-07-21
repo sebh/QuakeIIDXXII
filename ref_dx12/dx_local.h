@@ -47,8 +47,10 @@ typedef struct image_s
 	RenderTexture* RenderTexture;
 } image_t;
 
+image_t* FindImage(char *name, imagetype_t type);
 image_t	*Draw_FindPic(char *name);
 
+extern image_t* r_notexture;
 extern image_t* r_charstexture;
 extern unsigned d_8to24table[256];
 
@@ -132,6 +134,14 @@ struct DrawImageCall
 void DrawBeginFrame();
 void AddDrawImage(DrawImageCall& DrawImageCall);
 void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void SkyRegisterTexture(char* name, float rotate, vec3_t axis);
+void SkyUnregisterTexture();
+void SkyRender();
 
 
 

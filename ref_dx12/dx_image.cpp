@@ -10,7 +10,7 @@ static uint AllocatedImageCount = 0;
 static image_t Images[D_MAX_IMAGE_COUNT];
 
 static bool bImageInitialised = false;
-static image_t* r_notexture;
+image_t* r_notexture;
 
 image_t* r_charstexture;
 unsigned d_8to24table[256];

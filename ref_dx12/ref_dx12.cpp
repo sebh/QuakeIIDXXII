@@ -79,7 +79,7 @@ struct image_s* R_DX12_Draw_FindPic(char* name)
 void R_DX12_SetSky(char* name, float rotate, vec3_t axis)
 {
 	DEBUGPRINTF("R_DX12_SetSky - %s\n", name);
-	// TODO
+	SkyRegisterTexture(name, rotate, axis);
 }
 
 void R_DX12_EndRegistration(void)
@@ -105,6 +105,9 @@ void R_DX12_RenderFrame(refdef_t *fd)
 	SCOPED_GPU_TIMER(Quake2Frame, 100, 100, 100);
 
 	// TODO render the world
+
+	// Last render the sky
+	SkyRender();
 }
 
 void R_DX12_Draw_GetPicSize(int *w, int *h, char *name)
@@ -330,7 +333,10 @@ void R_DX12_Shutdown(void)
 	g_dx12Device->closeBufferedFramesBeforeShutdown();
 
 	UnloadAllShaders();
+
 	ReleaseAllStates();
+
+	SkyUnregisterTexture();
 	UnloadAllTextures();
 
 	CachedPSOManager::shutdown();
