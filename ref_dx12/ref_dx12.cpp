@@ -32,8 +32,7 @@ struct WinDx12State
 WinDx12State vid;
 
 refimport_t	ri;
-
-refdef_t	refdef;
+refdef_t r_newrefdef;
 
 bool WorldMapLoaded = false;
 
@@ -96,9 +95,9 @@ void R_DX12_RenderFrame(refdef_t *fd)
 	if (r_norefresh->value)
 		return;
 
-	refdef = *fd;
+	r_newrefdef = *fd;
 
-	if (!WorldMapLoaded && !(refdef.rdflags & RDF_NOWORLDMODEL))
+	if (!WorldMapLoaded && !(r_newrefdef.rdflags & RDF_NOWORLDMODEL))
 	{
 		ri.Sys_Error(ERR_DROP, "R_RenderView: NULL worldmodel");
 	}
@@ -187,13 +186,13 @@ void R_DX12_Draw_Fill(int x, int y, int w, int h, int c)
 
 void R_DX12_Draw_FadeScreen(void)
 {
-	DEBUGPRINTF("R_DX12_Draw_FadeScreen\n");
+	DEBUGPRINT("R_DX12_Draw_FadeScreen\n");
 	// TODO
 }
 
 void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte *data)
 {
-	DEBUGPRINTF("R_DX12_Draw_StretchRaw\n");
+	DEBUGPRINT("R_DX12_Draw_StretchRaw\n");
 	// TODO
 }
 
@@ -415,7 +414,7 @@ void R_DX12_EndFrame(void)
 
 void R_DX12_CinematicSetPalette(const unsigned char *palette)
 {
-	DEBUGPRINTF("R_DX12_CinematicSetPalette\n");
+	DEBUGPRINT("R_DX12_CinematicSetPalette\n");
 	// TODO
 }
 

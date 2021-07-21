@@ -138,7 +138,9 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Others
 
-extern	refimport_t	ri;
+extern refimport_t ri;
+
+extern refdef_t r_newrefdef;
 
 void ErrorExit(char* Text);
 
