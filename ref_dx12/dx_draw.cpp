@@ -159,10 +159,10 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 			int num = dic.c & 255;
 
 			if ((num & 127) == 32)
-				return;		// space
+				continue;		// space
 
 			if (dic.y <= -8)
-				return;		// totally off screen
+				continue;		// totally off screen
 
 			row = num >> 4;
 			col = num & 15;

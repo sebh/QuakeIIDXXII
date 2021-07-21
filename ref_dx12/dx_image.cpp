@@ -345,16 +345,45 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 		Image->uploaded = false;
 		Image->RenderTexture = nullptr;
 
-		// TODO
-		//if (bits == 8)
-		//	Image->has_alpha = GL_Upload8(pic, width, height, (image->type != it_pic && image->type != it_sky), image->type == it_sky);
-		//else
-		//	Image->has_alpha = GL_Upload32((unsigned *)pic, width, height, (image->type != it_pic && image->type != it_sky));
+#if 1
+		// Convert all 8bit assumed to be palleted to rgba 8 bit unorm
+		if (bits == 8)
+		{
+			byte* pic32 = new byte[width * height * 4];
 
-		// TODO
-		//Image->upload_width = upload_width;		// after power of 2 and scales
-		//Image->upload_height = upload_height;		// Set from GL_Upload32 or GL_Upload8
-		//Image->paletted = uploaded_paletted;
+			for (int i = 0; i < width * height; ++i)
+			{
+				if (pic[i] != 255)
+				{
+					union
+					{
+						unsigned	c;
+						byte		v[4];
+					} color;
+
+					color.c = d_8to24table[pic[i]];
+
+					pic32[i * 4 + 0] = color.v[0];
+					pic32[i * 4 + 1] = color.v[1];
+					pic32[i * 4 + 2] = color.v[2];
+					pic32[i * 4 + 3] = 1.0f;
+				}
+				else
+				{
+					pic32[i * 4 + 0] = 0.0f;
+					pic32[i * 4 + 1] = 0.0f;
+					pic32[i * 4 + 2] = 0.0f;
+					pic32[i * 4 + 3] = 0.0f;
+				}
+			}
+
+			delete[] Image->pic;
+			Image->pic = pic32;
+			Image->bits = 32;
+
+		}
+#endif
+
 		Image->upload_width = width;
 		Image->upload_height = height;
 		Image->width = width;
@@ -367,84 +396,6 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 	}
 
 	return Image;
-
-/*	image_t		*image;
-	int			i;
-
-	std::string NameStr = std::string(name);
-
-	// find a free image_t
-	for (i = 0, image = gltextures; i < numgltextures; i++, image++)
-	{
-		if (!image->texnum)
-			break;
-	}
-	if (i == numgltextures)
-	{
-		if (numgltextures == MAX_GLTEXTURES)
-			ri.Sys_Error(ERR_DROP, "MAX_GLTEXTURES");
-		numgltextures++;
-	}
-	image = &gltextures[i];
-
-	if (strlen(name) >= sizeof(image->name))
-		ri.Sys_Error(ERR_DROP, "Draw_LoadPic: \"%s\" is too long", name);
-	strcpy(image->name, name);
-	image->registration_sequence = registration_sequence;
-
-	image->width = width;
-	image->height = height;
-	image->type = type;
-
-	if (type == it_skin && bits == 8)
-		R_FloodFillSkin(pic, width, height);
-
-	// load little pics into the scrap
-	if (image->type == it_pic && bits == 8
-		&& image->width < 64 && image->height < 64)
-	{
-		int		x, y;
-		int		i, j, k;
-		int		texnum;
-
-		texnum = Scrap_AllocBlock(image->width, image->height, &x, &y);
-		if (texnum == -1)
-			goto nonscrap;
-		scrap_dirty = true;
-
-		// copy the texels into the scrap block
-		k = 0;
-		for (i = 0; i < image->height; i++)
-			for (j = 0; j < image->width; j++, k++)
-				scrap_texels[texnum][(y + i)*BLOCK_WIDTH + x + j] = pic[k];
-		image->texnum = TEXNUM_SCRAPS + texnum;
-		image->scrap = true;
-		image->has_alpha = true;
-		image->sl = (x + 0.01) / (float)BLOCK_WIDTH;
-		image->sh = (x + image->width - 0.01) / (float)BLOCK_WIDTH;
-		image->tl = (y + 0.01) / (float)BLOCK_WIDTH;
-		image->th = (y + image->height - 0.01) / (float)BLOCK_WIDTH;
-	}
-	else
-	{
-	nonscrap:
-		image->scrap = false;
-		image->texnum = TEXNUM_IMAGES + (image - gltextures);
-		GL_Bind(image->texnum);
-		if (bits == 8)
-			image->has_alpha = GL_Upload8(pic, width, height, (image->type != it_pic && image->type != it_sky), image->type == it_sky);
-		else
-			image->has_alpha = GL_Upload32((unsigned *)pic, width, height, (image->type != it_pic && image->type != it_sky));
-		image->upload_width = upload_width;		// after power of 2 and scales
-		image->upload_height = upload_height;
-		image->paletted = uploaded_paletted;
-		image->sl = 0;
-		image->sh = 1;
-		image->tl = 0;
-		image->th = 1;
-	}
-
-	return image;*/
 }
 
 

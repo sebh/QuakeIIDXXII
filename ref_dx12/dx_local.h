@@ -37,9 +37,8 @@ typedef struct image_s
 	imagetype_t	type;
 	int		width, height;				// source image
 	int		upload_width, upload_height;	// after power of two and picmip
-	int		registration_sequence;		// 0 = free
-	struct msurface_s	*texturechain;	// for sort-by-texture world drawing
-	int		texnum;						// texture binding
+//	int		registration_sequence;		// 0 = free
+//	struct msurface_s	*texturechain;	// for sort-by-texture world drawing
 
 	bool	uploaded;
 	bool	has_alpha;
