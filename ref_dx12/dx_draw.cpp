@@ -92,7 +92,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		PSODesc.mLayout = nullptr;
 		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
 		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
-		PSODesc.mBlendState = &getBlendState_Default();
+		PSODesc.mBlendState = &getBlendState_PremultipledAlpha();
 		PSODesc.mRenderTargetCount = 1;
 		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 		PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;

@@ -366,14 +366,14 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 					pic32[i * 4 + 0] = color.v[0];
 					pic32[i * 4 + 1] = color.v[1];
 					pic32[i * 4 + 2] = color.v[2];
-					pic32[i * 4 + 3] = 1.0f;
+					pic32[i * 4 + 3] = 255;
 				}
 				else
 				{
-					pic32[i * 4 + 0] = 0.0f;
-					pic32[i * 4 + 1] = 0.0f;
-					pic32[i * 4 + 2] = 0.0f;
-					pic32[i * 4 + 3] = 0.0f;
+					pic32[i * 4 + 0] = 0;
+					pic32[i * 4 + 1] = 0;
+					pic32[i * 4 + 2] = 0;
+					pic32[i * 4 + 3] = 0;
 				}
 			}
 
