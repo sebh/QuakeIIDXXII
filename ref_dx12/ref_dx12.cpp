@@ -376,7 +376,7 @@ void R_DX12_BeginFrame(float camera_separation)
 		BarrierPresentToRt.Transition.Subresource = 0;
 		CommandList->ResourceBarrier(1, &BarrierPresentToRt);
 
-		FLOAT BackBufferClearColor[4] = { 0.1f, 0.05f, 0.025, 1.0f };
+		FLOAT BackBufferClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 0, nullptr);
 	}
 }
