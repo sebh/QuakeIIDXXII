@@ -342,6 +342,15 @@ void R_DX12_Shutdown(void)
 
 	CachedPSOManager::shutdown();
 	Dx12Device::shutdown();
+
+	if (vid.HWnd)
+	{
+		DestroyWindow(vid.HWnd);
+		vid.HWnd = NULL;
+	}
+	UnregisterClass(vid.Wc.lpszClassName, vid.hInstance);
+	vid.hInstance = NULL;
+	vid.wndproc = NULL;
 }
 
 void R_DX12_BeginFrame(float camera_separation)
