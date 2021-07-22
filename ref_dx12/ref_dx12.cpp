@@ -303,10 +303,19 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 
 	// And create the rectangle that will allow it
 	BOOL menu = false;
+	RECT SavedClientRect = vid.ClientRect;
 	AdjustWindowRect(&vid.ClientRect, style, menu);
 	//Get the required window dimensions
 	vid.width = vid.ClientRect.right - vid.ClientRect.left; //Required width
 	vid.height = vid.ClientRect.bottom - vid.ClientRect.top; //Required height
+
+	// Re-adjust position to not have the window going up after a few run
+	LONG DeltaX = SavedClientRect.left - vid.ClientRect.left;
+	LONG DeltaY = SavedClientRect.top - vid.ClientRect.top;
+	vid.ClientRect.right  += DeltaX;
+	vid.ClientRect.bottom += DeltaY;
+	vid.ClientRect.left   += DeltaX;
+	vid.ClientRect.top    += DeltaY;
 
 	// clear out the window class for use
 	ZeroMemory(&vid.Wc, sizeof(WNDCLASSEX));
