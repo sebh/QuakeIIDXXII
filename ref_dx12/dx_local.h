@@ -105,6 +105,7 @@ enum class DrawImageCallType
 	Draw_Char,		// Draw a character
 	Draw_TileClear,	// tile the image over 64x64 pixel tiles
 	Draw_Fill,		// fill with a single color
+	Draw_FadeScreen
 };
 
 struct DrawImageCall
@@ -153,5 +154,19 @@ extern refimport_t ri;
 extern refdef_t r_newrefdef;
 
 void ErrorExit(char* Text);
+
+
+
+struct ViewData
+{
+	float4x4 ViewMatrix;
+	float4x4 ViewMatrixInv;
+	float4x4 ProjectionMatrix;
+	float4x4 ProjectionMatrixInv;
+	float4x4 ViewProjectionMatrix;
+	float4x4 ViewProjectionMatrixInv;
+};
+// ignoring VR views
+ViewData GetViewData();
 
 

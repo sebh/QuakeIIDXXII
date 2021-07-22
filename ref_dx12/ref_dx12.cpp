@@ -92,8 +92,14 @@ void R_DX12_RenderFrame(refdef_t *fd)
 	DEBUGPRINT("R_DX12_RenderFrame\n");
 	// See R_RenderFrame
 
+	ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
+	ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
+	D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
+
 	if (r_norefresh->value)
+	{
 		return;
+	}
 
 	r_newrefdef = *fd;
 
@@ -103,6 +109,27 @@ void R_DX12_RenderFrame(refdef_t *fd)
 	}
 
 	SCOPED_GPU_TIMER(Quake2Frame, 100, 100, 100);
+
+	// Set the view port region
+	D3D12_VIEWPORT Viewport;
+	Viewport.TopLeftX = r_newrefdef.x;
+	Viewport.TopLeftY = r_newrefdef.y;
+	Viewport.Width = r_newrefdef.width;
+	Viewport.Height = r_newrefdef.height;
+	Viewport.MinDepth = 0.0f;
+	Viewport.MaxDepth = 1.0f;
+	CommandList->RSSetViewports(1, &Viewport);
+	D3D12_RECT ScissorRect;
+	ScissorRect.left = r_newrefdef.x;
+	ScissorRect.top = r_newrefdef.y;
+	ScissorRect.right = r_newrefdef.x + r_newrefdef.width;
+	ScissorRect.bottom = r_newrefdef.y + r_newrefdef.height;
+	CommandList->RSSetScissorRects(1, &ScissorRect);
+
+	// Clear the viewport for rendering
+	FLOAT BackBufferClearColor[4] = { 0.0f, 0.5f, 0.0f, 1.0f };
+	CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 1, &ScissorRect);
+	// TODO also clear depth
 
 	// TODO render the world
 
@@ -190,13 +217,23 @@ void R_DX12_Draw_Fill(int x, int y, int w, int h, int c)
 void R_DX12_Draw_FadeScreen(void)
 {
 	DEBUGPRINT("R_DX12_Draw_FadeScreen\n");
-	// TODO
+	DrawImageCall dic;
+	dic.Type = DrawImageCallType::Draw_FadeScreen;
+	AddDrawImage(dic);
 }
 
 void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte *data)
 {
 	DEBUGPRINT("R_DX12_Draw_StretchRaw\n");
-	// TODO
+	// This is used to render movies. Not supported yet so instead we print a grey background.
+	DrawImageCall dic;
+	dic.Type = DrawImageCallType::Draw_Fill;
+	dic.x = x;
+	dic.y = y;
+	dic.w = w;
+	dic.h = h;
+	dic.c = 3;
+	AddDrawImage(dic);
 }
 
 qboolean R_DX12_Init(void *hinstance, void *hWnd)
@@ -384,8 +421,9 @@ void R_DX12_BeginFrame(float camera_separation)
 		BarrierPresentToRt.Transition.Subresource = 0;
 		CommandList->ResourceBarrier(1, &BarrierPresentToRt);
 
-		FLOAT BackBufferClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 0, nullptr);
+		// We do not always clear because the game only update parts of the screen that are needed for isntance hwen reducing the viewport size.
+//		FLOAT BackBufferClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+//		CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 0, nullptr);
 	}
 }
 

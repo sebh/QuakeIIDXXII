@@ -205,6 +205,24 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
 			break;
 		}
+		case DrawImageCallType::Draw_FadeScreen:
+		{
+			PSODesc.mVS = ImageDrawVertexShader;
+			PSODesc.mPS = ColorDrawPixelShader;
+
+			PSODesc.mBlendState = &getBlendState_PremultipledAlpha();
+
+			CBData->ImageBottomLeft[0] = 0;
+			CBData->ImageBottomLeft[1] = 0;
+			CBData->ImageSize[0] = 32768;
+			CBData->ImageSize[1] = 32768;
+
+			CBData->ColorAlpha[0] = 0.0f;
+			CBData->ColorAlpha[1] = 0.0f;
+			CBData->ColorAlpha[2] = 0.0f;
+			CBData->ColorAlpha[3] = 0.8f;
+			break;
+		}
 		default:
 			ErrorExit("DrawAllImages : unkown DrawImageCallType\n");
 			break;

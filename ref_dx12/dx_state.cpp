@@ -50,6 +50,32 @@ void ReleaseAllStates()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+ViewData GetViewData()
+{
+	float AspectRatioXOverY = float(r_newrefdef.width) / float(r_newrefdef.height);
+
+	ViewData View;
+
+	View.ViewMatrix = XMMatrixIdentity();
+	float4 ViewViewMatrixDet = XMMatrixDeterminant(View.ViewMatrix);
+	View.ViewMatrixInv = XMMatrixInverse(&ViewViewMatrixDet, View.ViewMatrix);
+
+	View.ProjectionMatrix = XMMatrixPerspectiveFovLH(90.0f*3.14159f / 180.0f, AspectRatioXOverY, 0.1f, 20000.0f);
+	float4 ViewProjectionMatrixDet = XMMatrixDeterminant(View.ProjectionMatrix);
+	View.ProjectionMatrixInv = XMMatrixInverse(&ViewProjectionMatrixDet, View.ProjectionMatrix);
+
+
+	View.ViewProjectionMatrix = XMMatrixMultiply(View.ViewMatrix, View.ProjectionMatrix);
+	float4 ViewViewProjectionMatrixDet = XMMatrixDeterminant(View.ViewProjectionMatrix);
+	View.ViewProjectionMatrixInv = XMMatrixInverse(&ViewViewProjectionMatrixDet, View.ViewProjectionMatrix);
+
+	return View;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void ErrorExit(char* Text)
 {
 	OutputDebugStringA(Text);
