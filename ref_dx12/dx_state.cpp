@@ -56,7 +56,16 @@ ViewData GetViewData()
 
 	ViewData View;
 
-	View.ViewMatrix = XMMatrixIdentity();
+	const float4 Up = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+	const float4 Pos = XMVectorSet(r_newrefdef.vieworg[0], r_newrefdef.vieworg[1], r_newrefdef.vieworg[2], 1.0f);
+
+	vec3_t forward;
+	vec3_t right;
+	vec3_t up;
+	AngleVectors(r_newrefdef.viewangles, forward, right, up);
+	const float4 LookAtPos = XMVectorSet(r_newrefdef.vieworg[0] + forward[0], r_newrefdef.vieworg[1] + forward[1], r_newrefdef.vieworg[2] + forward[2], 1.0f);
+
+	View.ViewMatrix = XMMatrixLookAtLH(Pos, LookAtPos, Up);
 	float4 ViewViewMatrixDet = XMMatrixDeterminant(View.ViewMatrix);
 	View.ViewMatrixInv = XMMatrixInverse(&ViewViewMatrixDet, View.ViewMatrix);
 

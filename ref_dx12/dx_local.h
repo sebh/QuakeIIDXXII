@@ -82,6 +82,14 @@ extern PixelShader*  TiledImageDrawPixelShader;
 extern PixelShader*  ColorDrawPixelShader;
 extern PixelShader*  CharDrawPixelShader;
 
+struct SkyConstantBuffer
+{
+	float4x4	ViewProjectionMatrix;
+	uint		Face;
+	uint		pad0[3];
+};
+extern VertexShader* SkyVertexShader;
+extern PixelShader*  SkyPixelShader;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

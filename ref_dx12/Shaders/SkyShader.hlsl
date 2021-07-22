@@ -5,11 +5,10 @@
 
 
 
-cbuffer ImageDrawConstantBuffer : register(b0)
+cbuffer SkyConstantBuffer : register(b0)
 {
-	float4x4	MeshWorldMatrix;
+	//float4x4	MeshWorldMatrix;
 	float4x4	ViewProjectionMatrix;
-	float4x4	ViewProjectionMatrixInv;
 	uint		Face;
 	uint3		pad0;
 }
@@ -22,7 +21,7 @@ struct VertexOutput
 	float2 uv			: TEXCOORD0;
 };
 
-VertexOutput ImageDrawVertexShader(uint VertexID : SV_VertexID)
+VertexOutput SkyVertexShader(uint VertexID : SV_VertexID)
 {
 	VertexOutput output;	// TODO init to 0
 
@@ -30,41 +29,42 @@ VertexOutput ImageDrawVertexShader(uint VertexID : SV_VertexID)
 
 	// static char*	suf[6] = { "rt", "bk", "lf", "ft", "up", "dn" };
 	float3 WorldPos = 0.0f;
-	if (Face == 0)
+	if (Face == 0)		// right
 	{
-		WorldPos = float3(1.0, Norm2d.x, Norm2d.y);
+		WorldPos = float3(1.0, Norm2d.x, -Norm2d.y);
 	}
-	else if (Face == 1)
+	else if (Face == 1)	// back
 	{
-		WorldPos = float3(Norm2d.x, -1.0, Norm2d.y);
+		WorldPos = float3(Norm2d.x, -1.0, -Norm2d.y);
 	}
-	else if (Face == 2)
+	else if (Face == 2)	// left
 	{
-		WorldPos = float3(-1.0, Norm2d.x, Norm2d.y);
+		WorldPos = float3(-1.0, -Norm2d.x, -Norm2d.y);
 	}
-	else if (Face == 3)
+	else if (Face == 3)	// front
 	{
-		WorldPos = float3(Norm2d.x, 1.0, Norm2d.y);
+		WorldPos = float3(-Norm2d.x, 1.0, -Norm2d.y);
 	}
-	else if (Face == 4)
+	else if (Face == 4)	// Top
 	{
-		WorldPos = float3(Norm2d.x, Norm2d.y, 1.0);
+		WorldPos = float3(Norm2d.y, Norm2d.x, 1.0);
 	}
-	else if (Face == 5)
+	else if (Face == 5)	// Bottom
 	{
-		WorldPos = float3(Norm2d.x, Norm2d.y, -1.0);
+		WorldPos = float3(-Norm2d.y, Norm2d.x, -1.0);
 	}
-	WorldPos *= 1000.0f; // scale
+	WorldPos *= 2000.0f; // scale
 
-	output.position = mul(ViewProjectionMatrix, mul(MeshWorldMatrix, float4(WorldPos, 1.0)));
-	output.uv = Norm2d;
+	//output.position = mul(ViewProjectionMatrix, mul(MeshWorldMatrix, float4(WorldPos, 1.0)));
+	output.position = mul(ViewProjectionMatrix, float4(WorldPos, 1.0));
+	output.uv = Norm2d * 0.5f + 0.5f;
 
 	return output;
 }
 
-float4 ImageDrawPixelShader(VertexOutput input) : SV_TARGET
+float4 SkyPixelShader(VertexOutput input) : SV_TARGET
 {
-	return ImageTexture.Sample(SamplerLinearClamp, float2(input.uv));
+	return SkyFaceTexture.Sample(SamplerLinearClamp, float2(input.uv));
 }
 
 
