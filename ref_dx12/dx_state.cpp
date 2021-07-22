@@ -65,11 +65,32 @@ ViewData GetViewData()
 	AngleVectors(r_newrefdef.viewangles, forward, right, up);
 	const float4 LookAtPos = XMVectorSet(r_newrefdef.vieworg[0] + forward[0], r_newrefdef.vieworg[1] + forward[1], r_newrefdef.vieworg[2] + forward[2], 1.0f);
 
-	View.ViewMatrix = XMMatrixLookAtLH(Pos, LookAtPos, Up);
+#if 0
+	View.ViewMatrix = XMMatrixLookAtLH(Pos, LookAtPos, Up); // missing space conversion
+#else
+
+	// Convert Q2 to D3d space
+	float4x4 D3dMat0 = XMMatrixScaling(1.0f, 1.0f, -1.0f);
+	float4x4 D3dMat1 = XMMatrixRotationX(DegToRad(-90.0f));
+	float4x4 D3dMat2 = XMMatrixRotationZ(DegToRad( 90.0f));
+	// Q2 camera transform
+	float4x4 RotXMat = XMMatrixRotationX(DegToRad(-r_newrefdef.viewangles[2]));
+	float4x4 RotYMat = XMMatrixRotationY(DegToRad(-r_newrefdef.viewangles[0]));
+	float4x4 RotZMat = XMMatrixRotationZ(DegToRad(-r_newrefdef.viewangles[1]));
+	float4x4 TranMat = XMMatrixTranslation(-r_newrefdef.vieworg[0], -r_newrefdef.vieworg[1], -r_newrefdef.vieworg[2]);
+
+	View.ViewMatrix = XMMatrixMultiply(D3dMat1, D3dMat0);
+	View.ViewMatrix = XMMatrixMultiply(D3dMat2, View.ViewMatrix);
+	View.ViewMatrix = XMMatrixMultiply(RotXMat, View.ViewMatrix);
+	View.ViewMatrix = XMMatrixMultiply(RotYMat, View.ViewMatrix);
+	View.ViewMatrix = XMMatrixMultiply(RotZMat, View.ViewMatrix);
+	View.ViewMatrix = XMMatrixMultiply(TranMat, View.ViewMatrix);
+#endif
+
 	float4 ViewViewMatrixDet = XMMatrixDeterminant(View.ViewMatrix);
 	View.ViewMatrixInv = XMMatrixInverse(&ViewViewMatrixDet, View.ViewMatrix);
 
-	View.ProjectionMatrix = XMMatrixPerspectiveFovLH(90.0f*3.14159f / 180.0f, AspectRatioXOverY, 0.1f, 20000.0f);
+	View.ProjectionMatrix = XMMatrixPerspectiveFovLH(DegToRad(r_newrefdef.fov_y), AspectRatioXOverY, 0.1f, 20000.0f);
 	float4 ViewProjectionMatrixDet = XMMatrixDeterminant(View.ProjectionMatrix);
 	View.ProjectionMatrixInv = XMMatrixInverse(&ViewProjectionMatrixDet, View.ProjectionMatrix);
 

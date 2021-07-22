@@ -7,6 +7,8 @@
 
 #include "Dx12Device.h"
 
+// https://fabiensanglard.net/quake2/index.php
+
 typedef enum
 {
 	rserr_ok,
