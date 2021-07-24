@@ -103,6 +103,7 @@ void ReleaseAllStates();
 extern RenderBufferGeneric* IndexBufferSingleTri;
 extern RenderBufferGeneric* IndexBufferQuadTris;
 
+extern RenderTextureDynamic* MovieTextureDynamic;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

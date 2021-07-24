@@ -6,6 +6,8 @@ static bool bAllStatesCreated = false;
 RenderBufferGeneric* IndexBufferSingleTri = nullptr;
 RenderBufferGeneric* IndexBufferQuadTris = nullptr;
 
+RenderTextureDynamic* MovieTextureDynamic = nullptr;
+
 bool AreAllStatesCreated()
 {
 	return bAllStatesCreated;
@@ -44,6 +46,11 @@ void ReleaseAllStates()
 
 	delete IndexBufferSingleTri;
 	delete IndexBufferQuadTris;
+
+	if (MovieTextureDynamic)
+	{
+		delete MovieTextureDynamic;
+	}
 }
 
 

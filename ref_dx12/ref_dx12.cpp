@@ -225,6 +225,8 @@ void R_DX12_Draw_FadeScreen(void)
 void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte *data)
 {
 	DEBUGPRINT("R_DX12_Draw_StretchRaw\n");
+
+#if 0
 	// This is used to render movies. Not supported yet so instead we print a grey background.
 	DrawImageCall dic;
 	dic.Type = DrawImageCallType::Draw_Fill;
@@ -234,6 +236,18 @@ void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte
 	dic.h = h;
 	dic.c = 3;
 	AddDrawImage(dic);
+#else
+	if (!MovieTextureDynamic || (MovieTextureDynamic && (MovieTextureDynamic->getWidth() != cols || MovieTextureDynamic->getHeight() != rows)))
+	{
+		if (MovieTextureDynamic)
+		{
+			delete MovieTextureDynamic;
+		}
+		MovieTextureDynamic = new RenderTextureDynamic(cols, rows, 1, DXGI_FORMAT_R8_UNORM, D3D12_RESOURCE_FLAG_NONE);
+	}
+
+	MovieTextureDynamic->Upload(data, cols, cols*rows);
+#endif
 }
 
 qboolean R_DX12_Init(void *hinstance, void *hWnd)

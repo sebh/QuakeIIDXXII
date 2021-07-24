@@ -53,12 +53,8 @@ void RenderBufferGenericDynamic::Unmap()
 RenderTextureDynamic::RenderTextureDynamic(
 	unsigned int width, unsigned int height,
 	unsigned int depth, DXGI_FORMAT format,
-	D3D12_RESOURCE_FLAGS flags,
-	unsigned int initDataCopySizeByte, unsigned int RowPitchByte, unsigned int SlicePitchByte)
+	D3D12_RESOURCE_FLAGS flags)
 	: mRenderTexture(width, height, depth, format, flags)
-	, mInitDataCopySizeByte(initDataCopySizeByte)
-	, mRowPitchByte(RowPitchByte)
-	, mSlicePitchByte(SlicePitchByte)
 {
 	D3D12_RESOURCE_DESC resourceDesc = getRenderTextureResourceDesc(width, height, depth, format, flags);
 
@@ -94,7 +90,7 @@ RenderTextureDynamic::~RenderTextureDynamic()
 {
 	for (int i = 0; i < frameBufferCount; ++i)
 	{
-		delete mFrameUploadTextures[i];
+		resetComPtr(&mFrameUploadTextures[i]);
 	}
 }
 

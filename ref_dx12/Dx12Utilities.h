@@ -41,8 +41,7 @@ public:
 	RenderTextureDynamic(
 		unsigned int width, unsigned int height,
 		unsigned int depth, DXGI_FORMAT format,
-		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
-		unsigned int initDataCopySizeByte = 0, unsigned int RowPitchByte = 0, unsigned int SlicePitchByte = 0);
+		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 	virtual ~RenderTextureDynamic();
 
 	void* Map();
@@ -50,6 +49,8 @@ public:
 
 	void Upload(void* DataPtr, unsigned int RowPitchByte, unsigned int SlicePitchByte);
 
+	UINT64 getWidth() { return mRenderTexture.getD3D12Resource()->GetDesc().Width; }
+	UINT64 getHeight() { return mRenderTexture.getD3D12Resource()->GetDesc().Height; }
 protected:
 
 private:
