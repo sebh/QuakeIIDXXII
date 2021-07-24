@@ -48,6 +48,9 @@
     <ClInclude Include="dx_local.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Dx12Utilities.h">
+      <Filter>Dx12</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -85,6 +88,9 @@
     </ClCompile>
     <ClCompile Include="dx_sky.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dx12Utilities.cpp">
+      <Filter>Dx12</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

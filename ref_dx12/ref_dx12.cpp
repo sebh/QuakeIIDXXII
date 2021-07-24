@@ -5,8 +5,6 @@
 
 #include "dx_local.h"
 
-#include "Dx12Device.h"
-
 // https://fabiensanglard.net/quake2/index.php
 
 typedef enum
@@ -44,7 +42,7 @@ cvar_t *vid_gamma;
 cvar_t *vid_ref;
 cvar_t *r_norefresh;
 
-#if _DEBUGxxx
+#if _DEBUG
 #define DEBUGPRINTF(A, B) {char text[128]; sprintf_s(text, 128, A, B); OutputDebugStringA(text);}
 #define DEBUGPRINT(A) {OutputDebugStringA(A);}
 #else

@@ -234,6 +234,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="Dx12Utilities.h" />
     <ClInclude Include="dx_local.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
@@ -253,6 +254,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Dx12Utilities.cpp" />
     <ClCompile Include="dx_draw.cpp" />
     <ClCompile Include="dx_image.cpp" />
     <ClCompile Include="dx_shader.cpp" />
