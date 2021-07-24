@@ -34,17 +34,30 @@ WinDx12State vid;
 refimport_t	ri;
 refdef_t r_newrefdef;
 
+model_t		*r_worldmodel;
+
 const unsigned char* CinematicPalette = nullptr;
 
 bool WorldMapLoaded = false;
 
-cvar_t *gl_mode;	// Reusing that mode
 cvar_t *vid_fullscreen;
 cvar_t *vid_gamma;
 cvar_t *vid_ref;
-cvar_t *r_norefresh;
 
-#if _DEBUG
+cvar_t *r_norefresh;
+cvar_t *r_novis;
+
+cvar_t *gl_mode;	// Reusing that mode
+cvar_t *gl_lockpvs;
+cvar_t *gl_flashblend;
+cvar_t *gl_modulate;
+cvar_t *gl_monolightmap;
+
+int	r_framecount = 1;	// so frame counts initialized to 0 don't match
+int	r_visframecount = 0;
+int registration_sequence;
+
+#if _DEBUGxxx
 #define DEBUGPRINTF(A, B) {char text[128]; sprintf_s(text, 128, A, B); OutputDebugStringA(text);}
 #define DEBUGPRINT(A) {OutputDebugStringA(A);}
 #else
@@ -55,21 +68,53 @@ cvar_t *r_norefresh;
 void R_DX12_BeginRegistration(char* map)
 {
 	DEBUGPRINTF("R_DX12_BeginRegistration - %s\n", map);
-	// TODO
 	WorldMapLoaded = true;
+	R_BeginRegistration(map);
 }
 
 struct model_s* R_DX12_RegisterModel(char* model)
 {
 	DEBUGPRINTF("R_DX12_RegisterModel - %s\n", model);
-	// TODO
-	return nullptr;
+
+	model_t	*mod;
+	int		i;
+	dsprite_t	*sprout;
+	dmdl_t		*pheader;
+
+	mod = Mod_ForName(model, false);
+	if (mod)
+	{
+		mod->registration_sequence = registration_sequence;
+
+		// register any images used by the models
+		if (mod->type == mod_sprite)
+		{
+			sprout = (dsprite_t *)mod->extradata;
+			for (i = 0; i < sprout->numframes; i++)
+				mod->skins[i] = FindImage(sprout->frames[i].name, it_sprite);
+		}
+		else if (mod->type == mod_alias)
+		{
+			pheader = (dmdl_t *)mod->extradata;
+			for (i = 0; i < pheader->num_skins; i++)
+				mod->skins[i] = FindImage((char *)pheader + pheader->ofs_skins + i * MAX_SKINNAME, it_skin);
+			//PGM
+			mod->numframes = pheader->num_frames;
+			//PGM
+		}
+		else if (mod->type == mod_brush)
+		{
+	//		for (i = 0; i < mod->numtexinfo; i++)
+	//			mod->texinfo[i].image->registration_sequence = registration_sequence;
+		}
+	}
+	return mod;
 }
 
 struct image_s* R_DX12_RegisterSkin(char* skin)
 {
 	DEBUGPRINTF("R_DX12_RegisterSkin - %s\n", skin);
-	return nullptr;
+	return FindImage(skin, it_skin);
 }
 
 struct image_s* R_DX12_Draw_FindPic(char* name)
@@ -87,6 +132,7 @@ void R_DX12_SetSky(char* name, float rotate, vec3_t axis)
 void R_DX12_EndRegistration(void)
 {
 	DEBUGPRINT("R_DX12_EndRegistration\n");
+	R_EndRegistration();
 }
 
 void R_DX12_RenderFrame(refdef_t *fd)
@@ -134,6 +180,9 @@ void R_DX12_RenderFrame(refdef_t *fd)
 	// TODO also clear depth
 
 	// TODO render the world
+
+	// Render entities on top of the world
+	DrawEntities();
 
 	// Last render the sky
 	SkyRender();
@@ -292,6 +341,13 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	vid_ref = ri.Cvar_Get("vid_ref", "soft", CVAR_ARCHIVE);
 	gl_mode = ri.Cvar_Get("gl_mode", "3", CVAR_ARCHIVE);
 	r_norefresh = ri.Cvar_Get("r_norefresh", "0", 0);
+	r_novis = ri.Cvar_Get("r_novis", "0", 0);
+	gl_lockpvs = ri.Cvar_Get("gl_lockpvs", "0", 0);
+	gl_flashblend = ri.Cvar_Get("gl_flashblend", "0", 0);
+	gl_modulate = ri.Cvar_Get("gl_modulate", "1", CVAR_ARCHIVE);
+	gl_monolightmap = ri.Cvar_Get("gl_monolightmap", "0", 0);
+
+	registration_sequence = 1;
 
 	qboolean fullscreen = vid_fullscreen->value;
 
@@ -430,7 +486,10 @@ void R_DX12_Shutdown(void)
 
 	ReleaseAllStates();
 
+	Mod_FreeAll();
+
 	SkyUnregisterTexture();
+
 	UnloadAllTextures();
 
 	CachedPSOManager::shutdown();

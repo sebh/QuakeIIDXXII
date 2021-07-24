@@ -151,6 +151,26 @@ void AddDrawImage(DrawImageCall& DrawImageCall);
 void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Model and draw
+
+#define MAX_LBM_HEIGHT  480
+
+#define BACKFACE_EPSILON	0.01
+
+#include "dx_gl_model.h"
+
+extern int r_viewcluster, r_viewcluster2, r_oldviewcluster, r_oldviewcluster2;
+extern entity_t *currententity;
+extern model_t *currentmodel;
+extern model_t	*r_worldmodel;
+
+
+void R_BeginRegistration(char *model);
+void R_EndRegistration(void);
+void DrawEntities();
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -169,7 +189,18 @@ extern refdef_t r_newrefdef;
 
 void ErrorExit(char* Text);
 
+extern cvar_t *r_novis;
 
+extern cvar_t *gl_lockpvs;
+extern cvar_t *gl_flashblend;
+extern cvar_t *gl_modulate;
+extern cvar_t *gl_monolightmap;
+
+extern int r_visframecount;
+extern int r_framecount;
+extern int r_dlightframecount;
+
+extern int registration_sequence;
 
 struct ViewData
 {

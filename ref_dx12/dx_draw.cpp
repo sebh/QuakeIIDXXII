@@ -263,3 +263,108 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 }
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+int	r_viewcluster, r_viewcluster2, r_oldviewcluster, r_oldviewcluster2;
+
+model_t		*currentmodel;
+
+entity_t	*currententity;
+
+
+
+void DrawEntities()
+{
+	int		i;
+
+//	if (!r_drawentities->value)
+//		return;
+
+	// draw non-transparent first
+	for (i = 0; i < r_newrefdef.num_entities; i++)
+	{
+		currententity = &r_newrefdef.entities[i];
+		if (currententity->flags & RF_TRANSLUCENT)
+			continue;	// solid
+
+		if (currententity->flags & RF_BEAM)
+		{
+			//R_DrawBeam(currententity);
+		}
+		else
+		{
+			currentmodel = currententity->model;
+			if (!currentmodel)
+			{
+				//R_DrawNullModel();
+				continue;
+			}
+			switch (currentmodel->type)
+			{
+			case mod_alias:
+				//R_DrawAliasModel(currententity);
+				break;
+			case mod_brush:
+				//R_DrawBrushModel(currententity);
+				break;
+			case mod_sprite:
+				//R_DrawSpriteModel(currententity);
+				break;
+			default:
+				ri.Sys_Error(ERR_DROP, "Bad modeltype");
+				break;
+			}
+		}
+	}
+
+	// draw transparent entities
+	// we could sort these if it ever becomes a problem...
+//	qglDepthMask(0);		// no z writes
+	for (i = 0; i < r_newrefdef.num_entities; i++)
+	{
+		currententity = &r_newrefdef.entities[i];
+		if (!(currententity->flags & RF_TRANSLUCENT))
+			continue;	// solid
+
+		if (currententity->flags & RF_BEAM)
+		{
+			//R_DrawBeam(currententity);
+		}
+		else
+		{
+			currentmodel = currententity->model;
+
+			if (!currentmodel)
+			{
+				//R_DrawNullModel();
+				continue;
+			}
+			switch (currentmodel->type)
+			{
+			case mod_alias:
+				//R_DrawAliasModel(currententity);
+				break;
+			case mod_brush:
+				//R_DrawBrushModel(currententity);
+				break;
+			case mod_sprite:
+				//R_DrawSpriteModel(currententity);
+				break;
+			default:
+				ri.Sys_Error(ERR_DROP, "Bad modeltype");
+				break;
+			}
+		}
+	}
+	//qglDepthMask(1);		// back to writing
+
+}
+
+
+

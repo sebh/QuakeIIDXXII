@@ -236,6 +236,7 @@
     </ClInclude>
     <ClInclude Include="Dx12Utilities.h" />
     <ClInclude Include="dx_local.h" />
+    <ClInclude Include="dx_gl_model.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -256,7 +257,10 @@
     </ClCompile>
     <ClCompile Include="Dx12Utilities.cpp" />
     <ClCompile Include="dx_draw.cpp" />
+    <ClCompile Include="dx_gl_light.cpp" />
+    <ClCompile Include="dx_gl_rsurf.cpp" />
     <ClCompile Include="dx_image.cpp" />
+    <ClCompile Include="dx_gl_model.cpp" />
     <ClCompile Include="dx_shader.cpp" />
     <ClCompile Include="dx_sky.cpp" />
     <ClCompile Include="dx_state.cpp" />

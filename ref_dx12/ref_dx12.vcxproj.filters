@@ -51,6 +51,9 @@
     <ClInclude Include="Dx12Utilities.h">
       <Filter>Dx12</Filter>
     </ClInclude>
+    <ClInclude Include="dx_gl_model.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -91,6 +94,15 @@
     </ClCompile>
     <ClCompile Include="Dx12Utilities.cpp">
       <Filter>Dx12</Filter>
+    </ClCompile>
+    <ClCompile Include="dx_gl_model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dx_gl_rsurf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dx_gl_light.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
