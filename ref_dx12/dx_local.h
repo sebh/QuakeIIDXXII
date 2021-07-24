@@ -152,6 +152,14 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Light
+
+void R_LightPoint(vec3_t p, vec3_t color);
+void R_PushDlights(void);
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Model and draw
 
 #define MAX_LBM_HEIGHT  480
@@ -173,6 +181,7 @@ void DrawEntities();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Sky
 
 void SkyRegisterTexture(char* name, float rotate, vec3_t axis);
 void SkyUnregisterTexture();
@@ -190,6 +199,8 @@ extern refdef_t r_newrefdef;
 void ErrorExit(char* Text);
 
 extern cvar_t *r_novis;
+extern cvar_t *r_speeds;
+extern cvar_t *r_lightlevel;
 
 extern cvar_t *gl_lockpvs;
 extern cvar_t *gl_flashblend;
@@ -201,6 +212,8 @@ extern int r_framecount;
 extern int r_dlightframecount;
 
 extern int registration_sequence;
+extern int c_visible_lightmaps;
+extern int c_visible_textures;
 
 struct ViewData
 {

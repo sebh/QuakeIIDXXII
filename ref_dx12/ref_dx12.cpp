@@ -32,9 +32,11 @@ struct WinDx12State
 WinDx12State vid;
 
 refimport_t	ri;
-refdef_t r_newrefdef;
+refdef_t	r_newrefdef;
 
 model_t		*r_worldmodel;
+
+int			c_brush_polys, c_alias_polys;
 
 const unsigned char* CinematicPalette = nullptr;
 
@@ -46,6 +48,8 @@ cvar_t *vid_ref;
 
 cvar_t *r_norefresh;
 cvar_t *r_novis;
+cvar_t *r_speeds;
+cvar_t *r_lightlevel;
 
 cvar_t *gl_mode;	// Reusing that mode
 cvar_t *gl_lockpvs;
@@ -135,6 +139,36 @@ void R_DX12_EndRegistration(void)
 	R_EndRegistration();
 }
 
+void R_SetLightLevel(void)
+{
+	vec3_t		shadelight;
+
+	if (r_newrefdef.rdflags & RDF_NOWORLDMODEL)
+		return;
+
+	// save off light value for server to look at (BIG HACK!)
+
+	R_LightPoint(r_newrefdef.vieworg, shadelight);
+
+	// pick the greatest component, which should be the same
+	// as the mono value returned by software
+	if (shadelight[0] > shadelight[1])
+	{
+		if (shadelight[0] > shadelight[2])
+			r_lightlevel->value = 150 * shadelight[0];
+		else
+			r_lightlevel->value = 150 * shadelight[2];
+	}
+	else
+	{
+		if (shadelight[1] > shadelight[2])
+			r_lightlevel->value = 150 * shadelight[1];
+		else
+			r_lightlevel->value = 150 * shadelight[2];
+	}
+
+}
+
 void R_DX12_RenderFrame(refdef_t *fd)
 {
 	DEBUGPRINT("R_DX12_RenderFrame\n");
@@ -179,13 +213,58 @@ void R_DX12_RenderFrame(refdef_t *fd)
 	CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 1, &ScissorRect);
 	// TODO also clear depth
 
-	// TODO render the world
+	// Render the world
+	// See https://fabiensanglard.net/quake2/quake2_opengl_renderer.php
+	{
+		if (r_speeds->value)
+		{
+			c_brush_polys = 0;
+			c_alias_polys = 0;
+		}
 
-	// Render entities on top of the world
-	DrawEntities();
+		// Mark polygon affected by dynamic light
+		R_PushDlights();
+
+//TODO	R_SetupFrame();
+
+//TODO	R_SetFrustum();
+
+//TODO	R_SetupGL();
+
+		// Decompress the PVS and mark potentially Visible Polygons
+//TODO	R_MarkLeaves();
+
+//TODO	R_DrawWorld();
+
+		// Render entities on top of the world
+		DrawEntities();
+
+		// Blend dynamic lights. Used instead of lightmap uppdate. 
+		// ==> Unused. Does not look good.
+		//R_RenderDlights();
+
+//TODO	R_DrawParticles();
+
+		// Alpha blend translucent surfaces
+//TODO	R_DrawAlphaSurfaces();
+
+		// Post effects (full screen red for damage, etc...)
+//TODO	R_Flash();
+
+		if (r_speeds->value)
+		{
+			ri.Con_Printf(PRINT_ALL, "%4i wpoly %4i epoly %i tex %i lmaps\n",
+				c_brush_polys,
+				c_alias_polys,
+				c_visible_textures,
+				c_visible_lightmaps);
+		}
+	}
 
 	// Last render the sky
 	SkyRender();
+
+	R_SetLightLevel();
 }
 
 void R_DX12_Draw_GetPicSize(int *w, int *h, char *name)
@@ -339,9 +418,13 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	vid_fullscreen = ri.Cvar_Get("vid_fullscreen", "0", CVAR_ARCHIVE);
 	vid_gamma = ri.Cvar_Get("vid_gamma", "1.0", CVAR_ARCHIVE);
 	vid_ref = ri.Cvar_Get("vid_ref", "soft", CVAR_ARCHIVE);
-	gl_mode = ri.Cvar_Get("gl_mode", "3", CVAR_ARCHIVE);
+
 	r_norefresh = ri.Cvar_Get("r_norefresh", "0", 0);
 	r_novis = ri.Cvar_Get("r_novis", "0", 0);
+	r_speeds = ri.Cvar_Get("r_speeds", "0", 0);
+	r_lightlevel = ri.Cvar_Get("r_lightlevel", "0", 0);
+
+	gl_mode = ri.Cvar_Get("gl_mode", "3", CVAR_ARCHIVE);
 	gl_lockpvs = ri.Cvar_Get("gl_lockpvs", "0", 0);
 	gl_flashblend = ri.Cvar_Get("gl_flashblend", "0", 0);
 	gl_modulate = ri.Cvar_Get("gl_modulate", "1", CVAR_ARCHIVE);
