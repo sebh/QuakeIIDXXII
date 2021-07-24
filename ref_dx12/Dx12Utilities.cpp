@@ -108,6 +108,8 @@ void RenderTextureDynamic::Unmap()
 	int frameIndex = g_dx12Device->getFrameIndex();
 	mFrameUploadTextures[frameIndex]->Unmap(0, nullptr);
 
+	mRenderTexture.resourceTransitionBarrier(D3D12_RESOURCE_STATE_COPY_DEST);
+
 	auto commandList = g_dx12Device->getFrameCommandList();
 	commandList->CopyResource(mRenderTexture.getD3D12Resource(), mFrameUploadTextures[frameIndex]);
 }
@@ -122,6 +124,8 @@ void RenderTextureDynamic::Upload(void* DataPtr, unsigned int RowPitchByte, unsi
 	SubResourceData.RowPitch = RowPitchByte;
 	SubResourceData.SlicePitch = SlicePitchByte;
 
+	mRenderTexture.resourceTransitionBarrier(D3D12_RESOURCE_STATE_COPY_DEST);
+
 	// using helper
 	UpdateSubresources<1>(
 		commandList,
@@ -132,9 +136,6 @@ void RenderTextureDynamic::Upload(void* DataPtr, unsigned int RowPitchByte, unsi
 		1,
 		&SubResourceData);
 	// UpdateSubresources changes the resources state
-	mRenderTexture.resourceTransitionBarrier(D3D12_RESOURCE_STATE_COPY_DEST);
-
-	mRenderTexture.resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 }
 
 

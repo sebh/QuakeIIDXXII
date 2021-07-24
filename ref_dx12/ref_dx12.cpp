@@ -291,6 +291,8 @@ void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte
 	MovieTextureDynamic->Upload(data32, cols * 4, cols*rows * 4);
 	delete [] data32;
 
+	MovieTextureDynamic->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 	DrawImageCall dic;
 	dic.Type = DrawImageCallType::Draw_Tex;
 	dic.x = x;
