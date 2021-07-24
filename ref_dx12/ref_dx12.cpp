@@ -34,6 +34,8 @@ WinDx12State vid;
 refimport_t	ri;
 refdef_t r_newrefdef;
 
+const unsigned char* CinematicPalette = nullptr;
+
 bool WorldMapLoaded = false;
 
 cvar_t *gl_mode;	// Reusing that mode
@@ -226,6 +228,9 @@ void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte
 {
 	DEBUGPRINT("R_DX12_Draw_StretchRaw\n");
 
+	if (!CinematicPalette)
+		return;
+
 #if 0
 	// This is used to render movies. Not supported yet so instead we print a grey background.
 	DrawImageCall dic;
@@ -243,10 +248,30 @@ void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte
 		{
 			delete MovieTextureDynamic;
 		}
-		MovieTextureDynamic = new RenderTextureDynamic(cols, rows, 1, DXGI_FORMAT_R8_UNORM, D3D12_RESOURCE_FLAG_NONE);
+		MovieTextureDynamic = new RenderTextureDynamic(cols, rows, 1, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_FLAG_NONE);
 	}
 
-	MovieTextureDynamic->Upload(data, cols, cols*rows);
+	// Convert from color palette to rgba8 unorm
+	byte* data32 = new byte[cols * rows * 4];
+	for (int i = 0; i < cols * rows; ++i)
+	{
+		if (data[i] != 255)
+		{
+			data32[i * 4 + 0] = CinematicPalette[data[i]*3+0];
+			data32[i * 4 + 1] = CinematicPalette[data[i]*3+1];
+			data32[i * 4 + 2] = CinematicPalette[data[i]*3+2];
+			data32[i * 4 + 3] = 255;
+		}
+		else
+		{
+			data32[i * 4 + 0] = 0;
+			data32[i * 4 + 1] = 0;
+			data32[i * 4 + 2] = 0;
+			data32[i * 4 + 3] = 0;
+		}
+	}
+	MovieTextureDynamic->Upload(data32, cols * 4, cols*rows * 4);
+	delete [] data32;
 
 	DrawImageCall dic;
 	dic.Type = DrawImageCallType::Draw_Tex;
@@ -491,7 +516,7 @@ void R_DX12_EndFrame(void)
 void R_DX12_CinematicSetPalette(const unsigned char *palette)
 {
 	DEBUGPRINT("R_DX12_CinematicSetPalette\n");
-	// TODO
+	CinematicPalette = palette;	// We assume the pointer can safely be kept around and always specified before the movie is played.
 }
 
 void R_DX12_AppActivate(qboolean active)
