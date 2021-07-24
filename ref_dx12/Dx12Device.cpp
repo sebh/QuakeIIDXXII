@@ -1351,27 +1351,30 @@ bool isFormatTypeless(DXGI_FORMAT format)
 	return false;
 }
 
-RenderTexture::RenderTexture(
-	unsigned int width, unsigned int height, unsigned int depth,
-	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags,
-	D3D12_CLEAR_VALUE* ClearValue,
-	unsigned int initDataCopySizeByte, unsigned int RowPitchByte, unsigned int SlicePitchByte, void* initData)
-	: RenderResource()
-	, mRTVHeap(nullptr)
+bool getIsDepthTexture(D3D12_RESOURCE_FLAGS flags)
 {
-	ATLASSERT(ClearValue==nullptr || (ClearValue->Format == format));
-	ID3D12Device* dev = g_dx12Device->getDevice();
-	D3D12_HEAP_PROPERTIES defaultHeap = getGpuOnlyMemoryHeapProperties();
+	return (flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) == D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+}
 
-	D3D12_RESOURCE_DIMENSION dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	if (depth > 1)
-		dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+DXGI_FORMAT getTextureViewFormat(D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format)
+{
+	return getIsDepthTexture(flags) ? getDepthShaderViewFormatFromTypeless(format) : format;
+}
 
-	const bool IsDepthTexture = (flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL) == D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-	DXGI_FORMAT ViewFormat = IsDepthTexture ? getDepthShaderViewFormatFromTypeless(format) : format;
-	DXGI_FORMAT ResourceFormat = IsDepthTexture ? getDepthStencilResourceFormatFromTypeless(format) : format;
-	
+DXGI_FORMAT getTextureResourceFormat(D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format)
+{
+	return getIsDepthTexture(flags) ? getDepthStencilResourceFormatFromTypeless(format) : format;
+}
+
+D3D12_RESOURCE_DESC getRenderTextureResourceDesc(
+	unsigned int width, unsigned int height, unsigned int depth,
+	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
+{
 	D3D12_RESOURCE_DESC resourceDesc;
+
+	const bool IsDepthTexture = getIsDepthTexture(flags);
+	DXGI_FORMAT ResourceFormat = getTextureResourceFormat(flags, format);
+
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 	resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 	resourceDesc.Width = width;
@@ -1383,6 +1386,30 @@ RenderTexture::RenderTexture(
 	resourceDesc.Flags = flags;
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.SampleDesc.Quality = 0;
+
+	return resourceDesc;
+}
+
+RenderTexture::RenderTexture(
+	unsigned int width, unsigned int height, unsigned int depth,
+	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags,
+	D3D12_CLEAR_VALUE* ClearValue,
+	unsigned int RowPitchByte, unsigned int SlicePitchByte, void* initData)
+	: RenderResource()
+	, mRTVHeap(nullptr)
+{
+	ATLASSERT(ClearValue==nullptr || (ClearValue->Format == format));
+	ID3D12Device* dev = g_dx12Device->getDevice();
+	D3D12_HEAP_PROPERTIES defaultHeap = getGpuOnlyMemoryHeapProperties();
+
+	D3D12_RESOURCE_DIMENSION dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	if (depth > 1)
+		dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+
+	const bool IsDepthTexture = getIsDepthTexture(flags);
+	DXGI_FORMAT ViewFormat = getTextureViewFormat(flags, format);
+	DXGI_FORMAT ResourceFormat = getTextureResourceFormat(flags, format);
+	D3D12_RESOURCE_DESC resourceDesc = getRenderTextureResourceDesc(width, height, depth, format, flags);
 
 	if (ClearValue)
 	{

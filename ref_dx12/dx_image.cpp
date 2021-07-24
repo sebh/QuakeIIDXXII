@@ -594,7 +594,7 @@ void UploadAllTextures()
 				1, it.second->bits==8 ? DXGI_FORMAT_R8_UNORM : DXGI_FORMAT_R8G8B8A8_UNORM,
 				D3D12_RESOURCE_FLAG_NONE,
 				nullptr,
-				PicSizeBytes, RowPitchBytes, SlicePitchBytes, it.second->pic);
+				RowPitchBytes, SlicePitchBytes, it.second->pic);
 			it.second->uploaded = true;
 		}
 	}

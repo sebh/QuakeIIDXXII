@@ -73,7 +73,9 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE				getBackBufferDescriptor() const;
 
 	// The single command list per frame since we do not prepare command in parallel yet
-	ID3D12GraphicsCommandList4* getFrameCommandList() const { return mCommandList[0]; }
+	ID3D12GraphicsCommandList4*				getFrameCommandList() const { return mCommandList[0]; }
+
+	int										getFrameIndex() const { return mFrameIndex; }
 
 	void beginFrame();
 	void endFrameAndSwap(bool vsyncEnabled);
@@ -512,6 +514,10 @@ D3D12_HEAP_PROPERTIES getGpuOnlyMemoryHeapProperties();
 D3D12_HEAP_PROPERTIES getUploadMemoryHeapProperties();
 D3D12_HEAP_PROPERTIES getReadbackMemoryHeapProperties();
 
+D3D12_RESOURCE_DESC getRenderTextureResourceDesc(
+	unsigned int width, unsigned int height, unsigned int depth,
+	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags);
+
 class RenderBufferGeneric : public RenderResource
 {
 public:
@@ -563,7 +569,7 @@ public:
 		unsigned int depth, DXGI_FORMAT format,
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE,
 		D3D12_CLEAR_VALUE* ClearValue = nullptr,
-		unsigned int initDataCopySizeByte = 0, unsigned int RowPitchByte = 0, unsigned int SlicePitchByte = 0, void* initData = nullptr);
+		unsigned int RowPitchByte = 0, unsigned int SlicePitchByte = 0, void* initData = nullptr);
 
 	//RenderTexture(const wchar_t* szFileName, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
