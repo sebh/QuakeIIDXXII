@@ -66,8 +66,8 @@ void LoadAllShaders();
 void UnloadAllShaders();
 
 
-extern VertexShader* TestVertexShader;
-extern PixelShader*  TestPixelShader;
+extern VertexShader* FullScreenTriangleVertexShader;
+extern PixelShader*  UvPixelShader;
 
 struct ImageDrawConstantBuffer
 {
@@ -221,6 +221,7 @@ extern cvar_t *gl_lockpvs;
 extern cvar_t *gl_flashblend;
 extern cvar_t *gl_modulate;
 extern cvar_t *gl_monolightmap;
+extern cvar_t *gl_polyblend;
 
 extern int r_visframecount;
 extern int r_framecount;

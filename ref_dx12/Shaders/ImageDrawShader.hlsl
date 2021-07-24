@@ -13,7 +13,7 @@ struct VertexOutput
 	float2 uv			: TEXCOORD0;
 };
 
-VertexOutput TestVertexShader(uint VertexID : SV_VertexID)
+VertexOutput FullScreenTriangleVertexShader(uint VertexID : SV_VertexID)
 {
 	VertexOutput output;	// TODO init to 0
 
@@ -23,7 +23,7 @@ VertexOutput TestVertexShader(uint VertexID : SV_VertexID)
 	return output;
 }
 
-float4 TestPixelShader(VertexOutput input) : SV_TARGET
+float4 UvPixelShader(VertexOutput input) : SV_TARGET
 {
 	return float4(input.uv, 0, 0);
 }

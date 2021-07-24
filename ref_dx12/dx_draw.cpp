@@ -64,8 +64,8 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		CachedRasterPsoDesc PSODesc;
 		PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
 		PSODesc.mLayout = nullptr;
-		PSODesc.mVS = TestVertexShader;
-		PSODesc.mPS = TestPixelShader;
+		PSODesc.mVS = FullScreenTriangleVertexShader;
+		PSODesc.mPS = UvPixelShader;
 		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
 		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 		PSODesc.mBlendState = &getBlendState_Default();

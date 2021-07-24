@@ -54,6 +54,7 @@ cvar_t *gl_lockpvs;
 cvar_t *gl_flashblend;
 cvar_t *gl_modulate;
 cvar_t *gl_monolightmap;
+cvar_t *gl_polyblend;;
 
 int	r_framecount = 1;	// so frame counts initialized to 0 don't match
 int	r_visframecount = 0;
@@ -321,6 +322,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	gl_flashblend = ri.Cvar_Get("gl_flashblend", "0", 0);
 	gl_modulate = ri.Cvar_Get("gl_modulate", "1", CVAR_ARCHIVE);
 	gl_monolightmap = ri.Cvar_Get("gl_monolightmap", "0", 0);
+	gl_polyblend = ri.Cvar_Get("gl_polyblend", "1", 0);
 
 	registration_sequence = 1;
 

@@ -1964,6 +1964,28 @@ const BlendState& getBlendState_PremultipledAlpha()
 	return BlendState_PremultipledAlpha;
 }
 
+static BlendState BlendState_AlphaBlending;
+const BlendState& getBlendState_AlphaBlending()
+{
+	BlendState_AlphaBlending.AlphaToCoverageEnable = FALSE;
+	BlendState_AlphaBlending.IndependentBlendEnable = FALSE;
+	for (uint i = 0; i < 8; ++i)
+	{
+		BlendState_AlphaBlending.RenderTarget[i].BlendEnable = TRUE;
+		BlendState_AlphaBlending.RenderTarget[i].LogicOpEnable = FALSE;
+		BlendState_AlphaBlending.RenderTarget[i].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+		BlendState_AlphaBlending.RenderTarget[i].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		BlendState_AlphaBlending.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
+		BlendState_AlphaBlending.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ZERO;
+		BlendState_AlphaBlending.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+		BlendState_AlphaBlending.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		BlendState_AlphaBlending.RenderTarget[i].LogicOp = D3D12_LOGIC_OP_NOOP;
+		BlendState_AlphaBlending.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	}
+
+	return BlendState_AlphaBlending;
+}
+
 static RasterizerState RasterizerState_Default;
 const RasterizerState& getRasterizerState_Default()
 {

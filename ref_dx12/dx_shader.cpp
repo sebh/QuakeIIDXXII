@@ -3,8 +3,8 @@
 
 
 
-VertexShader* TestVertexShader = nullptr;
-PixelShader*  TestPixelShader = nullptr;
+VertexShader* FullScreenTriangleVertexShader = nullptr;
+PixelShader*  UvPixelShader = nullptr;
 
 VertexShader* ImageDrawVertexShader = nullptr;
 PixelShader*  ImageDrawPixelShader = nullptr;
@@ -21,8 +21,8 @@ void LoadAllShaders()
 	{
 		Macros Macros;
 		Macros.push_back({L"TESTSHADER", L"1"});
-		TestVertexShader = new VertexShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"TestVertexShader", &Macros);
-		TestPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"TestPixelShader", &Macros);
+		FullScreenTriangleVertexShader = new VertexShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"FullScreenTriangleVertexShader", &Macros);
+		UvPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"UvPixelShader", &Macros);
 	}
 	{
 		Macros Macros;
@@ -42,8 +42,8 @@ void LoadAllShaders()
 
 void UnloadAllShaders()
 {
-	delete TestVertexShader;
-	delete TestPixelShader;
+	delete FullScreenTriangleVertexShader;
+	delete UvPixelShader;
 
 	delete ImageDrawVertexShader;
 	delete ImageDrawPixelShader;

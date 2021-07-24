@@ -660,6 +660,7 @@ const DepthStencilState&			getDepthStencilState_Disabled();
 typedef D3D12_BLEND_DESC			BlendState;
 const BlendState&					getBlendState_Default();			// Disabled
 const BlendState&					getBlendState_PremultipledAlpha();	// Premultiplied alpha on destination buffer RGB. A contains transmittance (requires clearing to alpha=1).
+const BlendState&					getBlendState_AlphaBlending();	// Alpha blending on destination buffer RGB. A contains transmittance (requires clearing to alpha=1).
 
 typedef D3D12_RASTERIZER_DESC		RasterizerState;
 const RasterizerState&				getRasterizerState_Default();		// solide, front=clockwise, cull back, everything else off.
