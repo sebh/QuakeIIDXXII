@@ -247,6 +247,15 @@ void R_DX12_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, byte
 	}
 
 	MovieTextureDynamic->Upload(data, cols, cols*rows);
+
+	DrawImageCall dic;
+	dic.Type = DrawImageCallType::Draw_Tex;
+	dic.x = x;
+	dic.y = y;
+	dic.w = w;
+	dic.h = h;
+	dic.Texture = &MovieTextureDynamic->getRenderTexture();
+	AddDrawImage(dic);
 #endif
 }
 

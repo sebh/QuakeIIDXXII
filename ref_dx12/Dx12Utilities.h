@@ -44,6 +44,7 @@ public:
 		D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 	virtual ~RenderTextureDynamic();
 
+	// Map and Unmpap have not been tested so far
 	void* Map();
 	void Unmap();
 
@@ -51,6 +52,7 @@ public:
 
 	UINT64 getWidth() { return mRenderTexture.getD3D12Resource()->GetDesc().Width; }
 	UINT64 getHeight() { return mRenderTexture.getD3D12Resource()->GetDesc().Height; }
+	RenderTexture& getRenderTexture() { return mRenderTexture; }
 protected:
 
 private:

@@ -122,6 +122,23 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
 			break;
 		}
+		case DrawImageCallType::Draw_Tex:
+		{
+			PSODesc.mVS = ImageDrawVertexShader;
+			PSODesc.mPS = ImageDrawPixelShader;
+
+			PSODesc.mBlendState = &getBlendState_Default();
+
+			CBData->ImageBottomLeft[0] = dic.x;
+			CBData->ImageBottomLeft[1] = dic.y;
+			CBData->ImageSize[0] = dic.w;
+			CBData->ImageSize[1] = dic.h;
+
+			DispatchDrawCallCpuDescriptorHeap::Call CallDescriptors = DrawDispatchCallCpuDescriptorHeap.AllocateCall(g_dx12Device->GetDefaultGraphicRootSignature());
+			CallDescriptors.SetSRV(0, *dic.Texture);
+			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
+			break;
+		}
 		case DrawImageCallType::Draw_Fill:
 		{
 			PSODesc.mVS = ImageDrawVertexShader;

@@ -112,6 +112,7 @@ extern RenderTextureDynamic* MovieTextureDynamic;
 enum class DrawImageCallType
 {
 	Draw_Pic,		// Draw an image
+	Draw_Tex,		// Draw a RenderTexture
 	Draw_Char,		// Draw a character
 	Draw_TileClear,	// tile the image over 64x64 pixel tiles
 	Draw_Fill,		// fill with a single color
@@ -122,7 +123,10 @@ struct DrawImageCall
 {
 	DrawImageCallType Type;
 
-	image_t* Image;
+	union {
+		image_t* Image;
+		RenderTexture* Texture;
+	};
 	int c;
 
 	int x;
