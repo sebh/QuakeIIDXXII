@@ -92,11 +92,9 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		PSODesc.mLayout = nullptr;
 		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
 		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
-		PSODesc.mBlendState = dic.Image && dic.Image->has_alpha ? &getBlendState_PremultipledAlpha() : &getBlendState_Default();
 		PSODesc.mRenderTargetCount = 1;
 		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 		PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-
 
 		FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(ImageDrawConstantBuffer));
 		ImageDrawConstantBuffer* CBData = (ImageDrawConstantBuffer*)CB.getCPUMemory();
@@ -112,6 +110,8 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 			PSODesc.mVS = ImageDrawVertexShader;
 			PSODesc.mPS = ImageDrawPixelShader;
 
+			PSODesc.mBlendState = dic.Image && dic.Image->has_alpha ? &getBlendState_PremultipledAlpha() : &getBlendState_Default();
+
 			CBData->ImageBottomLeft[0] = dic.x;
 			CBData->ImageBottomLeft[1] = dic.y;
 			CBData->ImageSize[0] = dic.w;
@@ -126,6 +126,8 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		{
 			PSODesc.mVS = ImageDrawVertexShader;
 			PSODesc.mPS = ColorDrawPixelShader;
+
+			PSODesc.mBlendState = &getBlendState_Default();
 
 			CBData->ImageBottomLeft[0] = dic.x;
 			CBData->ImageBottomLeft[1] = dic.y;
@@ -174,6 +176,8 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 			PSODesc.mVS = ImageDrawVertexShader;
 			PSODesc.mPS = CharDrawPixelShader;
 
+			PSODesc.mBlendState = &getBlendState_PremultipledAlpha();
+
 			CBData->ImageBottomLeft[0] = dic.x;
 			CBData->ImageBottomLeft[1] = dic.y;
 			CBData->ImageSize[0] = 8;
@@ -194,6 +198,8 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		{
 			PSODesc.mVS = ImageDrawVertexShader;
 			PSODesc.mPS = TiledImageDrawPixelShader;
+
+			PSODesc.mBlendState = &getBlendState_Default();
 
 			CBData->ImageBottomLeft[0] = dic.x;
 			CBData->ImageBottomLeft[1] = dic.y;
