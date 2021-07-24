@@ -38,17 +38,6 @@ void SkyRender()
 {
 	if (sky_images[0])
 	{
-		{
-			DrawImageCall dic;
-			dic.Image = sky_images[0];
-			dic.Type = DrawImageCallType::Draw_Pic;
-			dic.x = 100;
-			dic.y = 100;
-			dic.w = 256;
-			dic.h = 256;
-			AddDrawImage(dic);
-		}
-
 		FrameConstantBuffers& ConstantBuffers = g_dx12Device->getFrameConstantBuffers();
 		DispatchDrawCallCpuDescriptorHeap& DrawDispatchCallCpuDescriptorHeap = g_dx12Device->getDispatchDrawCallCpuDescriptorHeap();
 
