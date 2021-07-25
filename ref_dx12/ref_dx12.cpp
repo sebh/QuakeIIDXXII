@@ -467,6 +467,7 @@ void R_DX12_Shutdown(void)
 
 	SkyUnregisterTexture();
 
+	R_ShutdownRenderView();
 	UnloadAllTextures();
 
 	CachedPSOManager::shutdown();

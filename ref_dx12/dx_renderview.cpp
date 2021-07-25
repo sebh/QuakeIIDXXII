@@ -17,6 +17,7 @@ cplane_t	frustum[4];
 model_t		*currentmodel;
 entity_t	*currententity;
 
+RenderBufferGenericDynamic* MeshRenderBuffer = nullptr;
 
 
 void R_SetupFrame(void)
@@ -315,6 +316,11 @@ void R_RenderView(void)
 	ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
 	D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
 
+	if (!MeshRenderBuffer)
+	{
+		MeshRenderBuffer = new RenderBufferGenericDynamic(1024 * 1024, D3D12_RESOURCE_FLAG_NONE);
+	}
+
 	// Set defaults graphic and compute root signatures
 	CommandList->SetGraphicsRootSignature(g_dx12Device->GetDefaultGraphicRootSignature().getRootsignature());
 	CommandList->SetComputeRootSignature(g_dx12Device->GetDefaultComputeRootSignature().getRootsignature());
@@ -359,7 +365,75 @@ void R_RenderView(void)
 	//TODO	R_DrawWorld();
 
 	// Last render the sky
-	SkyRender();
+//	SkyRender();
+
+	{
+		float* ptr = (float*)MeshRenderBuffer->Map();
+		//*ptr++ = r_origin[0] + 100.0f * vpn[0];
+		//*ptr++ = r_origin[1] + 100.0f * vpn[1];
+		//*ptr++ = r_origin[2] + 100.0f * vpn[2];
+		//*ptr++ = r_origin[0] - 100.0f * vpn[0] + 100.0f;
+		//*ptr++ = r_origin[1] - 100.0f * vpn[1] + 100.0f;
+		//*ptr++ = r_origin[2] - 100.0f * vpn[2] + 100.0f;
+		//*ptr++ = r_origin[0] + 100.0f * vpn[0] + 100.0f * vup[0];
+		//*ptr++ = r_origin[1] + 100.0f * vpn[1] + 100.0f * vup[1];
+		//*ptr++ = r_origin[2] + 100.0f * vpn[2] + 100.0f * vup[2];
+		*ptr++ = 1000.0f;
+		*ptr++ = 0.0f;
+		*ptr++ = 0.0f;
+		*ptr++ = 0.0f;
+		*ptr++ = 10000.0f;
+		*ptr++ = 0.0f;
+		*ptr++ = 0.0f;
+		*ptr++ = 0.0f;
+		*ptr++ = 1000.0f;
+		MeshRenderBuffer->Unmap();
+
+		//
+		{
+			ViewData vd = GetViewData();
+
+			static InputLayout VtxLayout;
+			if(VtxLayout.getLayoutDesc()->NumElements == 0)
+				VtxLayout.appendSimpleVertexDataToInputLayout("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT);
+
+			FrameConstantBuffers& ConstantBuffers = g_dx12Device->getFrameConstantBuffers();
+			DispatchDrawCallCpuDescriptorHeap& DrawDispatchCallCpuDescriptorHeap = g_dx12Device->getDispatchDrawCallCpuDescriptorHeap();
+
+			ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
+			ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
+			D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
+
+			CachedRasterPsoDesc PSODesc;
+			PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
+			PSODesc.mLayout = &VtxLayout;
+			PSODesc.mBlendState = &getBlendState_Default();
+			PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
+			PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
+			PSODesc.mRenderTargetCount = 1;
+			PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
+			PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+			PSODesc.mVS = MeshVertexShader;
+			PSODesc.mPS = MeshDebugPixelShader;
+			g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
+
+			FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(MeshConstantBuffer));
+			MeshConstantBuffer* CBData = (MeshConstantBuffer*)CB.getCPUMemory();
+			CBData->MeshWorldMatrix = XMMatrixIdentity();
+			CBData->ViewProjectionMatrix = vd.ViewProjectionMatrix;
+			CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
+
+			IndexBufferSingleTri->resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
+			D3D12_INDEX_BUFFER_VIEW IndexBufferSingleTriBufferView = IndexBufferSingleTri->getIndexBufferView(DXGI_FORMAT_R32_UINT);
+			CommandList->IASetIndexBuffer(&IndexBufferSingleTriBufferView);
+			CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
+
+			D3D12_VERTEX_BUFFER_VIEW VtxBufferView = MeshRenderBuffer->getRenderBuffer().getVertexBufferView(3 * sizeof(float));
+			CommandList->IASetVertexBuffers(0, 1, &VtxBufferView);
+
+			CommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
+		}
+	}
 
 	// Render entities on top of the world
 	R_DrawEntitiesOnList();
@@ -388,5 +462,11 @@ void R_RenderView(void)
 	R_SetLightLevel();
 }
 
-
+void R_ShutdownRenderView(void)
+{
+	if (MeshRenderBuffer)
+	{
+		delete MeshRenderBuffer;
+	}
+}
 

@@ -15,6 +15,8 @@ public:
 	void* Map();
 	void Unmap();
 
+	RenderBufferGeneric& getRenderBuffer() { return mRenderBuffer; }
+
 protected:
 
 private:
@@ -53,6 +55,7 @@ public:
 	UINT64 getWidth() { return mRenderTexture.getD3D12Resource()->GetDesc().Width; }
 	UINT64 getHeight() { return mRenderTexture.getD3D12Resource()->GetDesc().Height; }
 	RenderTexture& getRenderTexture() { return mRenderTexture; }
+
 protected:
 
 private:

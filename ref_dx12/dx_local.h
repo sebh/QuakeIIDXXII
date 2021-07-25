@@ -92,6 +92,13 @@ struct SkyConstantBuffer
 extern VertexShader* SkyVertexShader;
 extern PixelShader*  SkyPixelShader;
 
+struct MeshConstantBuffer
+{
+	float4x4	MeshWorldMatrix;
+	float4x4	ViewProjectionMatrix;
+};
+extern VertexShader* MeshVertexShader;
+extern PixelShader* MeshDebugPixelShader;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // States
@@ -156,6 +163,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
 // Render view
 
 void R_RenderView(void);
+void R_ShutdownRenderView(void);
 
 
 
