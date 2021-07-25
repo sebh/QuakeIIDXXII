@@ -124,5 +124,8 @@
     <FxCompile Include="Shaders\SkyShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\WorldMeshDrawShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

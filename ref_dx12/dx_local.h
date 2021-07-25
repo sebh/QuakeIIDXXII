@@ -99,6 +99,7 @@ struct MeshConstantBuffer
 };
 extern VertexShader* MeshVertexShader;
 extern PixelShader* MeshDebugPixelShader;
+extern PixelShader* MeshColorPixelShader;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // States
@@ -162,6 +163,7 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Render view
 
+void R_InitRenderView(void);
 void R_RenderView(void);
 void R_ShutdownRenderView(void);
 
@@ -224,6 +226,7 @@ void ErrorExit(char* Text);
 extern cvar_t *r_novis;
 extern cvar_t *r_speeds;
 extern cvar_t *r_lightlevel;
+extern cvar_t *r_drawentities;
 
 extern cvar_t *gl_lockpvs;
 extern cvar_t *gl_flashblend;

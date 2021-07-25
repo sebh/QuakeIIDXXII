@@ -17,8 +17,44 @@ cplane_t	frustum[4];
 model_t		*currentmodel;
 entity_t	*currententity;
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 RenderBufferGenericDynamic* MeshRenderBuffer = nullptr;
 
+static InputLayout VtxLayout;
+
+// Current simplification on purpose: all world/mesh draw are using the same vertex layout
+struct MeshVertexFormat
+{
+	float Position[3];
+	float SurfaceUV[2];
+	float LightmapUV[2];
+	float ColorAlpha[4];
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+void R_InitRenderView(void)
+{
+	VtxLayout.appendSimpleVertexDataToInputLayout("POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT);
+	VtxLayout.appendSimpleVertexDataToInputLayout("TEXCOORD0",	0, DXGI_FORMAT_R32G32_FLOAT);
+	VtxLayout.appendSimpleVertexDataToInputLayout("TEXCOORD1",	0, DXGI_FORMAT_R32G32_FLOAT);
+	VtxLayout.appendSimpleVertexDataToInputLayout("COLOR",		0, DXGI_FORMAT_R32G32B32A32_FLOAT);
+}
 
 void R_SetupFrame(void)
 {
@@ -172,8 +208,8 @@ void R_DrawEntitiesOnList()
 {
 	int		i;
 
-	//	if (!r_drawentities->value)
-	//		return;
+	if (!r_drawentities->value)
+		return;
 
 		// draw non-transparent first
 	for (i = 0; i < r_newrefdef.num_entities; i++)
@@ -185,6 +221,7 @@ void R_DrawEntitiesOnList()
 		if (currententity->flags & RF_BEAM)
 		{
 			//R_DrawBeam(currententity);
+			int i = 0;
 		}
 		else
 		{
@@ -224,6 +261,7 @@ void R_DrawEntitiesOnList()
 		if (currententity->flags & RF_BEAM)
 		{
 			//R_DrawBeam(currententity);
+			int i = 0;
 		}
 		else
 		{
@@ -311,6 +349,7 @@ void R_Flash()
 void R_RenderView(void)
 {
 	SCOPED_GPU_TIMER(Quake2Frame, 100, 100, 100);
+	ViewData vd = GetViewData();
 
 	ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
 	ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
@@ -367,17 +406,9 @@ void R_RenderView(void)
 	// Last render the sky
 	SkyRender();
 
+#if 0
 	{
 		float* ptr = (float*)MeshRenderBuffer->Map();
-		//*ptr++ = r_origin[0] + 100.0f * vpn[0];
-		//*ptr++ = r_origin[1] + 100.0f * vpn[1];
-		//*ptr++ = r_origin[2] + 100.0f * vpn[2];
-		//*ptr++ = r_origin[0] - 100.0f * vpn[0] + 100.0f;
-		//*ptr++ = r_origin[1] - 100.0f * vpn[1] + 100.0f;
-		//*ptr++ = r_origin[2] - 100.0f * vpn[2] + 100.0f;
-		//*ptr++ = r_origin[0] + 100.0f * vpn[0] + 100.0f * vup[0];
-		//*ptr++ = r_origin[1] + 100.0f * vpn[1] + 100.0f * vup[1];
-		//*ptr++ = r_origin[2] + 100.0f * vpn[2] + 100.0f * vup[2];
 		*ptr = 1000.0f;
 		ptr++;
 		*ptr = 0.0f;
@@ -400,11 +431,6 @@ void R_RenderView(void)
 
 		//
 		{
-			ViewData vd = GetViewData();
-
-			static InputLayout VtxLayout;
-			if(VtxLayout.getLayoutDesc()->NumElements == 0)
-				VtxLayout.appendSimpleVertexDataToInputLayout("POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT);
 
 			FrameConstantBuffers& ConstantBuffers = g_dx12Device->getFrameConstantBuffers();
 			DispatchDrawCallCpuDescriptorHeap& DrawDispatchCallCpuDescriptorHeap = g_dx12Device->getDispatchDrawCallCpuDescriptorHeap();
@@ -444,6 +470,7 @@ void R_RenderView(void)
 			CommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
 		}
 	}
+#endif
 
 	// Render entities on top of the world
 	R_DrawEntitiesOnList();

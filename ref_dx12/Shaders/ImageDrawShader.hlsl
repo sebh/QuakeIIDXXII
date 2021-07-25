@@ -5,41 +5,6 @@
 
 
 
-#if TESTMESHSHADER
-
-cbuffer MeshConstantBuffer : register(b0)
-{
-	float4x4	MeshWorldMatrix;
-	float4x4	ViewProjectionMatrix;
-}
-
-struct VertexInput
-{
-	float3 position		: POSITION;
-};
-struct VertexOutput
-{
-	float4 position		: SV_POSITION;
-};
-
-VertexOutput MeshVertexShader(VertexInput input, uint VertexID : SV_VertexID)
-{
-	VertexOutput output;
-
-	output.position = mul(ViewProjectionMatrix, mul(MeshWorldMatrix, float4(input.position, 1.0)));
-
-	return output;
-}
-
-float4 MeshDebugPixelShader(VertexOutput input) : SV_TARGET
-{
-	return float4(1.0, 0.5, 0.25, 1.0);
-}
-
-#endif // TESTMESHSHADER
-
-
-
 #if TESTSHADER
 
 struct VertexOutput

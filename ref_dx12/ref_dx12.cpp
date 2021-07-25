@@ -48,6 +48,7 @@ cvar_t *r_norefresh;
 cvar_t *r_novis;
 cvar_t *r_speeds;
 cvar_t *r_lightlevel;
+cvar_t *r_drawentities;
 
 cvar_t *gl_mode;	// Reusing that mode
 cvar_t *gl_lockpvs;
@@ -316,6 +317,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	r_novis = ri.Cvar_Get("r_novis", "0", 0);
 	r_speeds = ri.Cvar_Get("r_speeds", "0", 0);
 	r_lightlevel = ri.Cvar_Get("r_lightlevel", "0", 0);
+	r_drawentities = ri.Cvar_Get("r_drawentities", "1", 0);
 
 	gl_mode = ri.Cvar_Get("gl_mode", "3", CVAR_ARCHIVE);
 	gl_lockpvs = ri.Cvar_Get("gl_lockpvs", "0", 0);
@@ -451,6 +453,8 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	ri.Vid_NewWindow(vid.width, vid.height);
 
 	LoadAllShaders();
+
+	R_InitRenderView();
 
 	return true;
 }

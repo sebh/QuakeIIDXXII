@@ -17,6 +17,7 @@ PixelShader*  SkyPixelShader = nullptr;
 
 VertexShader* MeshVertexShader = nullptr;
 PixelShader* MeshDebugPixelShader = nullptr;
+PixelShader* MeshColorPixelShader = nullptr;
 
 
 void LoadAllShaders()
@@ -45,9 +46,9 @@ void LoadAllShaders()
 	}
 	{
 		Macros Macros;
-		Macros.push_back({ L"TESTMESHSHADER", L"1" });
-		MeshVertexShader = new VertexShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"MeshVertexShader", &Macros);
-		MeshDebugPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"MeshDebugPixelShader", &Macros);
+		MeshVertexShader = new VertexShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\WorldMeshDrawShader.hlsl", L"MeshVertexShader", &Macros);
+		MeshDebugPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\WorldMeshDrawShader.hlsl", L"MeshDebugPixelShader", &Macros);
+		MeshColorPixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\WorldMeshDrawShader.hlsl", L"MeshColorPixelShader", &Macros);
 	}
 }
 
@@ -67,6 +68,7 @@ void UnloadAllShaders()
 
 	delete MeshVertexShader;
 	delete MeshDebugPixelShader;
+	delete MeshColorPixelShader;
 }
 
 
