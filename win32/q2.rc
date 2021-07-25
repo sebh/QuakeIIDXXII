@@ -8,6 +8,9 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "afxres.h"
+// If the above generates a compilation error, it means you have not installed MFC with visual studio.
+// Instead, you can include windows.h.
+//#include "windows.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
