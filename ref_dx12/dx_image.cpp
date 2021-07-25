@@ -467,7 +467,8 @@ image_t* FindImage(char *name, imagetype_t type)
 		LoadPCX(name, &pic, &palette, &width, &height);
 		if (!pic)
 		{
-			ri.Sys_Error(ERR_DROP, "GL_FindImage: can't load %s", name);
+			ri.Con_Printf(PRINT_DEVELOPER, "Bad pcx file %s\n", name);
+			//ri.Sys_Error(ERR_DROP, "GL_FindImage: can't load %s", name);
 			return NULL;
 		}
 		image = GL_LoadPic(name, pic, width, height, type, 8);
