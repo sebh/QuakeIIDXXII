@@ -18,7 +18,7 @@ struct VertexInput
 	float3 Position			: POSITION;
 	float2 SurfaceUV		: TEXCOORD0;
 	float2 LightmapUV		: TEXCOORD1;
-	float4 ColorAlpha		: COLOR;
+	float4 ColorAlpha		: TEXCOORD2;
 };
 
 struct VertexOutput
@@ -26,7 +26,7 @@ struct VertexOutput
 	float4 Position			: SV_POSITION;
 	float2 SurfaceUV		: TEXCOORD0;
 	float2 LightmapUV		: TEXCOORD1;
-	float4 ColorAlpha		: COLOR;
+	float4 ColorAlpha		: TEXCOORD2;
 };
 
 
@@ -53,7 +53,7 @@ float4 MeshDebugPixelShader(VertexOutput Input) : SV_TARGET
 
 float4 MeshColorPixelShader(VertexOutput Input) : SV_TARGET
 {
-	return float4(1.0, 0.5, 0.25, 1.0);
+	return Input.ColorAlpha;
 }
 
 
