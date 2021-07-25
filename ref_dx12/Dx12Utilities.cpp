@@ -34,10 +34,13 @@ void* RenderBufferGenericDynamic::Map()
 	return ptr;
 }
 
-void RenderBufferGenericDynamic::Unmap()
+void RenderBufferGenericDynamic::UnmapAndUpload()
 {
 	int frameIndex = g_dx12Device->getFrameIndex();
 	mFrameUploadBuffers[frameIndex]->getD3D12Resource()->Unmap(0, nullptr);
+
+	mRenderBuffer.resourceTransitionBarrier(D3D12_RESOURCE_STATE_COPY_DEST);
+	g_dx12Device->getFrameCommandList()->CopyResource(mRenderBuffer.getD3D12Resource(), mFrameUploadBuffers[frameIndex]->getD3D12Resource());
 }
 
 
@@ -103,7 +106,7 @@ void* RenderTextureDynamic::Map()
 	return ptr;
 }
 
-void RenderTextureDynamic::Unmap()
+void RenderTextureDynamic::UnmapAndUpload()
 {
 	int frameIndex = g_dx12Device->getFrameIndex();
 	mFrameUploadTextures[frameIndex]->Unmap(0, nullptr);

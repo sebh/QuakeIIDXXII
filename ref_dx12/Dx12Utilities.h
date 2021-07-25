@@ -13,7 +13,7 @@ public:
 	virtual ~RenderBufferGenericDynamic();
 
 	void* Map();
-	void Unmap();
+	void UnmapAndUpload();
 
 	RenderBufferGeneric& getRenderBuffer() { return mRenderBuffer; }
 
@@ -48,7 +48,7 @@ public:
 
 	// Map and Unmpap have not been tested so far
 	void* Map();
-	void Unmap();
+	void UnmapAndUpload();
 
 	void Upload(void* DataPtr, unsigned int RowPitchByte, unsigned int SlicePitchByte);
 

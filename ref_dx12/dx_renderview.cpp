@@ -365,7 +365,7 @@ void R_RenderView(void)
 	//TODO	R_DrawWorld();
 
 	// Last render the sky
-//	SkyRender();
+	SkyRender();
 
 	{
 		float* ptr = (float*)MeshRenderBuffer->Map();
@@ -378,16 +378,25 @@ void R_RenderView(void)
 		//*ptr++ = r_origin[0] + 100.0f * vpn[0] + 100.0f * vup[0];
 		//*ptr++ = r_origin[1] + 100.0f * vpn[1] + 100.0f * vup[1];
 		//*ptr++ = r_origin[2] + 100.0f * vpn[2] + 100.0f * vup[2];
-		*ptr++ = 1000.0f;
-		*ptr++ = 0.0f;
-		*ptr++ = 0.0f;
-		*ptr++ = 0.0f;
-		*ptr++ = 10000.0f;
-		*ptr++ = 0.0f;
-		*ptr++ = 0.0f;
-		*ptr++ = 0.0f;
-		*ptr++ = 1000.0f;
-		MeshRenderBuffer->Unmap();
+		*ptr = 1000.0f;
+		ptr++;
+		*ptr = 0.0f;
+		ptr++;
+		*ptr = 0.0f;
+		ptr++;
+		*ptr = 0.0f;
+		ptr++;
+		*ptr = 10000.0f;
+		ptr++;
+		*ptr = 0.0f;
+		ptr++;
+		*ptr = 0.0f;
+		ptr++;
+		*ptr = 0.0f;
+		ptr++;
+		*ptr = 1000.0f;
+		ptr++;
+		MeshRenderBuffer->UnmapAndUpload();
 
 		//
 		{
@@ -428,6 +437,7 @@ void R_RenderView(void)
 			CommandList->IASetIndexBuffer(&IndexBufferSingleTriBufferView);
 			CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
 
+			MeshRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 			D3D12_VERTEX_BUFFER_VIEW VtxBufferView = MeshRenderBuffer->getRenderBuffer().getVertexBufferView(3 * sizeof(float));
 			CommandList->IASetVertexBuffers(0, 1, &VtxBufferView);
 
