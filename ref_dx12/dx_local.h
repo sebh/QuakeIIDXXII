@@ -273,7 +273,7 @@ struct MeshRenderCommand
 
 #define VertexMemorySizeBytes	10 * 1024 * 1024
 #define IndexMemorySizeBytes	1 * 1024 * 1024
-#define MaxCommandCount			4096
+#define MaxCommandCount			8912
 struct MeshRenderer
 {
 public:
