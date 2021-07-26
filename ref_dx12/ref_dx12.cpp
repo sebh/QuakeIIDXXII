@@ -494,6 +494,8 @@ void R_DX12_Shutdown(void)
 	R_ShutdownRenderView();
 	UnloadAllTextures();
 
+	delete DepthTexture;
+
 	CachedPSOManager::shutdown();
 	Dx12Device::shutdown();
 
