@@ -656,6 +656,7 @@ private:
 
 typedef D3D12_DEPTH_STENCIL_DESC	DepthStencilState;
 const DepthStencilState&			getDepthStencilState_Default();		// Depth and depth write enabled
+const DepthStencilState&			getDepthStencilState_ReadOnly();
 const DepthStencilState&			getDepthStencilState_Disabled();
 
 typedef D3D12_BLEND_DESC			BlendState;

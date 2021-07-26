@@ -1925,6 +1925,26 @@ const DepthStencilState& getDepthStencilState_Default()
 	return DepthStencilState_Default;
 }
 
+static DepthStencilState DepthStencilState_ReadOnly;
+const DepthStencilState& getDepthStencilState_ReadOnly()
+{
+	DepthStencilState_ReadOnly.DepthEnable = TRUE;
+	DepthStencilState_ReadOnly.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	DepthStencilState_ReadOnly.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+	DepthStencilState_ReadOnly.StencilEnable = FALSE;
+	DepthStencilState_ReadOnly.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+	DepthStencilState_ReadOnly.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+	DepthStencilState_ReadOnly.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	DepthStencilState_ReadOnly.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	DepthStencilState_ReadOnly.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilState_ReadOnly.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilState_ReadOnly.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilState_ReadOnly.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilState_ReadOnly.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	DepthStencilState_ReadOnly.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+	return DepthStencilState_ReadOnly;
+}
+
 static DepthStencilState DepthStencilState_Disabled;
 const DepthStencilState& getDepthStencilState_Disabled()
 {

@@ -379,4 +379,5 @@ struct ViewData
 // ignoring VR views
 ViewData GetViewData();
 
+extern RenderTexture* DepthTexture;
 

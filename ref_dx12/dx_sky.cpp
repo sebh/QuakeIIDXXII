@@ -65,12 +65,14 @@ void SkyRender()
 			PSODesc.mVS = SkyVertexShader;
 			PSODesc.mPS = SkyPixelShader;
 			PSODesc.mLayout = nullptr;
-			PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
+			PSODesc.mDepthStencilState = &getDepthStencilState_ReadOnly();
 			PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 			PSODesc.mBlendState = &getBlendState_Default();
 			PSODesc.mRenderTargetCount = 1;
 			PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 			PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+			PSODesc.mDepthTextureDescriptor = DepthTexture->getDSVCPUHandle();
+			PSODesc.mDepthTextureFormat = DepthTexture->getClearColor().Format;
 			g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
 
 			FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(SkyConstantBuffer));

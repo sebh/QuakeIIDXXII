@@ -31,6 +31,8 @@ struct WinDx12State
 
 WinDx12State vid;
 
+RenderTexture* DepthTexture = nullptr;
+
 refimport_t	ri;
 refdef_t	r_newrefdef;
 
@@ -453,6 +455,16 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 		ri.Con_Printf(PRINT_ALL, "DX12 device creation failed\n");
 		return false;
 	}
+	ID3D12Resource* backBuffer = g_dx12Device->getBackBuffer();
+
+	// Create the depth buffer
+	D3D12_CLEAR_VALUE DepthClearValue;
+	DepthClearValue.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	DepthClearValue.DepthStencil.Depth = 1.0f;
+	DepthClearValue.DepthStencil.Stencil = 0;
+	DepthTexture = new RenderTexture(
+		(uint)backBuffer->GetDesc().Width, (uint)backBuffer->GetDesc().Height, 1,
+		DepthClearValue.Format, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL, &DepthClearValue);
 
 	SetForegroundWindow(vid.HWnd);
 	SetFocus(vid.HWnd);

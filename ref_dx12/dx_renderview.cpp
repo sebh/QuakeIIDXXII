@@ -209,15 +209,22 @@ void MeshRenderer::ExecuteRenderCommands()
 	CommandList->SetGraphicsRootSignature(g_dx12Device->GetDefaultGraphicRootSignature().getRootsignature());
 	CommandList->SetComputeRootSignature(g_dx12Device->GetDefaultComputeRootSignature().getRootsignature());
 
+	// Set the common descriptor heap
+	std::vector<ID3D12DescriptorHeap*> descriptorHeaps;
+	descriptorHeaps.push_back(g_dx12Device->getFrameDispatchDrawCallGpuDescriptorHeap()->getHeap());
+	CommandList->SetDescriptorHeaps(uint(descriptorHeaps.size()), descriptorHeaps.data());
+
 	CachedRasterPsoDesc PSODesc;
 	PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
 	PSODesc.mLayout = &MeshVertexFormatLayout;
 	PSODesc.mBlendState = &getBlendState_Default();
-	PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
+	PSODesc.mDepthStencilState = &getDepthStencilState_Default();
 	PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 	PSODesc.mRenderTargetCount = 1;
 	PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 	PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	PSODesc.mDepthTextureDescriptor = DepthTexture->getDSVCPUHandle();
+	PSODesc.mDepthTextureFormat = DepthTexture->getClearColor().Format;
 
 	MeshIndexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
 	D3D12_INDEX_BUFFER_VIEW MeshIndexRenderBufferView = MeshIndexRenderBuffer->getRenderBuffer().getIndexBufferView(DXGI_FORMAT_R32_UINT);
@@ -755,6 +762,11 @@ void R_RenderView(void)
 	CommandList->SetGraphicsRootSignature(g_dx12Device->GetDefaultGraphicRootSignature().getRootsignature());
 	CommandList->SetComputeRootSignature(g_dx12Device->GetDefaultComputeRootSignature().getRootsignature());
 
+	// Set the common descriptor heap
+	std::vector<ID3D12DescriptorHeap*> descriptorHeaps;
+	descriptorHeaps.push_back(g_dx12Device->getFrameDispatchDrawCallGpuDescriptorHeap()->getHeap());
+	CommandList->SetDescriptorHeaps(uint(descriptorHeaps.size()), descriptorHeaps.data());
+
 	// Set the view port region
 	D3D12_VIEWPORT Viewport;
 	Viewport.TopLeftX = r_newrefdef.x;
@@ -774,7 +786,9 @@ void R_RenderView(void)
 	// Clear the viewport for rendering
 	FLOAT BackBufferClearColor[4] = { 0.0f, 0.5f, 0.0f, 1.0f };
 	CommandList->ClearRenderTargetView(BackBufferDescriptor, BackBufferClearColor, 1, &ScissorRect);
-	// TODO also clear depth
+	// And its depth texture
+	DepthTexture->resourceTransitionBarrier(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	CommandList->ClearDepthStencilView(DepthTexture->getDSVCPUHandle(), D3D12_CLEAR_FLAG_DEPTH, DepthTexture->getClearColor().DepthStencil.Depth, DepthTexture->getClearColor().DepthStencil.Stencil, 0, nullptr);
 
 	if (r_speeds->value)
 	{
@@ -796,9 +810,6 @@ void R_RenderView(void)
 
 	R_DrawWorld();
 
-	// Last render the sky
-	SkyRender();
-
 	// Render entities on top of the world
 	R_DrawEntitiesOnList();
 
@@ -806,13 +817,17 @@ void R_RenderView(void)
 	// ==> Not implemented. Does not look good.
 	//R_RenderDlights();
 
-	R_RenderParticles();
-
-	// Alpha blend translucent surfaces
+	// Alpha blend translucent surfaces last
 //	R_DrawAlphaSurfaces();
 
 	gMeshRenderer->StopRecording();
 	gMeshRenderer->ExecuteRenderCommands();
+
+	// Render the sky after the world has been rendered
+	SkyRender();
+
+	// Blend over particles
+	R_RenderParticles();
 
 	// Post effects (full screen red for damage, etc...)
 	R_Flash();

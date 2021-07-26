@@ -67,15 +67,22 @@ void R_RenderParticles(void)
 	CommandList->SetGraphicsRootSignature(g_dx12Device->GetDefaultGraphicRootSignature().getRootsignature());
 	CommandList->SetComputeRootSignature(g_dx12Device->GetDefaultComputeRootSignature().getRootsignature());
 
+	// Set the common descriptor heap
+	std::vector<ID3D12DescriptorHeap*> descriptorHeaps;
+	descriptorHeaps.push_back(g_dx12Device->getFrameDispatchDrawCallGpuDescriptorHeap()->getHeap());
+	CommandList->SetDescriptorHeaps(uint(descriptorHeaps.size()), descriptorHeaps.data());
+
 	CachedRasterPsoDesc PSODesc;
 	PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
 	PSODesc.mLayout = &ParticleVertexFormatLayout;
 	PSODesc.mBlendState = &getBlendState_AlphaBlending();
-	PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
+	PSODesc.mDepthStencilState = &getDepthStencilState_ReadOnly();
 	PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 	PSODesc.mRenderTargetCount = 1;
 	PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 	PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	PSODesc.mDepthTextureDescriptor = DepthTexture->getDSVCPUHandle();
+	PSODesc.mDepthTextureFormat = DepthTexture->getClearColor().Format;
 	PSODesc.mVS = ParticleVertexShader;
 	PSODesc.mPS = ParticlePixelShader;
 
