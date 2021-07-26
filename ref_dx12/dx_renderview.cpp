@@ -127,6 +127,7 @@ void MeshRenderer::StartCommand(
 {
 	ATLASSERT(bRecordingStarted == true);
 	ATLASSERT(bCommandStarted == false);
+	ATLASSERT(RecordedRenderCommandCount < MaxCommandCount);
 
 	CurrentCommand = &RenderCommands[RecordedRenderCommandCount++];
 	bCommandStarted = true;
