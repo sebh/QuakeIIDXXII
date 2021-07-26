@@ -1066,6 +1066,9 @@ void R_RenderView(void)
 		c_alias_polys = 0;
 	}
 
+	// Render the sky first (inefficiently full screen) because render commands can contain transparent element (such as BFG gun glowing sprites).
+	SkyRender();
+
 	gMeshRenderer->StartRecording();
 
 	// Mark polygon affected by dynamic light
@@ -1092,9 +1095,6 @@ void R_RenderView(void)
 
 	gMeshRenderer->StopRecording();
 	gMeshRenderer->ExecuteRenderCommands();
-
-	// Render the sky after the world has been rendered
-	SkyRender();
 
 	// Blend over particles
 	R_RenderParticles();
