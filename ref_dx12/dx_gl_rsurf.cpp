@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "dx_local.h"
 
+// We always support multiple texturing.
+static bool qglMTexCoord2fSGIS = true;
+
 static vec3_t	modelorg;		// relative to viewpoint
 
 msurface_t	*r_alpha_surfaces;
@@ -1088,13 +1091,13 @@ void R_DrawInlineBModel (void)
 				psurf->texturechain = r_alpha_surfaces;
 				r_alpha_surfaces = psurf;
 			}
-			else if ( true && !( psurf->flags & SURF_DRAWTURB ) )
+			else if (qglMTexCoord2fSGIS && !( psurf->flags & SURF_DRAWTURB ) )
 			{
 				GL_RenderLightmappedPoly( psurf );
 			}
 			else
 			{
-				ATLASSERT(false);	// SebH Should this reall happen ?
+				ATLASSERT(false);	// SebH Should this really happen ?
 				// GL_EnableMultitexture( false );
 				// R_RenderBrushPoly( psurf );
 				// GL_EnableMultitexture( true );
