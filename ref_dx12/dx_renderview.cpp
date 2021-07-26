@@ -542,6 +542,7 @@ void R_DrawEntitiesOnList()
 	// draw transparent entities
 	// we could sort these if it ever becomes a problem...
 //	qglDepthMask(0);		// no z writes
+	// SebH: is that the only difference for such entities? No depth write? By that I mean no blending?
 	for (i = 0; i < r_newrefdef.num_entities; i++)
 	{
 		currententity = &r_newrefdef.entities[i];
@@ -568,7 +569,7 @@ void R_DrawEntitiesOnList()
 				//R_DrawAliasModel(currententity);
 				break;
 			case mod_brush:
-				//R_DrawBrushModel(currententity);
+				R_DrawBrushModel(currententity);
 				break;
 			case mod_sprite:
 				//R_DrawSpriteModel(currententity);
