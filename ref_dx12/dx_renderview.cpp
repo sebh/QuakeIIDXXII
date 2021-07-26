@@ -19,6 +19,43 @@ model_t		*currentmodel;
 entity_t	*currententity;
 
 
+// speed up sin calculations - Ed
+float	r_turbsin[] =
+{
+ 0, 0.19633, 0.392541, 0.588517, 0.784137, 0.979285, 1.17384, 1.3677,
+ 1.56072, 1.75281, 1.94384, 2.1337, 2.32228, 2.50945, 2.69512, 2.87916,
+ 3.06147, 3.24193, 3.42044, 3.59689, 3.77117, 3.94319, 4.11282, 4.27998,
+ 4.44456, 4.60647, 4.76559, 4.92185, 5.07515, 5.22538, 5.37247, 5.51632,
+ 5.65685, 5.79398, 5.92761, 6.05767, 6.18408, 6.30677, 6.42566, 6.54068,
+ 6.65176, 6.75883, 6.86183, 6.9607, 7.05537, 7.14579, 7.23191, 7.31368,
+ 7.39104, 7.46394, 7.53235, 7.59623, 7.65552, 7.71021, 7.76025, 7.80562,
+ 7.84628, 7.88222, 7.91341, 7.93984, 7.96148, 7.97832, 7.99036, 7.99759,
+ 8, 7.99759, 7.99036, 7.97832, 7.96148, 7.93984, 7.91341, 7.88222,
+ 7.84628, 7.80562, 7.76025, 7.71021, 7.65552, 7.59623, 7.53235, 7.46394,
+ 7.39104, 7.31368, 7.23191, 7.14579, 7.05537, 6.9607, 6.86183, 6.75883,
+ 6.65176, 6.54068, 6.42566, 6.30677, 6.18408, 6.05767, 5.92761, 5.79398,
+ 5.65685, 5.51632, 5.37247, 5.22538, 5.07515, 4.92185, 4.76559, 4.60647,
+ 4.44456, 4.27998, 4.11282, 3.94319, 3.77117, 3.59689, 3.42044, 3.24193,
+ 3.06147, 2.87916, 2.69512, 2.50945, 2.32228, 2.1337, 1.94384, 1.75281,
+ 1.56072, 1.3677, 1.17384, 0.979285, 0.784137, 0.588517, 0.392541, 0.19633,
+ 9.79717e-16, -0.19633, -0.392541, -0.588517, -0.784137, -0.979285, -1.17384, -1.3677,
+ -1.56072, -1.75281, -1.94384, -2.1337, -2.32228, -2.50945, -2.69512, -2.87916,
+ -3.06147, -3.24193, -3.42044, -3.59689, -3.77117, -3.94319, -4.11282, -4.27998,
+ -4.44456, -4.60647, -4.76559, -4.92185, -5.07515, -5.22538, -5.37247, -5.51632,
+ -5.65685, -5.79398, -5.92761, -6.05767, -6.18408, -6.30677, -6.42566, -6.54068,
+ -6.65176, -6.75883, -6.86183, -6.9607, -7.05537, -7.14579, -7.23191, -7.31368,
+ -7.39104, -7.46394, -7.53235, -7.59623, -7.65552, -7.71021, -7.76025, -7.80562,
+ -7.84628, -7.88222, -7.91341, -7.93984, -7.96148, -7.97832, -7.99036, -7.99759,
+ -8, -7.99759, -7.99036, -7.97832, -7.96148, -7.93984, -7.91341, -7.88222,
+ -7.84628, -7.80562, -7.76025, -7.71021, -7.65552, -7.59623, -7.53235, -7.46394,
+ -7.39104, -7.31368, -7.23191, -7.14579, -7.05537, -6.9607, -6.86183, -6.75883,
+ -6.65176, -6.54068, -6.42566, -6.30677, -6.18408, -6.05767, -5.92761, -5.79398,
+ -5.65685, -5.51632, -5.37247, -5.22538, -5.07515, -4.92185, -4.76559, -4.60647,
+ -4.44456, -4.27998, -4.11282, -3.94319, -3.77117, -3.59689, -3.42044, -3.24193,
+ -3.06147, -2.87916, -2.69512, -2.50945, -2.32228, -2.1337, -1.94384, -1.75281,
+ -1.56072, -1.3677, -1.17384, -0.979285, -0.784137, -0.588517, -0.392541, -0.19633,
+};
+#define TURBSCALE (256.0 / (2 * M_PI))
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -546,7 +583,146 @@ void R_DrawEntitiesOnList()
 		}
 	}
 	//qglDepthMask(1);		// back to writing
+}
 
+
+extern msurface_t	*r_alpha_surfaces;
+
+void R_DrawAlphaSurfaces(void)
+{
+	msurface_t	*s;
+	float		intens;
+
+	//
+	// go back to the world matrix
+	//
+//	qglLoadMatrixf(r_world_matrix);
+
+//	qglEnable(GL_BLEND);
+//	GL_TexEnv(GL_MODULATE);
+
+	// the textures are prescaled up for a better lighting range,
+	// so scale it back down
+	intens = 1.0f;// gl_state.inverse_intensity;		// TODO?
+
+	for (s = r_alpha_surfaces; s; s = s->texturechain)
+	{
+		c_brush_polys++;
+		image_t* SurfaceTexture = s->texinfo->image;
+
+		XMFLOAT4A Tmp;
+		if (s->texinfo->flags & SURF_TRANS33)
+			Tmp = XMFLOAT4A(intens, intens, intens, 0.33);
+		else if (s->texinfo->flags & SURF_TRANS66)
+			Tmp = XMFLOAT4A(intens, intens, intens, 0.66);
+		else
+			Tmp = XMFLOAT4A(intens, intens, intens, 1);
+		float4 ColorAlpha = XMLoadFloat4A(&Tmp);
+
+		if (s->flags & SURF_DRAWTURB)
+		{
+			//EmitWaterPolys(s);
+			msurface_t *fa = s;
+
+			glpoly_t	*p, *bp;
+			float		*v;
+			int			i;
+			float		s, t, os, ot;
+			float		scroll;
+			float		rdt = r_newrefdef.time;
+
+			if (fa->texinfo->flags & SURF_FLOWING)
+				scroll = -64 * ((r_newrefdef.time*0.5) - (int)(r_newrefdef.time*0.5));
+			else
+				scroll = 0;
+
+
+			for (bp = fa->polys; bp; bp = bp->next)
+			{
+				p = bp;
+
+
+				gMeshRenderer->StartCommand(MeshRenderCommand::RenderCommandType::DrawInstanced_Colored);
+
+				MeshVertexFormat V0;
+				bool bV0Set = false;
+				MeshVertexFormat LastV;
+				bool bLastVSet = false;
+
+//				qglBegin(GL_TRIANGLE_FAN);
+				for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE)
+				{
+					os = v[3];
+					ot = v[4];
+
+#if !id386
+					s = os + r_turbsin[(int)((ot*0.125 + r_newrefdef.time) * TURBSCALE) & 255];
+#else
+					s = os + r_turbsin[Q_ftol(((ot*0.125 + rdt) * TURBSCALE)) & 255];
+#endif
+					s += scroll;
+					s *= (1.0 / 64);
+
+#if !id386
+					t = ot + r_turbsin[(int)((os*0.125 + rdt) * TURBSCALE) & 255];
+#else
+					t = ot + r_turbsin[Q_ftol(((os*0.125 + rdt) * TURBSCALE)) & 255];
+#endif
+					t *= (1.0 / 64);
+
+					MeshVertexFormat Vertex;
+					memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+					Vertex.ColorAlpha[0] = Tmp.x;
+					Vertex.ColorAlpha[1] = Tmp.y;
+					Vertex.ColorAlpha[2] = Tmp.z;
+					Vertex.ColorAlpha[3] = Tmp.w;
+
+					if (bLastVSet)
+					{
+						gMeshRenderer->AppendVertex(V0);
+						gMeshRenderer->AppendVertex(LastV);
+						gMeshRenderer->AppendVertex(Vertex);
+					}
+
+//					qglTexCoord2f(s, t);
+//					qglVertex3fv(v);
+
+					if (bV0Set)
+					{
+						LastV = Vertex;
+						bLastVSet = true;
+					}
+					if (!bV0Set)
+					{
+						V0 = Vertex;
+						bV0Set = true;
+					}
+				}
+//				qglEnd();
+
+				gMeshRenderer->EndCommand();
+			}
+		}
+		else if (s->texinfo->flags & SURF_FLOWING)			// PGM	9/16/98
+		{
+			int i = 0;
+			//DrawGLFlowingPoly(s);							// PGM
+			// TODO
+
+		}
+		else
+		{
+			int i = 0;
+			//DrawGLPoly(s->polys);
+			// TODO
+		}
+	}
+
+//	GL_TexEnv(GL_REPLACE);
+//	qglColor4f(1, 1, 1, 1);
+//	qglDisable(GL_BLEND);
+
+	r_alpha_surfaces = NULL;
 }
 
 void R_Flash()
@@ -737,72 +913,6 @@ void R_RenderView(void)
 	gMeshRenderer->AppendVertex(v);
 	gMeshRenderer->EndCommand();
 
-#if 0
-	{
-		float* ptr = (float*)MeshRenderBuffer->Map();
-		*ptr = 1000.0f;
-		ptr++;
-		*ptr = 0.0f;
-		ptr++;
-		*ptr = 0.0f;
-		ptr++;
-		*ptr = 0.0f;
-		ptr++;
-		*ptr = 10000.0f;
-		ptr++;
-		*ptr = 0.0f;
-		ptr++;
-		*ptr = 0.0f;
-		ptr++;
-		*ptr = 0.0f;
-		ptr++;
-		*ptr = 1000.0f;
-		ptr++;
-		MeshRenderBuffer->UnmapAndUpload();
-
-		//
-		{
-			FrameConstantBuffers& ConstantBuffers = g_dx12Device->getFrameConstantBuffers();
-			DispatchDrawCallCpuDescriptorHeap& DrawDispatchCallCpuDescriptorHeap = g_dx12Device->getDispatchDrawCallCpuDescriptorHeap();
-
-			ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
-			ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
-			D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
-
-			CachedRasterPsoDesc PSODesc;
-			PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
-			PSODesc.mLayout = &VtxLayout;
-			PSODesc.mBlendState = &getBlendState_Default();
-			PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
-			PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
-			PSODesc.mRenderTargetCount = 1;
-			PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
-			PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-			PSODesc.mVS = MeshVertexShader;
-			PSODesc.mPS = MeshDebugPixelShader;
-			g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
-
-			FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(MeshConstantBuffer));
-			MeshConstantBuffer* CBData = (MeshConstantBuffer*)CB.getCPUMemory();
-			CBData->MeshWorldMatrix = XMMatrixIdentity();
-			CBData->ViewProjectionMatrix = vd.ViewProjectionMatrix;
-			CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
-
-			IndexBufferSingleTri->resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
-			D3D12_INDEX_BUFFER_VIEW IndexBufferSingleTriBufferView = IndexBufferSingleTri->getIndexBufferView(DXGI_FORMAT_R32_UINT);
-			CommandList->IASetIndexBuffer(&IndexBufferSingleTriBufferView);
-			CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
-
-			MeshRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-			D3D12_VERTEX_BUFFER_VIEW VtxBufferView = MeshRenderBuffer->getRenderBuffer().getVertexBufferView(3 * sizeof(float));
-			CommandList->IASetVertexBuffers(0, 1, &VtxBufferView);
-
-			CommandList->DrawIndexedInstanced(3, 1, 0, 0, 0);
-		}
-	}
-#else
-
-#endif
 
 	// Render entities on top of the world
 	R_DrawEntitiesOnList();
@@ -814,7 +924,7 @@ void R_RenderView(void)
 	R_RenderParticles();
 
 	// Alpha blend translucent surfaces
-//TODO	R_DrawAlphaSurfaces();
+//	R_DrawAlphaSurfaces();
 
 	gMeshRenderer->StopRecording();
 	gMeshRenderer->ExecuteRenderCommands();
