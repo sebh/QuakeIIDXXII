@@ -1310,13 +1310,16 @@ void R_RecursiveWorldNode (mnode_t *node)
 		if ( (surf->flags & SURF_PLANEBACK) != sidebit )
 			continue;		// wrong side
 
-		// We do not render the sky this way
 		//if (surf->texinfo->flags & SURF_SKY)
 		//{	// just adds to visible sky bounds
 		//	R_AddSkySurface (surf);
 		//}
-		//else 
-		if (surf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66))
+		if (surf->texinfo->flags & SURF_SKY)
+		{
+			// We do not render the sky this way
+			continue;
+		}
+		else if (surf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66))
 		{	// add to the translucent chain
 			surf->texturechain = r_alpha_surfaces;
 			r_alpha_surfaces = surf;
