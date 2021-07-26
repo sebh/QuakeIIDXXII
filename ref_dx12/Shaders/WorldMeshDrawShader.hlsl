@@ -58,7 +58,9 @@ float4 MeshColorPixelShader(VertexOutput Input) : SV_TARGET
 
 float4 LightmapSurfacePixelShader(VertexOutput Input) : SV_TARGET
 {
-	return float4(Input.SurfaceUV, 0.0f, 1.0f);
+	return LightmapTexture.Sample(SamplerLinearRepeat, Input.LightmapUV) * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
+	//return LightmapTexture.Sample(SamplerLinearRepeat, Input.LightmapUV);
+	//return SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
 }
 
 

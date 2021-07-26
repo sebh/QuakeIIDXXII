@@ -527,27 +527,6 @@ void UploadAllTextures()
 {
 	if (!bImageInitialised)
 	{
-		// Upload a defaulttexture to GPU
-		byte dottexture[8][8] =
-		{
-			{00,00,00,15,15,00,00,00},
-			{00,10,15,15,15,15,10,00},
-			{00,15,15,15,15,15,15,00},
-			{15,15,15,15,15,15,15,15},
-			{15,15,15,15,15,15,15,15},
-			{00,15,15,15,15,15,15,00},
-			{00,10,15,15,15,15,10,00},
-			{00,00,00,15,15,00,00,00},
-		};
-		r_notexture = GL_LoadPic("***r_notexture***", (byte *)dottexture, 8, 8, it_wall, 8);
-
-		byte whitetexture[2][2] =
-		{
-			{15,15},
-			{15,15},
-		};
-		r_whitetexture = GL_LoadPic("***r_whitetexture***", (byte *)whitetexture, 2, 2, it_wall, 8);
-
 		// Load the color pallette
 		{
 			int		i;
@@ -577,6 +556,27 @@ void UploadAllTextures()
 			free(pic);
 			free(pal);
 		}
+
+		// Upload a defaulttexture to GPU
+		byte dottexture[8][8] =
+		{
+			{00,00,00,15,15,00,00,00},
+			{00,10,15,15,15,15,10,00},
+			{00,15,15,15,15,15,15,00},
+			{15,15,15,15,15,15,15,15},
+			{15,15,15,15,15,15,15,15},
+			{00,15,15,15,15,15,15,00},
+			{00,10,15,15,15,15,10,00},
+			{00,00,00,15,15,00,00,00},
+		};
+		r_notexture = GL_LoadPic("***r_notexture***", (byte *)dottexture, 8, 8, it_wall, 8);
+
+		byte whitetexture[2][2] =
+		{
+			{15,15},
+			{15,15},
+		};
+		r_whitetexture = GL_LoadPic("***r_whitetexture***", (byte *)whitetexture, 2, 2, it_wall, 8);
 
 		{
 			r_charstexture = FindImage("pics/conchars.pcx", it_pic);

@@ -143,7 +143,8 @@ void MeshRenderer::StartCommand(
 	CurrentCommand->InstanceCount = 1;
 	CurrentCommand->StartInstanceLocation = 0;
 
-	if (Type == MeshRenderCommand::EType::DrawInstanced_Colored)
+	if (Type == MeshRenderCommand::EType::DrawInstanced_Colored
+		|| Type == MeshRenderCommand::EType::DrawInstanced_LightmapSurface)
 	{
 		CurrentCommand->VertexCountPerInstance = 0;
 		CurrentCommand->StartVertexLocation = RecordedVertexCount;
@@ -169,7 +170,8 @@ void MeshRenderer::AppendVertex(MeshVertexFormat& NewVertex)
 	*MeshVertexMemory = NewVertex;
 	MeshVertexMemory++;
 
-	if (CurrentCommand->Type == MeshRenderCommand::EType::DrawInstanced_Colored)
+	if (CurrentCommand->Type == MeshRenderCommand::EType::DrawInstanced_Colored
+		|| CurrentCommand->Type == MeshRenderCommand::EType::DrawInstanced_LightmapSurface)
 	{
 		CurrentCommand->VertexCountPerInstance++;
 	}
@@ -216,7 +218,6 @@ void MeshRenderer::ExecuteRenderCommands()
 	PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 	PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-
 	MeshIndexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
 	D3D12_INDEX_BUFFER_VIEW MeshIndexRenderBufferView = MeshIndexRenderBuffer->getRenderBuffer().getIndexBufferView(DXGI_FORMAT_R32_UINT);
 	CommandList->IASetIndexBuffer(&MeshIndexRenderBufferView);
@@ -242,6 +243,11 @@ void MeshRenderer::ExecuteRenderCommands()
 		{
 			PSODesc.mVS = MeshVertexShader;
 			PSODesc.mPS = MeshLightmapSurfacePixelShader;
+
+			DispatchDrawCallCpuDescriptorHeap::Call CallDescriptors = DrawDispatchCallCpuDescriptorHeap.AllocateCall(g_dx12Device->GetDefaultGraphicRootSignature());
+			CallDescriptors.SetSRV(0, *Cmd.SurfaceTexture);
+			CallDescriptors.SetSRV(1, *Cmd.LightmapTexture);
+			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
 			break;
 		}
 		default:

@@ -820,7 +820,7 @@ dynamic:
 
 //==========
 //PGM
-		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, LastEntityWorldMatrix);
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture);
 		MeshVertexFormat V0;
 		bool bV0Set = false;
 		MeshVertexFormat LastV;
@@ -854,6 +854,10 @@ dynamic:
 					Vertex.ColorAlpha[1] = 1.0f;
 					Vertex.ColorAlpha[2] = 0.0f;
 					Vertex.ColorAlpha[3] = 1.0f;
+					Vertex.LightmapUV[0] = v[5];
+					Vertex.LightmapUV[1] = v[6];
+					Vertex.SurfaceUV[0]  = v[3] + scroll;
+					Vertex.SurfaceUV[1]  = v[4];
 
 					if (bLastVSet)
 					{
@@ -897,6 +901,10 @@ dynamic:
 					Vertex.ColorAlpha[1] = 1.0f;
 					Vertex.ColorAlpha[2] = 0.0f;
 					Vertex.ColorAlpha[3] = 1.0f;
+					Vertex.LightmapUV[0] = v[5];
+					Vertex.LightmapUV[1] = v[6];
+					Vertex.SurfaceUV[0]  = v[3];
+					Vertex.SurfaceUV[1]  = v[4];
 
 					if (bLastVSet)
 					{
@@ -929,7 +937,7 @@ dynamic:
 //		GL_MBind( GL_TEXTURE0, image->texnum );
 //		GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + lmtex );
 
-		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, LastEntityWorldMatrix);
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture);
 		MeshVertexFormat V0;
 		bool bV0Set = false;
 		MeshVertexFormat LastV;
@@ -966,6 +974,10 @@ dynamic:
 					Vertex.ColorAlpha[1] = 1.0f;
 					Vertex.ColorAlpha[2] = 1.0f;
 					Vertex.ColorAlpha[3] = 1.0f;
+					Vertex.LightmapUV[0] = v[5];
+					Vertex.LightmapUV[1] = v[6];
+					Vertex.SurfaceUV[0]  = v[3] + scroll;
+					Vertex.SurfaceUV[1]  = v[4];
 
 					if (bLastVSet)
 					{
@@ -1011,6 +1023,10 @@ dynamic:
 					Vertex.ColorAlpha[1] = 1.0f;
 					Vertex.ColorAlpha[2] = 1.0f;
 					Vertex.ColorAlpha[3] = 1.0f;
+					Vertex.LightmapUV[0] = v[5];
+					Vertex.LightmapUV[1] = v[6];
+					Vertex.SurfaceUV[0]  = v[3];
+					Vertex.SurfaceUV[1]  = v[4];
 
 					if (bLastVSet)
 					{
