@@ -198,6 +198,9 @@ void R_MarkLeaves(void);
 void R_DrawWorld();
 void R_DrawBrushModel(entity_t *e);
 
+#define	MAX_LIGHTMAPS	128
+extern RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Particles

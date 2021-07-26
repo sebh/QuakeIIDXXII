@@ -18,6 +18,7 @@ cplane_t	frustum[4];
 model_t		*currentmodel;
 entity_t	*currententity;
 
+RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
 
 // speed up sin calculations - Ed
 float	r_turbsin[] =
@@ -306,6 +307,11 @@ void R_InitRenderView(void)
 	gMeshRenderer = new MeshRenderer();
 
 	R_InitParticleRenderer();
+
+	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
+	{
+		Dx12Lightmaps[i] = new RenderTextureDynamic(128, 128, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+	}
 }
 
 void R_SetupFrame(void)
@@ -793,86 +799,6 @@ void R_RenderView(void)
 	// Last render the sky
 	SkyRender();
 
-	/*gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
-	MeshVertexFormat v;
-	v.Position[0] = 1000.0f;
-	v.Position[1] = 0;
-	v.Position[2] = 0;
-	v.SurfaceUV[0] = 0;
-	v.SurfaceUV[1] = 0;
-	v.LightmapUV[0] = 0;
-	v.LightmapUV[1] = 0;
-	v.ColorAlpha[0] = 1;
-	v.ColorAlpha[1] = 0;
-	v.ColorAlpha[2] = 0;
-	v.ColorAlpha[3] = 1;
-	gMeshRenderer->AppendVertex(v);
-	v.Position[0] = 0;
-	v.Position[1] = 1000.0f;
-	v.Position[2] = 0;
-	v.SurfaceUV[0] = 0;
-	v.SurfaceUV[1] = 0;
-	v.LightmapUV[0] = 0;
-	v.LightmapUV[1] = 0;
-	v.ColorAlpha[0] = 0;
-	v.ColorAlpha[1] = 1;
-	v.ColorAlpha[2] = 0;
-	v.ColorAlpha[3] = 1;
-	gMeshRenderer->AppendVertex(v);
-	v.Position[0] = 0;
-	v.Position[1] = 0;
-	v.Position[2] = 1000.0f;
-	v.SurfaceUV[0] = 0;
-	v.SurfaceUV[1] = 0;
-	v.LightmapUV[0] = 0;
-	v.LightmapUV[1] = 0;
-	v.ColorAlpha[0] = 0;
-	v.ColorAlpha[1] = 0;
-	v.ColorAlpha[2] = 1;
-	v.ColorAlpha[3] = 1;
-	gMeshRenderer->AppendVertex(v);
-	gMeshRenderer->EndCommand();
-
-	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
-	v.Position[0] = -1000.0f;
-	v.Position[1] = 0;
-	v.Position[2] = 0;
-	v.SurfaceUV[0] = 0;
-	v.SurfaceUV[1] = 0;
-	v.LightmapUV[0] = 0;
-	v.LightmapUV[1] = 0;
-	v.ColorAlpha[0] = 1;
-	v.ColorAlpha[1] = 0;
-	v.ColorAlpha[2] = 0;
-	v.ColorAlpha[3] = 1;
-	gMeshRenderer->AppendVertex(v);
-	v.Position[0] = 0;
-	v.Position[1] = -1000.0f;
-	v.Position[2] = 0;
-	v.SurfaceUV[0] = 0;
-	v.SurfaceUV[1] = 0;
-	v.LightmapUV[0] = 0;
-	v.LightmapUV[1] = 0;
-	v.ColorAlpha[0] = 1;
-	v.ColorAlpha[1] = 1;
-	v.ColorAlpha[2] = 0;
-	v.ColorAlpha[3] = 1;
-	gMeshRenderer->AppendVertex(v);
-	v.Position[0] = 0;
-	v.Position[1] = 0;
-	v.Position[2] = -1000.0f;
-	v.SurfaceUV[0] = 0;
-	v.SurfaceUV[1] = 0;
-	v.LightmapUV[0] = 0;
-	v.LightmapUV[1] = 0;
-	v.ColorAlpha[0] = 1;
-	v.ColorAlpha[1] = 0;
-	v.ColorAlpha[2] = 1;
-	v.ColorAlpha[3] = 1;
-	gMeshRenderer->AppendVertex(v);
-	gMeshRenderer->EndCommand();*/
-
-
 	// Render entities on top of the world
 	R_DrawEntitiesOnList();
 
@@ -911,6 +837,12 @@ void R_ShutdownRenderView(void)
 	{
 		delete gMeshRenderer;
 		gMeshRenderer = nullptr;
+	}
+
+	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
+	{
+		delete Dx12Lightmaps[i];
+		Dx12Lightmaps[i] = nullptr;
 	}
 }
 

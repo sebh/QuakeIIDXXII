@@ -796,6 +796,8 @@ dynamic:
 //							  GL_LIGHTMAP_FORMAT, 
 //							  GL_UNSIGNED_BYTE, temp );
 
+//			Dx12Lightmaps[lmtex]->Upload(temp, 128 * 4, 128 * 128 * 4);
+//			Dx12Lightmaps[lmtex]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		}
 		else
 		{
@@ -814,6 +816,8 @@ dynamic:
 //							  GL_LIGHTMAP_FORMAT, 
 //							  GL_UNSIGNED_BYTE, temp );
 
+//			Dx12Lightmaps[lmtex]->Upload(temp, 128 * 4, 128 * 128 * 4);
+//			Dx12Lightmaps[lmtex]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		}
 
 		c_brush_polys++;
@@ -823,7 +827,7 @@ dynamic:
 
 //==========
 //PGM
-		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture);
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture); // , &Dx12Lightmaps[lmtex]->getRenderTexture());
 		MeshVertexFormat V0;
 		bool bV0Set = false;
 		MeshVertexFormat LastV;
@@ -940,7 +944,7 @@ dynamic:
 //		GL_MBind( GL_TEXTURE0, image->texnum );
 //		GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + lmtex );
 
-		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture);
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture); //, &Dx12Lightmaps[lmtex]->getRenderTexture());
 		MeshVertexFormat V0;
 		bool bV0Set = false;
 		MeshVertexFormat LastV;
@@ -1584,9 +1588,9 @@ static void LM_UploadBlock( qboolean dynamic )
 		texture = gl_lms.current_lightmap_texture;
 	}
 
-	/*GL_Bind( gl_state.lightmap_textures + texture );
-	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//GL_Bind( gl_state.lightmap_textures + texture );
+	//qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	if ( dynamic )
 	{
@@ -1597,28 +1601,36 @@ static void LM_UploadBlock( qboolean dynamic )
 			if ( gl_lms.allocated[i] > height )
 				height = gl_lms.allocated[i];
 		}
+		ATLASSERT(height <= BLOCK_HEIGHT);
 
-		qglTexSubImage2D( GL_TEXTURE_2D, 
-						  0,
-						  0, 0,
-						  BLOCK_WIDTH, height,
-						  GL_LIGHTMAP_FORMAT,
-						  GL_UNSIGNED_BYTE,
-						  gl_lms.lightmap_buffer );
+		//qglTexSubImage2D( GL_TEXTURE_2D, 
+		//				  0,
+		//				  0, 0,
+		//				  BLOCK_WIDTH, height,
+		//				  GL_LIGHTMAP_FORMAT,
+		//				  GL_UNSIGNED_BYTE,
+		//				  gl_lms.lightmap_buffer );
+
+//		Dx12Lightmaps[texture]->Upload(gl_lms.lightmap_buffer, BLOCK_WIDTH * 4, BLOCK_WIDTH * BLOCK_HEIGHT * 4);
+//		Dx12Lightmaps[texture]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 	else
 	{
-		qglTexImage2D( GL_TEXTURE_2D, 
-					   0, 
-					   gl_lms.internal_format,
-					   BLOCK_WIDTH, BLOCK_HEIGHT, 
-					   0, 
-					   GL_LIGHTMAP_FORMAT, 
-					   GL_UNSIGNED_BYTE, 
-					   gl_lms.lightmap_buffer );
+		//qglTexImage2D( GL_TEXTURE_2D, 
+		//			   0, 
+		//			   gl_lms.internal_format,
+		//			   BLOCK_WIDTH, BLOCK_HEIGHT, 
+		//			   0, 
+		//			   GL_LIGHTMAP_FORMAT, 
+		//			   GL_UNSIGNED_BYTE, 
+		//			   gl_lms.lightmap_buffer );
+
+//		Dx12Lightmaps[texture]->Upload(gl_lms.lightmap_buffer, BLOCK_WIDTH * 4, BLOCK_WIDTH * BLOCK_HEIGHT * 4);
+//		Dx12Lightmaps[texture]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
 		if ( ++gl_lms.current_lightmap_texture == MAX_LIGHTMAPS )
 			ri.Sys_Error( ERR_DROP, "LM_UploadBlock() - MAX_LIGHTMAPS exceeded\n" );
-	}*/
+	}
 }
 
 // returns a texture number and the position inside it
@@ -1809,8 +1821,8 @@ void GL_BeginBuildingLightmaps (model_t *m)
 //		gl_state.texture_extension_number = gl_state.lightmap_textures + MAX_LIGHTMAPS;
 //	}
 
-//	gl_lms.current_lightmap_texture = 1;
-//
+	gl_lms.current_lightmap_texture = 1;
+
 //	/*
 //	** if mono lightmaps are enabled and we want to use alpha
 //	** blending (a,1-a) then we're likely running on a 3DLabs
@@ -1847,7 +1859,7 @@ void GL_BeginBuildingLightmaps (model_t *m)
 //	{
 //		gl_lms.internal_format = gl_tex_solid_format;
 //	}
-
+	
 //	/*
 //	** initialize the dynamic lightmap texture
 //	*/
@@ -1871,7 +1883,7 @@ GL_EndBuildingLightmaps
 */
 void GL_EndBuildingLightmaps (void)
 {
-//	LM_UploadBlock( false );
+	LM_UploadBlock( false );
 //	GL_EnableMultitexture( false );
 }
 
