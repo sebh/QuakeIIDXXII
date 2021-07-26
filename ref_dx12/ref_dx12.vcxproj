@@ -261,6 +261,7 @@
     <ClCompile Include="dx_gl_rsurf.cpp" />
     <ClCompile Include="dx_image.cpp" />
     <ClCompile Include="dx_gl_model.cpp" />
+    <ClCompile Include="dx_renderparticle.cpp" />
     <ClCompile Include="dx_renderview.cpp" />
     <ClCompile Include="dx_shader.cpp" />
     <ClCompile Include="dx_sky.cpp" />
@@ -279,6 +280,12 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\ImageDrawShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\ParticleDrawShader.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

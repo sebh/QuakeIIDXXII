@@ -107,6 +107,9 @@
     <ClCompile Include="dx_renderview.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dx_renderparticle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ref_dx12.def">
@@ -125,6 +128,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\WorldMeshDrawShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\ParticleDrawShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

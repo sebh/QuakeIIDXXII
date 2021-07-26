@@ -638,6 +638,22 @@ void InputLayout::appendSimpleVertexDataToInputLayout(const char* semanticName, 
 	mInputLayout.NumElements++;
 }
 
+void InputLayout::appendPerInstanceVertexDataToInputLayout(const char* semanticName, uint semanticIndex, DXGI_FORMAT format, uint InstanceDataStepRate)
+{
+	ATLASSERT(mInputLayout.NumElements < INPUT_LAYOUT_MAX_ELEMENTCOUNT);
+
+	D3D12_INPUT_ELEMENT_DESC& desc = mInputLayoutElements[mInputLayout.NumElements];
+	desc.SemanticName = semanticName;
+	desc.SemanticIndex = semanticIndex;
+	desc.Format = format;
+	desc.InputSlot = 0;
+	desc.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	desc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+	desc.InstanceDataStepRate = InstanceDataStepRate;
+
+	mInputLayout.NumElements++;
+}
+
 
 ShaderBase::ShaderBase(const TCHAR* filename, const TCHAR* entryFunction, const TCHAR* profile, const Macros* macros)
 	: mShaderBytecode(nullptr)

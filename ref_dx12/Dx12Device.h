@@ -270,6 +270,7 @@ public:
 	~InputLayout();
 
 	void appendSimpleVertexDataToInputLayout(const char* semanticName, uint semanticIndex, DXGI_FORMAT format);
+	void appendPerInstanceVertexDataToInputLayout(const char* semanticName, uint semanticIndex, DXGI_FORMAT format, uint InstanceDataStepRate);
 
 	const D3D12_INPUT_LAYOUT_DESC* getLayoutDesc() const { return &mInputLayout; }
 

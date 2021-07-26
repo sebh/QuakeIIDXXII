@@ -101,6 +101,17 @@ extern VertexShader* MeshVertexShader;
 extern PixelShader* MeshDebugPixelShader;
 extern PixelShader* MeshColorPixelShader;
 
+struct ParticleConstantBuffer
+{
+	float4x4	ViewProjectionMatrix;
+	float		ViewRight[4];
+	float		ViewUp[4];
+	float		ParticleSize;
+	float		Pad0[3];
+};
+extern VertexShader* ParticleVertexShader;
+extern PixelShader* ParticlePixelShader;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // States
 
@@ -187,6 +198,15 @@ void R_MarkLeaves(void);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Model and draw
 
+void R_InitParticleRenderer(void);
+void R_RenderParticles(void);
+void R_ShutdownParticleRenderer(void);
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Model and draw
+
 #define MAX_LBM_HEIGHT  480
 
 #define BACKFACE_EPSILON	0.01
@@ -233,6 +253,7 @@ extern cvar_t *gl_flashblend;
 extern cvar_t *gl_modulate;
 extern cvar_t *gl_monolightmap;
 extern cvar_t *gl_polyblend;
+extern cvar_t *gl_particle_size;
 
 extern int r_visframecount;
 extern int r_framecount;
@@ -244,6 +265,10 @@ extern int c_visible_textures;
 
 struct ViewData
 {
+	vec3_t forward;
+	vec3_t right;
+	vec3_t up;
+
 	float4x4 ViewMatrix;
 	float4x4 ViewMatrixInv;
 	float4x4 ProjectionMatrix;

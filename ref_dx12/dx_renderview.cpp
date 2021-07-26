@@ -308,6 +308,8 @@ void R_InitRenderView(void)
 	MeshVertexFormatLayout.appendSimpleVertexDataToInputLayout("TEXCOORD",	2, DXGI_FORMAT_R32G32B32A32_FLOAT);
 
 	gMeshRenderer = new MeshRenderer();
+
+	R_InitParticleRenderer();
 }
 
 void R_SetupFrame(void)
@@ -695,6 +697,46 @@ void R_RenderView(void)
 	v.ColorAlpha[3] = 1;
 	gMeshRenderer->AppendVertex(v);
 	gMeshRenderer->EndCommand();
+
+	gMeshRenderer->StartCommand(MeshRenderCommand::RenderCommandType::DrawInstanced_Colored);
+	v.Position[0] = -1000.0f;
+	v.Position[1] = 0;
+	v.Position[2] = 0;
+	v.SurfaceUV[0] = 0;
+	v.SurfaceUV[1] = 0;
+	v.LightmapUV[0] = 0;
+	v.LightmapUV[1] = 0;
+	v.ColorAlpha[0] = 1;
+	v.ColorAlpha[1] = 0;
+	v.ColorAlpha[2] = 0;
+	v.ColorAlpha[3] = 1;
+	gMeshRenderer->AppendVertex(v);
+	v.Position[0] = 0;
+	v.Position[1] = -1000.0f;
+	v.Position[2] = 0;
+	v.SurfaceUV[0] = 0;
+	v.SurfaceUV[1] = 0;
+	v.LightmapUV[0] = 0;
+	v.LightmapUV[1] = 0;
+	v.ColorAlpha[0] = 1;
+	v.ColorAlpha[1] = 1;
+	v.ColorAlpha[2] = 0;
+	v.ColorAlpha[3] = 1;
+	gMeshRenderer->AppendVertex(v);
+	v.Position[0] = 0;
+	v.Position[1] = 0;
+	v.Position[2] = -1000.0f;
+	v.SurfaceUV[0] = 0;
+	v.SurfaceUV[1] = 0;
+	v.LightmapUV[0] = 0;
+	v.LightmapUV[1] = 0;
+	v.ColorAlpha[0] = 1;
+	v.ColorAlpha[1] = 0;
+	v.ColorAlpha[2] = 1;
+	v.ColorAlpha[3] = 1;
+	gMeshRenderer->AppendVertex(v);
+	gMeshRenderer->EndCommand();
+
 #if 0
 	{
 		float* ptr = (float*)MeshRenderBuffer->Map();
@@ -769,7 +811,7 @@ void R_RenderView(void)
 	// ==> Not implemented. Does not look good.
 	//R_RenderDlights();
 
-//TODO	R_DrawParticles();
+	R_RenderParticles();
 
 	// Alpha blend translucent surfaces
 //TODO	R_DrawAlphaSurfaces();
@@ -794,6 +836,8 @@ void R_RenderView(void)
 
 void R_ShutdownRenderView(void)
 {
+	R_ShutdownParticleRenderer();
+
 	if (gMeshRenderer)
 	{
 		delete gMeshRenderer;
