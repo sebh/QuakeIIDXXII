@@ -230,7 +230,6 @@ void MeshRenderer::ExecuteRenderCommands()
 	CachedRasterPsoDesc PSODesc;
 	PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
 	PSODesc.mLayout = &MeshVertexFormatLayout;
-	PSODesc.mDepthStencilState = &getDepthStencilState_Default();
 	PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 	PSODesc.mRenderTargetCount = 1;
 	PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
@@ -251,7 +250,10 @@ void MeshRenderer::ExecuteRenderCommands()
 	{
 		MeshRenderCommand& Cmd = RenderCommands[i];
 
+		// Enable blend state if needed
 		PSODesc.mBlendState = Cmd.bEnableAlphaBlending ? &getBlendState_AlphaBlending() : &getBlendState_Default();
+		// Also disable depth write if blendign is enabled (typically what is needed)
+		PSODesc.mDepthStencilState = Cmd.bEnableAlphaBlending ? &getDepthStencilState_ReadOnly() : &getDepthStencilState_Default();
 
 		switch (Cmd.Type)
 		{
@@ -491,7 +493,147 @@ void R_SetLightLevel(void)
 		else
 			r_lightlevel->value = 150 * shadelight[2];
 	}
+}
 
+/*
+=================
+R_DrawSpriteModel
+
+=================
+*/
+void R_DrawSpriteModel (entity_t *e)
+{
+	float alpha = 1.0F;
+	vec3_t	point;
+	dsprframe_t	*frame;
+	float		*up, *right;
+	dsprite_t		*psprite;
+
+	// don't even bother culling, because it's just a single
+	// polygon without a surface cache
+
+	psprite = (dsprite_t *)currentmodel->extradata;
+
+#if 0
+	if (e->frame < 0 || e->frame >= psprite->numframes)
+	{
+		ri.Con_Printf (PRINT_ALL, "no such sprite frame %i\n", e->frame);
+		e->frame = 0;
+	}
+#endif
+	e->frame %= psprite->numframes;
+
+	frame = &psprite->frames[e->frame];
+
+#if 0
+	if (psprite->type == SPR_ORIENTED)
+	{	// bullet marks on walls
+	vec3_t		v_forward, v_right, v_up;
+
+	AngleVectors (currententity->angles, v_forward, v_right, v_up);
+		up = v_up;
+		right = v_right;
+	}
+	else
+#endif
+	{	// normal sprite
+		up = vup;
+		right = vright;
+	}
+
+	if ( e->flags & RF_TRANSLUCENT )
+		alpha = e->alpha;
+
+	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), currentmodel->skins[e->frame]->RenderTexture);
+	if (alpha != 1.0F)
+		gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+
+//	if ( alpha != 1.0F )
+//		qglEnable( GL_BLEND );
+
+//	qglColor4f( 1, 1, 1, alpha );
+
+//    GL_Bind(currentmodel->skins[e->frame]->texnum);
+
+//	GL_TexEnv( GL_MODULATE );
+
+//	if ( alpha == 1.0 )
+//		qglEnable (GL_ALPHA_TEST);		// SebH TODO implement shader variation with alpha test
+//	else
+//		qglDisable( GL_ALPHA_TEST );
+
+//	qglBegin (GL_QUADS);
+
+//	qglTexCoord2f (0, 1);
+	VectorMA (e->origin, -frame->origin_y, up, point);
+	VectorMA (point, -frame->origin_x, right, point);
+//	qglVertex3fv (point);
+	MeshVertexFormat Vertex0;
+	memcpy(Vertex0.Position, point, sizeof(Vertex0.Position));
+	Vertex0.ColorAlpha[0] = 1;
+	Vertex0.ColorAlpha[1] = 1;
+	Vertex0.ColorAlpha[2] = 1;
+	Vertex0.ColorAlpha[3] = alpha;
+	Vertex0.SurfaceUV[0] = 0;
+	Vertex0.SurfaceUV[1] = 1;
+
+//	qglTexCoord2f (0, 0);
+	VectorMA (e->origin, frame->height - frame->origin_y, up, point);
+	VectorMA (point, -frame->origin_x, right, point);
+//	qglVertex3fv (point);
+	MeshVertexFormat Vertex1;
+	memcpy(Vertex1.Position, point, sizeof(Vertex0.Position));
+	Vertex1.ColorAlpha[0] = 1;
+	Vertex1.ColorAlpha[1] = 1;
+	Vertex1.ColorAlpha[2] = 1;
+	Vertex1.ColorAlpha[3] = alpha;
+	Vertex1.SurfaceUV[0] = 0;
+	Vertex1.SurfaceUV[1] = 0;
+
+//	qglTexCoord2f (1, 0);
+	VectorMA (e->origin, frame->height - frame->origin_y, up, point);
+	VectorMA (point, frame->width - frame->origin_x, right, point);
+//	qglVertex3fv (point);
+	MeshVertexFormat Vertex2;
+	memcpy(Vertex2.Position, point, sizeof(Vertex0.Position));
+	Vertex2.ColorAlpha[0] = 1;
+	Vertex2.ColorAlpha[1] = 1;
+	Vertex2.ColorAlpha[2] = 1;
+	Vertex2.ColorAlpha[3] = alpha;
+	Vertex2.SurfaceUV[0] = 1;
+	Vertex2.SurfaceUV[1] = 0;
+
+//	qglTexCoord2f (1, 1);
+	VectorMA (e->origin, -frame->origin_y, up, point);
+	VectorMA (point, frame->width - frame->origin_x, right, point);
+//	qglVertex3fv (point);
+	MeshVertexFormat Vertex3;
+	memcpy(Vertex3.Position, point, sizeof(Vertex0.Position));
+	Vertex3.ColorAlpha[0] = 1;
+	Vertex3.ColorAlpha[1] = 1;
+	Vertex3.ColorAlpha[2] = 1;
+	Vertex3.ColorAlpha[3] = alpha;
+	Vertex3.SurfaceUV[0] = 1;
+	Vertex3.SurfaceUV[1] = 1;
+
+	gMeshRenderer->AppendVertex(Vertex1);
+	gMeshRenderer->AppendVertex(Vertex2);
+	gMeshRenderer->AppendVertex(Vertex0);
+	gMeshRenderer->AppendVertex(Vertex3);
+	gMeshRenderer->AppendVertex(Vertex2);
+	gMeshRenderer->AppendVertex(Vertex0);
+
+	gMeshRenderer->EndCommand();
+	
+//	qglEnd ();
+
+//	qglDisable (GL_ALPHA_TEST);
+//	GL_TexEnv( GL_REPLACE );
+
+//	if ( alpha != 1.0F )
+//		qglDisable( GL_BLEND );
+
+//	qglColor4f( 1, 1, 1, 1 );
 }
 
 void R_DrawEntitiesOnList()
@@ -530,7 +672,7 @@ void R_DrawEntitiesOnList()
 				R_DrawBrushModel(currententity);
 				break;
 			case mod_sprite:
-				//R_DrawSpriteModel(currententity);
+				R_DrawSpriteModel(currententity);
 				break;
 			default:
 				ri.Sys_Error(ERR_DROP, "Bad modeltype");
@@ -572,7 +714,7 @@ void R_DrawEntitiesOnList()
 				R_DrawBrushModel(currententity);
 				break;
 			case mod_sprite:
-				//R_DrawSpriteModel(currententity);
+				R_DrawSpriteModel(currententity);
 				break;
 			default:
 				ri.Sys_Error(ERR_DROP, "Bad modeltype");
