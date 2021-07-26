@@ -56,4 +56,9 @@ float4 MeshColorPixelShader(VertexOutput Input) : SV_TARGET
 	return Input.ColorAlpha;
 }
 
+float4 LightmapSurfacePixelShader(VertexOutput Input) : SV_TARGET
+{
+	return float4(Input.SurfaceUV, 0.0f, 1.0f);
+}
+
 

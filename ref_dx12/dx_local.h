@@ -51,6 +51,7 @@ typedef struct image_s
 image_t* FindImage(char *name, imagetype_t type);
 image_t	*Draw_FindPic(char *name);
 
+extern image_t* r_whitetexture;
 extern image_t* r_notexture;
 extern image_t* r_charstexture;
 extern unsigned d_8to24table[256];
@@ -100,6 +101,7 @@ struct MeshConstantBuffer
 extern VertexShader* MeshVertexShader;
 extern PixelShader* MeshDebugPixelShader;
 extern PixelShader* MeshColorPixelShader;
+extern PixelShader* MeshLightmapSurfacePixelShader;
 
 struct ParticleConstantBuffer
 {
@@ -240,9 +242,13 @@ struct MeshRenderCommand
 {
 	enum class EType
 	{
-		DrawInstanced_Colored
+		DrawInstanced_Colored,
+		DrawInstanced_LightmapSurface,
 	};
 	EType Type;
+
+	RenderTexture* SurfaceTexture;
+	RenderTexture* LightmapTexture;
 
 	D3D_PRIMITIVE_TOPOLOGY Topology;
 
@@ -275,7 +281,12 @@ public:
 
 	void StopRecording();
 
-	void StartCommand(MeshRenderCommand::EType Type, float4x4 MeshWorldMatrix = XMMatrixIdentity(), D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	void StartCommand(
+		MeshRenderCommand::EType Type, 
+		float4x4 MeshWorldMatrix = XMMatrixIdentity(), 
+		RenderTexture* SurfaceTexture = nullptr,
+		RenderTexture* LightmapTexture = nullptr,
+		D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	void AppendVertex(MeshVertexFormat& NewVertex);
 

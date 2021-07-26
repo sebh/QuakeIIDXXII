@@ -117,7 +117,12 @@ void MeshRenderer::StopRecording()
 	bRecordingStarted = false;
 }
 
-void MeshRenderer::StartCommand(MeshRenderCommand::EType Type, float4x4 MeshWorldMatrix, D3D_PRIMITIVE_TOPOLOGY Topology)
+void MeshRenderer::StartCommand(
+	MeshRenderCommand::EType Type, 
+	float4x4 MeshWorldMatrix,
+	RenderTexture* SurfaceTexture,
+	RenderTexture* LightmapTexture,
+	D3D_PRIMITIVE_TOPOLOGY Topology)
 {
 	ATLASSERT(bRecordingStarted == true);
 	ATLASSERT(bCommandStarted == false);
@@ -129,6 +134,9 @@ void MeshRenderer::StartCommand(MeshRenderCommand::EType Type, float4x4 MeshWorl
 
 	CurrentCommand->Type = Type;
 	CurrentCommand->Topology = Topology;
+
+	CurrentCommand->SurfaceTexture = SurfaceTexture ? SurfaceTexture : r_whitetexture->RenderTexture;
+	CurrentCommand->LightmapTexture = LightmapTexture ? LightmapTexture : r_whitetexture->RenderTexture;
 
 	XMStoreFloat4x4(&CurrentCommand->MeshWorldMatrix, MeshWorldMatrix);
 
@@ -230,6 +238,12 @@ void MeshRenderer::ExecuteRenderCommands()
 			PSODesc.mPS = MeshColorPixelShader;
 			break;
 		}
+		case MeshRenderCommand::EType::DrawInstanced_LightmapSurface:
+		{
+			PSODesc.mVS = MeshVertexShader;
+			PSODesc.mPS = MeshLightmapSurfacePixelShader;
+			break;
+		}
 		default:
 		{
 			ATLASSERT(false);
@@ -251,6 +265,7 @@ void MeshRenderer::ExecuteRenderCommands()
 		switch (Cmd.Type)
 		{
 		case MeshRenderCommand::EType::DrawInstanced_Colored:
+		case MeshRenderCommand::EType::DrawInstanced_LightmapSurface:
 		{
 			CommandList->DrawInstanced(Cmd.VertexCountPerInstance, Cmd.InstanceCount, Cmd.StartVertexLocation, Cmd.StartInstanceLocation);
 			break;
@@ -767,7 +782,7 @@ void R_RenderView(void)
 	// Decompress the PVS and mark potentially Visible Polygons
 	R_MarkLeaves();
 
-//TODO	R_DrawWorld();
+////////	R_DrawWorld();
 
 	// Last render the sky
 	SkyRender();

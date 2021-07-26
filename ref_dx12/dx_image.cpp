@@ -10,6 +10,7 @@ static uint AllocatedImageCount = 0;
 static image_t Images[D_MAX_IMAGE_COUNT];
 
 static bool bImageInitialised = false;
+image_t* r_whitetexture;
 image_t* r_notexture;
 
 image_t* r_charstexture;
@@ -529,16 +530,23 @@ void UploadAllTextures()
 		// Upload a defaulttexture to GPU
 		byte dottexture[8][8] =
 		{
-			{000,000,000,255,255,000,000,000},
-			{000,128,255,255,255,255,128,000},
-			{000,255,255,255,255,255,255,000},
-			{255,255,255,255,255,255,255,255},
-			{255,255,255,255,255,255,255,255},
-			{000,255,255,255,255,255,255,000},
-			{000,128,255,255,255,255,128,000},
-			{000,000,000,255,255,000,000,000},
+			{00,00,00,15,15,00,00,00},
+			{00,10,15,15,15,15,10,00},
+			{00,15,15,15,15,15,15,00},
+			{15,15,15,15,15,15,15,15},
+			{15,15,15,15,15,15,15,15},
+			{00,15,15,15,15,15,15,00},
+			{00,10,15,15,15,15,10,00},
+			{00,00,00,15,15,00,00,00},
 		};
 		r_notexture = GL_LoadPic("***r_notexture***", (byte *)dottexture, 8, 8, it_wall, 8);
+
+		byte whitetexture[2][2] =
+		{
+			{15,15},
+			{15,15},
+		};
+		r_whitetexture = GL_LoadPic("***r_whitetexture***", (byte *)whitetexture, 2, 2, it_wall, 8);
 
 		// Load the color pallette
 		{
