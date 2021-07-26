@@ -93,21 +93,16 @@ void R_RotateForEntity(entity_t *e)
 //	qglRotatef(-e->angles[0], 0, 1, 0);
 //	qglRotatef(-e->angles[2], 1, 0, 0);
 
-
-	// Convert Q2 to D3d space
-	float4x4 D3dMat0 = XMMatrixScaling(1.0f, 1.0f, -1.0f);
-	float4x4 D3dMat1 = XMMatrixRotationX(DegToRad(-90.0f));
-	float4x4 D3dMat2 = XMMatrixRotationZ(DegToRad(90.0f));
 	// Q2 camera transform
 	float4x4 RotZMat = XMMatrixRotationZ(DegToRad( e->angles[1]));
 	float4x4 RotYMat = XMMatrixRotationY(DegToRad(-e->angles[0]));
 	float4x4 RotXMat = XMMatrixRotationX(DegToRad(-e->angles[2]));
 	float4x4 TranMat = XMMatrixTranslation(e->origin[0], e->origin[1], e->origin[2]);
 
-	LastEntityWorldMatrix = RotZMat;
-	LastEntityWorldMatrix = XMMatrixMultiply(RotYMat, LastEntityWorldMatrix);
+	LastEntityWorldMatrix = TranMat;
 	LastEntityWorldMatrix = XMMatrixMultiply(RotXMat, LastEntityWorldMatrix);
-	LastEntityWorldMatrix = XMMatrixMultiply(TranMat, LastEntityWorldMatrix);
+	LastEntityWorldMatrix = XMMatrixMultiply(RotYMat, LastEntityWorldMatrix);
+	LastEntityWorldMatrix = XMMatrixMultiply(RotZMat, LastEntityWorldMatrix);
 }
 
 /*
