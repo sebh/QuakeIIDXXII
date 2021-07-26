@@ -137,6 +137,8 @@ void MeshRenderer::StartCommand(
 	CurrentCommand->Type = Type;
 	CurrentCommand->Topology = Topology;
 
+	CurrentCommand->bEnableAlphaBlending = false;
+
 	CurrentCommand->SurfaceTexture = SurfaceTexture ? SurfaceTexture : r_whitetexture->RenderTexture;
 	CurrentCommand->LightmapTexture = LightmapTexture ? LightmapTexture : r_whitetexture->RenderTexture;
 
@@ -146,6 +148,7 @@ void MeshRenderer::StartCommand(
 	CurrentCommand->StartInstanceLocation = 0;
 
 	if (Type == MeshRenderCommand::EType::DrawInstanced_Colored
+		|| Type == MeshRenderCommand::EType::DrawInstanced_ColoredSurface
 		|| Type == MeshRenderCommand::EType::DrawInstanced_LightmapSurface)
 	{
 		CurrentCommand->VertexCountPerInstance = 0;
@@ -157,6 +160,14 @@ void MeshRenderer::StartCommand(
 		CurrentCommand->StartIndexLocation = RecordedIndexCount;
 		CurrentCommand->BaseVertexLocation = RecordedVertexCount;
 	}
+}
+
+void MeshRenderer::SetCurrentCommandUseAlphaBlending()
+{
+	ATLASSERT(bRecordingStarted == true);
+	ATLASSERT(bCommandStarted == true);
+
+	CurrentCommand->bEnableAlphaBlending = true;
 }
 
 void MeshRenderer::AppendVertex(MeshVertexFormat& NewVertex)
@@ -173,6 +184,7 @@ void MeshRenderer::AppendVertex(MeshVertexFormat& NewVertex)
 	MeshVertexMemory++;
 
 	if (CurrentCommand->Type == MeshRenderCommand::EType::DrawInstanced_Colored
+		|| CurrentCommand->Type == MeshRenderCommand::EType::DrawInstanced_ColoredSurface
 		|| CurrentCommand->Type == MeshRenderCommand::EType::DrawInstanced_LightmapSurface)
 	{
 		CurrentCommand->VertexCountPerInstance++;
@@ -218,7 +230,6 @@ void MeshRenderer::ExecuteRenderCommands()
 	CachedRasterPsoDesc PSODesc;
 	PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
 	PSODesc.mLayout = &MeshVertexFormatLayout;
-	PSODesc.mBlendState = &getBlendState_Default();
 	PSODesc.mDepthStencilState = &getDepthStencilState_Default();
 	PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
 	PSODesc.mRenderTargetCount = 1;
@@ -240,12 +251,24 @@ void MeshRenderer::ExecuteRenderCommands()
 	{
 		MeshRenderCommand& Cmd = RenderCommands[i];
 
+		PSODesc.mBlendState = Cmd.bEnableAlphaBlending ? &getBlendState_AlphaBlending() : &getBlendState_Default();
+
 		switch (Cmd.Type)
 		{
 		case MeshRenderCommand::EType::DrawInstanced_Colored:
 		{
 			PSODesc.mVS = MeshVertexShader;
 			PSODesc.mPS = MeshColorPixelShader;
+			break;
+		}
+		case MeshRenderCommand::EType::DrawInstanced_ColoredSurface:
+		{
+			PSODesc.mVS = MeshVertexShader;
+			PSODesc.mPS = MeshColoredSurfacePixelShader;
+
+			DispatchDrawCallCpuDescriptorHeap::Call CallDescriptors = DrawDispatchCallCpuDescriptorHeap.AllocateCall(g_dx12Device->GetDefaultGraphicRootSignature());
+			CallDescriptors.SetSRV(0, *Cmd.SurfaceTexture);
+			CommandList->SetGraphicsRootDescriptorTable(RootParameterIndex_DescriptorTable0, CallDescriptors.getRootDescriptorTableGpuHandle());
 			break;
 		}
 		case MeshRenderCommand::EType::DrawInstanced_LightmapSurface:
@@ -280,6 +303,7 @@ void MeshRenderer::ExecuteRenderCommands()
 		switch (Cmd.Type)
 		{
 		case MeshRenderCommand::EType::DrawInstanced_Colored:
+		case MeshRenderCommand::EType::DrawInstanced_ColoredSurface:
 		case MeshRenderCommand::EType::DrawInstanced_LightmapSurface:
 		{
 			CommandList->DrawInstanced(Cmd.VertexCountPerInstance, Cmd.InstanceCount, Cmd.StartVertexLocation, Cmd.StartInstanceLocation);
@@ -614,8 +638,8 @@ void R_DrawAlphaSurfaces(void)
 			{
 				p = bp;
 
-
-				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
+				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
+				gMeshRenderer->SetCurrentCommandUseAlphaBlending();
 				MeshVertexFormat V0;
 				bool bV0Set = false;
 				MeshVertexFormat LastV;
@@ -644,10 +668,12 @@ void R_DrawAlphaSurfaces(void)
 
 					MeshVertexFormat Vertex;
 					memcpy(Vertex.Position, v, sizeof(Vertex.Position));
-					Vertex.ColorAlpha[0] = 1.0f;// Tmp.x;
-					Vertex.ColorAlpha[1] = 0.0f;// Tmp.y;
-					Vertex.ColorAlpha[2] = 0.0f;// Tmp.z;
-					Vertex.ColorAlpha[3] = 0.0f;// Tmp.w;
+					Vertex.ColorAlpha[0] = Tmp.x;
+					Vertex.ColorAlpha[1] = Tmp.y;
+					Vertex.ColorAlpha[2] = Tmp.z;
+					Vertex.ColorAlpha[3] = Tmp.w;
+					Vertex.SurfaceUV[0] = s;
+					Vertex.SurfaceUV[1] = t;
 
 					if (bLastVSet)
 					{
@@ -691,7 +717,8 @@ void R_DrawAlphaSurfaces(void)
 			if (scroll == 0.0)
 				scroll = -64.0;
 
-			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
+			gMeshRenderer->SetCurrentCommandUseAlphaBlending();
 			MeshVertexFormat V0;
 			bool bV0Set = false;
 			MeshVertexFormat LastV;
@@ -703,10 +730,10 @@ void R_DrawAlphaSurfaces(void)
 			{
 				MeshVertexFormat Vertex;
 				memcpy(Vertex.Position, v, sizeof(Vertex.Position));
-				Vertex.ColorAlpha[0] = 1.0f;// Tmp.x;
-				Vertex.ColorAlpha[1] = 0.0f;// Tmp.y;
-				Vertex.ColorAlpha[2] = 0.0f;// Tmp.z;
-				Vertex.ColorAlpha[3] = 0.0f;// Tmp.w;
+				Vertex.ColorAlpha[0] = Tmp.x;
+				Vertex.ColorAlpha[1] = Tmp.y;
+				Vertex.ColorAlpha[2] = Tmp.z;
+				Vertex.ColorAlpha[3] = Tmp.w;
 				Vertex.SurfaceUV[0] = v[3] + scroll;
 				Vertex.SurfaceUV[1] = v[4];
 
@@ -743,7 +770,8 @@ void R_DrawAlphaSurfaces(void)
 			int		i;
 			float	*v;
 
-			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
+			gMeshRenderer->SetCurrentCommandUseAlphaBlending();
 			MeshVertexFormat V0;
 			bool bV0Set = false;
 			MeshVertexFormat LastV;
@@ -755,10 +783,10 @@ void R_DrawAlphaSurfaces(void)
 			{
 				MeshVertexFormat Vertex;
 				memcpy(Vertex.Position, v, sizeof(Vertex.Position));
-				Vertex.ColorAlpha[0] = 1.0f;// Tmp.x;
-				Vertex.ColorAlpha[1] = 0.0f;// Tmp.y;
-				Vertex.ColorAlpha[2] = 0.0f;// Tmp.z;
-				Vertex.ColorAlpha[3] = 0.0f;// Tmp.w;
+				Vertex.ColorAlpha[0] = Tmp.x;
+				Vertex.ColorAlpha[1] = Tmp.y;
+				Vertex.ColorAlpha[2] = Tmp.z;
+				Vertex.ColorAlpha[3] = Tmp.w;
 				Vertex.SurfaceUV[0] = v[3];
 				Vertex.SurfaceUV[1] = v[4];
 

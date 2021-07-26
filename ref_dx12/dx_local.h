@@ -102,6 +102,7 @@ extern VertexShader* MeshVertexShader;
 extern PixelShader* MeshDebugPixelShader;
 extern PixelShader* MeshColorPixelShader;
 extern PixelShader* MeshLightmapSurfacePixelShader;
+extern PixelShader* MeshColoredSurfacePixelShader;
 
 struct ParticleConstantBuffer
 {
@@ -246,9 +247,12 @@ struct MeshRenderCommand
 	enum class EType
 	{
 		DrawInstanced_Colored,
+		DrawInstanced_ColoredSurface,
 		DrawInstanced_LightmapSurface,
 	};
 	EType Type;
+
+	bool bEnableAlphaBlending;
 
 	RenderTexture* SurfaceTexture;
 	RenderTexture* LightmapTexture;
@@ -290,6 +294,8 @@ public:
 		RenderTexture* SurfaceTexture = nullptr,
 		RenderTexture* LightmapTexture = nullptr,
 		D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	void SetCurrentCommandUseAlphaBlending();
 
 	void AppendVertex(MeshVertexFormat& NewVertex);
 

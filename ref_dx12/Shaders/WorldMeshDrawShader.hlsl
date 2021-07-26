@@ -30,8 +30,8 @@ struct VertexOutput
 };
 
 
-Texture2D SurfaceTexture	: register(t0);
-Texture2D LightmapTexture	: register(t1);
+Texture2D<float4> SurfaceTexture	: register(t0);
+Texture2D<float4> LightmapTexture	: register(t1);
 
 
 VertexOutput MeshVertexShader(VertexInput Input, uint VertexID : SV_VertexID)
@@ -56,11 +56,14 @@ float4 MeshColorPixelShader(VertexOutput Input) : SV_TARGET
 	return Input.ColorAlpha;
 }
 
-float4 LightmapSurfacePixelShader(VertexOutput Input) : SV_TARGET
+float4 MeshLightmapSurfacePixelShader(VertexOutput Input) : SV_TARGET
 {
-	return LightmapTexture.Sample(SamplerLinearRepeat, Input.LightmapUV) * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
-	//return LightmapTexture.Sample(SamplerLinearRepeat, Input.LightmapUV);
-	//return SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
+	return float4(LightmapTexture.Sample(SamplerLinearRepeat, Input.LightmapUV).rgb, 1.0f) * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
+}
+
+float4 MeshColoredSurfacePixelShader(VertexOutput Input) : SV_TARGET
+{
+	return Input.ColorAlpha * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
 }
 
 
