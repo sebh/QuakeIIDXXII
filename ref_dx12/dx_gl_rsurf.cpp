@@ -1115,7 +1115,7 @@ void R_DrawInlineBModel (void)
 			}
 			else
 			{
-				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ?
+				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ? Yes, it can happen when loading map fact1
 				// GL_EnableMultitexture( false );
 				// R_RenderBrushPoly( psurf );
 				// GL_EnableMultitexture( true );
@@ -1331,7 +1331,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 			}
 			else
 			{
-				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ?
+				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ? YES, it can happen when playing map boss1 and taking an elevator
 
 				// the polygon is visible, so add it to the texture
 				// sorted chain
