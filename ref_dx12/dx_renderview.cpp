@@ -616,7 +616,6 @@ void R_DrawAlphaSurfaces(void)
 
 
 				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
-
 				MeshVertexFormat V0;
 				bool bV0Set = false;
 				MeshVertexFormat LastV;
@@ -645,10 +644,10 @@ void R_DrawAlphaSurfaces(void)
 
 					MeshVertexFormat Vertex;
 					memcpy(Vertex.Position, v, sizeof(Vertex.Position));
-					Vertex.ColorAlpha[0] = Tmp.x;
-					Vertex.ColorAlpha[1] = Tmp.y;
-					Vertex.ColorAlpha[2] = Tmp.z;
-					Vertex.ColorAlpha[3] = Tmp.w;
+					Vertex.ColorAlpha[0] = 1.0f;// Tmp.x;
+					Vertex.ColorAlpha[1] = 0.0f;// Tmp.y;
+					Vertex.ColorAlpha[2] = 0.0f;// Tmp.z;
+					Vertex.ColorAlpha[3] = 0.0f;// Tmp.w;
 
 					if (bLastVSet)
 					{
@@ -678,16 +677,115 @@ void R_DrawAlphaSurfaces(void)
 		}
 		else if (s->texinfo->flags & SURF_FLOWING)			// PGM	9/16/98
 		{
-			int i = 0;
 			//DrawGLFlowingPoly(s);							// PGM
-			// TODO
+			msurface_t *fa = s;
 
+			int		i;
+			float	*v;
+			glpoly_t *p;
+			float	scroll;
+
+			p = fa->polys;
+
+			scroll = -64 * ((r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0));
+			if (scroll == 0.0)
+				scroll = -64.0;
+
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
+			MeshVertexFormat V0;
+			bool bV0Set = false;
+			MeshVertexFormat LastV;
+			bool bLastVSet = false;
+
+			//qglBegin(GL_POLYGON);
+			v = p->verts[0];
+			for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+			{
+				MeshVertexFormat Vertex;
+				memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+				Vertex.ColorAlpha[0] = 1.0f;// Tmp.x;
+				Vertex.ColorAlpha[1] = 0.0f;// Tmp.y;
+				Vertex.ColorAlpha[2] = 0.0f;// Tmp.z;
+				Vertex.ColorAlpha[3] = 0.0f;// Tmp.w;
+				Vertex.SurfaceUV[0] = v[3] + scroll;
+				Vertex.SurfaceUV[1] = v[4];
+
+				if (bLastVSet)
+				{
+					gMeshRenderer->AppendVertex(V0);
+					gMeshRenderer->AppendVertex(LastV);
+					gMeshRenderer->AppendVertex(Vertex);
+				}
+
+				//qglTexCoord2f((v[3] + scroll), v[4]);
+				//qglVertex3fv(v);
+
+				if (bV0Set)
+				{
+					LastV = Vertex;
+					bLastVSet = true;
+				}
+				if (!bV0Set)
+				{
+					V0 = Vertex;
+					bV0Set = true;
+				}
+			}
+			//qglEnd();
+
+			gMeshRenderer->EndCommand();
 		}
 		else
 		{
-			int i = 0;
 			//DrawGLPoly(s->polys);
-			// TODO
+			glpoly_t *p = s->polys;
+
+			int		i;
+			float	*v;
+
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
+			MeshVertexFormat V0;
+			bool bV0Set = false;
+			MeshVertexFormat LastV;
+			bool bLastVSet = false;
+
+			//qglBegin(GL_POLYGON);
+			v = p->verts[0];
+			for (i = 0; i < p->numverts; i++, v += VERTEXSIZE)
+			{
+				MeshVertexFormat Vertex;
+				memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+				Vertex.ColorAlpha[0] = 1.0f;// Tmp.x;
+				Vertex.ColorAlpha[1] = 0.0f;// Tmp.y;
+				Vertex.ColorAlpha[2] = 0.0f;// Tmp.z;
+				Vertex.ColorAlpha[3] = 0.0f;// Tmp.w;
+				Vertex.SurfaceUV[0] = v[3];
+				Vertex.SurfaceUV[1] = v[4];
+
+				if (bLastVSet)
+				{
+					gMeshRenderer->AppendVertex(V0);
+					gMeshRenderer->AppendVertex(LastV);
+					gMeshRenderer->AppendVertex(Vertex);
+				}
+
+				//qglTexCoord2f(v[3], v[4]);
+				//qglVertex3fv(v);
+
+				if (bV0Set)
+				{
+					LastV = Vertex;
+					bLastVSet = true;
+				}
+				if (!bV0Set)
+				{
+					V0 = Vertex;
+					bV0Set = true;
+				}
+			}
+			//qglEnd();
+
+			gMeshRenderer->EndCommand();
 		}
 	}
 
@@ -819,7 +917,7 @@ void R_RenderView(void)
 	//R_RenderDlights();
 
 	// Alpha blend translucent surfaces last
-//	R_DrawAlphaSurfaces();
+	R_DrawAlphaSurfaces();
 
 	gMeshRenderer->StopRecording();
 	gMeshRenderer->ExecuteRenderCommands();
