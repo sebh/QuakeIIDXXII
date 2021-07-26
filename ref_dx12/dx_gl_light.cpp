@@ -115,12 +115,14 @@ DYNAMIC LIGHTS
 R_MarkLights
 =============
 */
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
+void R_MarkLights (dlight_t *light, int bit, /*mnode_t*/void *nodevoid)
 {
 	cplane_t	*splitplane;
 	float		dist;
 	msurface_t	*surf;
 	int			i;
+
+	mnode_t* node = (mnode_t*) nodevoid;
 	
 	if (node->contents != -1)
 		return;

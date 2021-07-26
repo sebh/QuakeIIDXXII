@@ -67,267 +67,205 @@ float	r_turbsin[] =
 
 static InputLayout MeshVertexFormatLayout;
 
-// Current simplification on purpose: all world/mesh draw are using the same vertex layout
-struct MeshVertexFormat
+MeshRenderer::MeshRenderer()
 {
-	float Position[3];
-	float SurfaceUV[2];
-	float LightmapUV[2];
-	float ColorAlpha[4];
-};
+	bRecordingStarted = false;
+	bCommandStarted = false;
+	MeshVertexRenderBuffer = new RenderBufferGenericDynamic(VertexMemorySizeBytes, D3D12_RESOURCE_FLAG_NONE);
+	MeshIndexRenderBuffer = new RenderBufferGenericDynamic(IndexMemorySizeBytes, D3D12_RESOURCE_FLAG_NONE);
 
-struct MeshRenderCommand
+	RenderCommands = new MeshRenderCommand[MaxCommandCount];
+}
+
+MeshRenderer::~MeshRenderer()
 {
-	enum class RenderCommandType
-	{
-		DrawInstanced_Colored
-	};
-	RenderCommandType Type;
+	delete MeshVertexRenderBuffer;
+	delete MeshIndexRenderBuffer;
+	free(RenderCommands);
+}
 
-	D3D_PRIMITIVE_TOPOLOGY Topology;
-
-	XMFLOAT4X4 MeshWorldMatrix; // float4x4 but using XMFLOAT4X4 to not force alignement constraint (TODO implement aligned allocator)
-
-	// Used by both DrawInstanced and DrawIndexedInstanced
-	UINT InstanceCount;
-	UINT StartInstanceLocation;
-
-	// Used by DrawInstanced only
-	UINT VertexCountPerInstance;
-	UINT StartVertexLocation;
-
-	// Used by DrawIndexedInstanced only
-	UINT IndexCountPerInstance;
-	UINT StartIndexLocation;
-	UINT BaseVertexLocation;
-};
-
-#define VertexMemorySizeBytes	10 * 1024 * 1024
-#define IndexMemorySizeBytes	1 * 1024 * 1024
-#define MaxCommandCount			4096
-struct MeshRenderer
+void MeshRenderer::StartRecording()
 {
-public:
-	MeshRenderer()
-	{
-		bRecordingStarted = false;
-		bCommandStarted = false;
-		MeshVertexRenderBuffer = new RenderBufferGenericDynamic(VertexMemorySizeBytes, D3D12_RESOURCE_FLAG_NONE);
-		MeshIndexRenderBuffer = new RenderBufferGenericDynamic(IndexMemorySizeBytes, D3D12_RESOURCE_FLAG_NONE);
+	ATLASSERT(bRecordingStarted == false);
+	ATLASSERT(bCommandStarted == false);
 
-		RenderCommands = new MeshRenderCommand[MaxCommandCount];
+	AllocatedVertexBytes = 0;
+	AllocatedIndexBytes = 0;
+	RecordedVertexCount = 0;
+	RecordedIndexCount = 0;
+
+	RecordedRenderCommandCount = 0;
+	CurrentCommand = nullptr;
+
+	MeshVertexMemory = (MeshVertexFormat*)MeshVertexRenderBuffer->Map();
+	MeshIndexMemory = (uint*)MeshIndexRenderBuffer->Map();
+
+	bRecordingStarted = true;
+}
+
+void MeshRenderer::StopRecording()
+{
+	ATLASSERT(bRecordingStarted == true);
+	ATLASSERT(bCommandStarted == false);
+
+	MeshVertexRenderBuffer->UnmapAndUpload();
+	MeshIndexRenderBuffer->UnmapAndUpload();
+
+	MeshVertexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	MeshIndexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+
+	bRecordingStarted = false;
+}
+
+void MeshRenderer::StartCommand(MeshRenderCommand::EType Type, float4x4 MeshWorldMatrix, D3D_PRIMITIVE_TOPOLOGY Topology)
+{
+	ATLASSERT(bRecordingStarted == true);
+	ATLASSERT(bCommandStarted == false);
+
+	CurrentCommand = &RenderCommands[RecordedRenderCommandCount++];
+	bCommandStarted = true;
+
+	//memset(CurrentCommand, 0, sizeof(MeshRenderCommand));
+
+	CurrentCommand->Type = Type;
+	CurrentCommand->Topology = Topology;
+
+	XMStoreFloat4x4(&CurrentCommand->MeshWorldMatrix, MeshWorldMatrix);
+
+	CurrentCommand->InstanceCount = 1;
+	CurrentCommand->StartInstanceLocation = 0;
+
+	if (Type == MeshRenderCommand::EType::DrawInstanced_Colored)
+	{
+		CurrentCommand->VertexCountPerInstance = 0;
+		CurrentCommand->StartVertexLocation = RecordedVertexCount;
 	}
-
-	~MeshRenderer()
+	else
 	{
-		delete MeshVertexRenderBuffer;
-		delete MeshIndexRenderBuffer;
-		free(RenderCommands);
+		CurrentCommand->IndexCountPerInstance = 0;
+		CurrentCommand->StartIndexLocation = RecordedIndexCount;
+		CurrentCommand->BaseVertexLocation = RecordedVertexCount;
 	}
+}
 
-	void StartRecording()
+void MeshRenderer::AppendVertex(MeshVertexFormat& NewVertex)
+{
+	ATLASSERT(bRecordingStarted == true);
+	ATLASSERT(bCommandStarted == true);
+	ATLASSERT((AllocatedVertexBytes + sizeof(MeshVertexFormat)) <= VertexMemorySizeBytes);
+
+	// DrawInstanced
+	RecordedVertexCount++;
+	AllocatedVertexBytes += sizeof(MeshVertexFormat);
+
+	*MeshVertexMemory = NewVertex;
+	MeshVertexMemory++;
+
+	if (CurrentCommand->Type == MeshRenderCommand::EType::DrawInstanced_Colored)
 	{
-		ATLASSERT(bRecordingStarted == false);
-		ATLASSERT(bCommandStarted == false);
-
-		AllocatedVertexBytes = 0;
-		AllocatedIndexBytes = 0;
-		RecordedVertexCount = 0;
-		RecordedIndexCount = 0;
-
-		RecordedRenderCommandCount = 0;
-		CurrentCommand = nullptr;
-
-		MeshVertexMemory = (MeshVertexFormat*)MeshVertexRenderBuffer->Map();
-		MeshIndexMemory = (uint*)MeshIndexRenderBuffer->Map();
-
-		bRecordingStarted = true;
+		CurrentCommand->VertexCountPerInstance++;
 	}
-
-	void StopRecording()
+	else
 	{
-		ATLASSERT(bRecordingStarted == true);
-		ATLASSERT(bCommandStarted == false);
-
-		MeshVertexRenderBuffer->UnmapAndUpload();
-		MeshIndexRenderBuffer->UnmapAndUpload();
-
-		MeshVertexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-		MeshIndexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
-		bRecordingStarted = false;
+		// Nothing to do
 	}
+}
 
-	void StartCommand(MeshRenderCommand::RenderCommandType Type, D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, float4x4 MeshWorldMatrix = XMMatrixIdentity())
+void MeshRenderer::EndCommand()
+{
+	ATLASSERT(bRecordingStarted == true);
+	ATLASSERT(bCommandStarted == true);
+
+	CurrentCommand = nullptr;
+	bCommandStarted = false;
+}
+
+void MeshRenderer::ExecuteRenderCommands()
+{
+	ATLASSERT(bRecordingStarted == false);
+	ATLASSERT(bCommandStarted == false);
+
+	ViewData vd = GetViewData();
+
+	FrameConstantBuffers& ConstantBuffers = g_dx12Device->getFrameConstantBuffers();
+	DispatchDrawCallCpuDescriptorHeap& DrawDispatchCallCpuDescriptorHeap = g_dx12Device->getDispatchDrawCallCpuDescriptorHeap();
+
+	ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
+	ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
+	D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
+
+	// Set defaults graphic and compute root signatures
+	CommandList->SetGraphicsRootSignature(g_dx12Device->GetDefaultGraphicRootSignature().getRootsignature());
+	CommandList->SetComputeRootSignature(g_dx12Device->GetDefaultComputeRootSignature().getRootsignature());
+
+	CachedRasterPsoDesc PSODesc;
+	PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
+	PSODesc.mLayout = &MeshVertexFormatLayout;
+	PSODesc.mBlendState = &getBlendState_Default();
+	PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
+	PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
+	PSODesc.mRenderTargetCount = 1;
+	PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
+	PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+
+	MeshIndexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
+	D3D12_INDEX_BUFFER_VIEW MeshIndexRenderBufferView = MeshIndexRenderBuffer->getRenderBuffer().getIndexBufferView(DXGI_FORMAT_R32_UINT);
+	CommandList->IASetIndexBuffer(&MeshIndexRenderBufferView);
+
+	MeshVertexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	D3D12_VERTEX_BUFFER_VIEW MeshVertexRenderBufferView = MeshVertexRenderBuffer->getRenderBuffer().getVertexBufferView(sizeof(MeshVertexFormat));
+	CommandList->IASetVertexBuffers(0, 1, &MeshVertexRenderBufferView);
+
+
+	for (uint i = 0; i < RecordedRenderCommandCount; ++i)
 	{
-		ATLASSERT(bRecordingStarted == true);
-		ATLASSERT(bCommandStarted == false);
+		MeshRenderCommand& Cmd = RenderCommands[i];
 
-		CurrentCommand = &RenderCommands[RecordedRenderCommandCount++];
-		bCommandStarted = true;
-
-		//memset(CurrentCommand, 0, sizeof(MeshRenderCommand));
-
-		CurrentCommand->Type = Type;
-		CurrentCommand->Topology = Topology;
-
-		XMStoreFloat4x4(&CurrentCommand->MeshWorldMatrix, MeshWorldMatrix);
-
-		CurrentCommand->InstanceCount = 1;
-		CurrentCommand->StartInstanceLocation = 0;
-
-		if (Type == MeshRenderCommand::RenderCommandType::DrawInstanced_Colored)
+		switch (Cmd.Type)
 		{
-			CurrentCommand->VertexCountPerInstance = 0;
-			CurrentCommand->StartVertexLocation = RecordedVertexCount;
+		case MeshRenderCommand::EType::DrawInstanced_Colored:
+		{
+			PSODesc.mVS = MeshVertexShader;
+			PSODesc.mPS = MeshColorPixelShader;
+			break;
 		}
-		else
+		default:
 		{
-			CurrentCommand->IndexCountPerInstance = 0;
-			CurrentCommand->StartIndexLocation = RecordedIndexCount;
-			CurrentCommand->BaseVertexLocation = RecordedVertexCount;
+			ATLASSERT(false);
+			break;
 		}
-	}
-
-	void AppendVertex(MeshVertexFormat& NewVertex)
-	{
-		ATLASSERT(bRecordingStarted == true);
-		ATLASSERT(bCommandStarted == true);
-		ATLASSERT((AllocatedVertexBytes + sizeof(MeshVertexFormat)) <= VertexMemorySizeBytes);
-
-		// DrawInstanced
-		RecordedVertexCount++;
-		AllocatedVertexBytes += sizeof(MeshVertexFormat);
-
-		*MeshVertexMemory = NewVertex;
-		MeshVertexMemory++;
-
-		if (CurrentCommand->Type == MeshRenderCommand::RenderCommandType::DrawInstanced_Colored)
-		{
-			CurrentCommand->VertexCountPerInstance++;
 		}
-		else
-		{
-			// Nothing to do
-		}
-	}
-
-	// TODO AppendIndex
-
-	void EndCommand()
-	{
-		ATLASSERT(bRecordingStarted == true);
-		ATLASSERT(bCommandStarted == true);
-
-		CurrentCommand = nullptr;
-		bCommandStarted = false;
-	}
-
-	void ExecuteRenderCommands()
-	{
-		ATLASSERT(bRecordingStarted == false);
-		ATLASSERT(bCommandStarted == false);
-
-		ViewData vd = GetViewData();
-
-		FrameConstantBuffers& ConstantBuffers = g_dx12Device->getFrameConstantBuffers();
-		DispatchDrawCallCpuDescriptorHeap& DrawDispatchCallCpuDescriptorHeap = g_dx12Device->getDispatchDrawCallCpuDescriptorHeap();
-
-		ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();
-		ID3D12Resource* BackBuffer = g_dx12Device->getBackBuffer();
-		D3D12_CPU_DESCRIPTOR_HANDLE BackBufferDescriptor = g_dx12Device->getBackBufferDescriptor();
-
-		// Set defaults graphic and compute root signatures
-		CommandList->SetGraphicsRootSignature(g_dx12Device->GetDefaultGraphicRootSignature().getRootsignature());
-		CommandList->SetComputeRootSignature(g_dx12Device->GetDefaultComputeRootSignature().getRootsignature());
-
-		CachedRasterPsoDesc PSODesc;
-		PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
-		PSODesc.mLayout = &MeshVertexFormatLayout;
-		PSODesc.mBlendState = &getBlendState_Default();
-		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
-		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
-		PSODesc.mRenderTargetCount = 1;
-		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
-		PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-
-		MeshIndexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
-		D3D12_INDEX_BUFFER_VIEW MeshIndexRenderBufferView = MeshIndexRenderBuffer->getRenderBuffer().getIndexBufferView(DXGI_FORMAT_R32_UINT);
-		CommandList->IASetIndexBuffer(&MeshIndexRenderBufferView);
-
-		MeshVertexRenderBuffer->getRenderBuffer().resourceTransitionBarrier(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-		D3D12_VERTEX_BUFFER_VIEW MeshVertexRenderBufferView = MeshVertexRenderBuffer->getRenderBuffer().getVertexBufferView(sizeof(MeshVertexFormat));
-		CommandList->IASetVertexBuffers(0, 1, &MeshVertexRenderBufferView);
-
-
-		for (uint i = 0; i < RecordedRenderCommandCount; ++i)
-		{
-			MeshRenderCommand& Cmd = RenderCommands[i];
-
-			switch (Cmd.Type)
-			{
-			case MeshRenderCommand::RenderCommandType::DrawInstanced_Colored:
-			{
-				PSODesc.mVS = MeshVertexShader;
-				PSODesc.mPS = MeshColorPixelShader;
-				break;
-			}
-			default:
-			{
-				ATLASSERT(false);
-				break;
-			}
-			}
 			
-			g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
+		g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
 
-			FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(MeshConstantBuffer));
-			MeshConstantBuffer* CBData = (MeshConstantBuffer*)CB.getCPUMemory();
+		FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(MeshConstantBuffer));
+		MeshConstantBuffer* CBData = (MeshConstantBuffer*)CB.getCPUMemory();
 
-			CBData->MeshWorldMatrix = XMLoadFloat4x4(&Cmd.MeshWorldMatrix);
-			CBData->ViewProjectionMatrix = vd.ViewProjectionMatrix;
-			CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
+		CBData->MeshWorldMatrix = XMLoadFloat4x4(&Cmd.MeshWorldMatrix);
+		CBData->ViewProjectionMatrix = vd.ViewProjectionMatrix;
+		CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
 
-			CommandList->IASetPrimitiveTopology(Cmd.Topology);
+		CommandList->IASetPrimitiveTopology(Cmd.Topology);
 
-			switch (Cmd.Type)
-			{
-			case MeshRenderCommand::RenderCommandType::DrawInstanced_Colored:
-			{
-				CommandList->DrawInstanced(Cmd.VertexCountPerInstance, Cmd.InstanceCount, Cmd.StartVertexLocation, Cmd.StartInstanceLocation);
-				break;
-			}
-			default:
-			{
-				ATLASSERT(false);
-				break;
-			}
-			}
+		switch (Cmd.Type)
+		{
+		case MeshRenderCommand::EType::DrawInstanced_Colored:
+		{
+			CommandList->DrawInstanced(Cmd.VertexCountPerInstance, Cmd.InstanceCount, Cmd.StartVertexLocation, Cmd.StartInstanceLocation);
+			break;
 		}
-		
+		default:
+		{
+			ATLASSERT(false);
+			break;
+		}
+		}
 	}
+		
+}
 
-
-private:
-	RenderBufferGenericDynamic* MeshVertexRenderBuffer = nullptr;
-	RenderBufferGenericDynamic* MeshIndexRenderBuffer = nullptr;
-
-	bool bRecordingStarted = false;
-	bool bCommandStarted = false;
-	uint AllocatedVertexBytes;
-	uint AllocatedIndexBytes;
-	uint RecordedVertexCount;
-	uint RecordedIndexCount;
-
-	MeshVertexFormat* MeshVertexMemory;
-	uint* MeshIndexMemory;
-
-	MeshRenderCommand* RenderCommands;
-	uint RecordedRenderCommandCount;
-	MeshRenderCommand* CurrentCommand;
-};
-static MeshRenderer* gMeshRenderer = nullptr;
+MeshRenderer* gMeshRenderer = nullptr;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -530,7 +468,7 @@ void R_DrawEntitiesOnList()
 				//R_DrawAliasModel(currententity);
 				break;
 			case mod_brush:
-				//R_DrawBrushModel(currententity);
+				R_DrawBrushModel(currententity);
 				break;
 			case mod_sprite:
 				//R_DrawSpriteModel(currententity);
@@ -642,7 +580,7 @@ void R_DrawAlphaSurfaces(void)
 				p = bp;
 
 
-				gMeshRenderer->StartCommand(MeshRenderCommand::RenderCommandType::DrawInstanced_Colored);
+				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
 
 				MeshVertexFormat V0;
 				bool bV0Set = false;
@@ -834,7 +772,7 @@ void R_RenderView(void)
 	// Last render the sky
 	SkyRender();
 
-	gMeshRenderer->StartCommand(MeshRenderCommand::RenderCommandType::DrawInstanced_Colored);
+	/*gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
 	MeshVertexFormat v;
 	v.Position[0] = 1000.0f;
 	v.Position[1] = 0;
@@ -874,7 +812,7 @@ void R_RenderView(void)
 	gMeshRenderer->AppendVertex(v);
 	gMeshRenderer->EndCommand();
 
-	gMeshRenderer->StartCommand(MeshRenderCommand::RenderCommandType::DrawInstanced_Colored);
+	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored);
 	v.Position[0] = -1000.0f;
 	v.Position[1] = 0;
 	v.Position[2] = 0;
@@ -911,7 +849,7 @@ void R_RenderView(void)
 	v.ColorAlpha[2] = 1;
 	v.ColorAlpha[3] = 1;
 	gMeshRenderer->AppendVertex(v);
-	gMeshRenderer->EndCommand();
+	gMeshRenderer->EndCommand();*/
 
 
 	// Render entities on top of the world

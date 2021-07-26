@@ -186,6 +186,7 @@ void R_ShutdownRenderView(void);
 void R_LightPoint(vec3_t p, vec3_t color);
 void R_PushDlights(void);
 
+void R_MarkLights(dlight_t *light, int bit, /*mnode_t*/void *node);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -193,10 +194,11 @@ void R_PushDlights(void);
 
 void R_MarkLeaves(void);
 
+void R_DrawBrushModel(entity_t *e);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Model and draw
+// Particles
 
 void R_InitParticleRenderer(void);
 void R_RenderParticles(void);
@@ -213,15 +215,97 @@ void R_ShutdownParticleRenderer(void);
 
 #include "dx_gl_model.h"
 
+extern int c_brush_polys, c_alias_polys;
 extern int r_viewcluster, r_viewcluster2, r_oldviewcluster, r_oldviewcluster2;
 extern entity_t *currententity;
 extern model_t *currentmodel;
 extern model_t	*r_worldmodel;
 
+extern cplane_t frustum[4];
 
 void R_BeginRegistration(char *model);
 void R_EndRegistration(void);
-void DrawEntities();
+
+
+// Current simplification on purpose: all world/mesh draw are using the same vertex layout
+struct MeshVertexFormat
+{
+	float Position[3];
+	float SurfaceUV[2];
+	float LightmapUV[2];
+	float ColorAlpha[4];
+};
+
+struct MeshRenderCommand
+{
+	enum class EType
+	{
+		DrawInstanced_Colored
+	};
+	EType Type;
+
+	D3D_PRIMITIVE_TOPOLOGY Topology;
+
+	XMFLOAT4X4 MeshWorldMatrix; // float4x4 but using XMFLOAT4X4 to not force alignement constraint (TODO implement aligned allocator)
+
+	// Used by both DrawInstanced and DrawIndexedInstanced
+	UINT InstanceCount;
+	UINT StartInstanceLocation;
+
+	// Used by DrawInstanced only
+	UINT VertexCountPerInstance;
+	UINT StartVertexLocation;
+
+	// Used by DrawIndexedInstanced only
+	UINT IndexCountPerInstance;
+	UINT StartIndexLocation;
+	UINT BaseVertexLocation;
+};
+
+#define VertexMemorySizeBytes	10 * 1024 * 1024
+#define IndexMemorySizeBytes	1 * 1024 * 1024
+#define MaxCommandCount			4096
+struct MeshRenderer
+{
+public:
+	MeshRenderer();
+	~MeshRenderer();
+
+	void StartRecording();
+
+	void StopRecording();
+
+	void StartCommand(MeshRenderCommand::EType Type, float4x4 MeshWorldMatrix = XMMatrixIdentity(), D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	void AppendVertex(MeshVertexFormat& NewVertex);
+
+	// TODO AppendIndex
+
+	void EndCommand();
+
+	void ExecuteRenderCommands();
+
+
+private:
+	RenderBufferGenericDynamic* MeshVertexRenderBuffer = nullptr;
+	RenderBufferGenericDynamic* MeshIndexRenderBuffer = nullptr;
+
+	bool bRecordingStarted = false;
+	bool bCommandStarted = false;
+	uint AllocatedVertexBytes;
+	uint AllocatedIndexBytes;
+	uint RecordedVertexCount;
+	uint RecordedIndexCount;
+
+	MeshVertexFormat* MeshVertexMemory;
+	uint* MeshIndexMemory;
+
+	MeshRenderCommand* RenderCommands;
+	uint RecordedRenderCommandCount;
+	MeshRenderCommand* CurrentCommand;
+};
+
+extern MeshRenderer* gMeshRenderer;
 
 
 
@@ -244,6 +328,7 @@ extern refdef_t r_newrefdef;
 void ErrorExit(char* Text);
 
 extern cvar_t *r_novis;
+extern cvar_t *r_nocull;
 extern cvar_t *r_speeds;
 extern cvar_t *r_lightlevel;
 extern cvar_t *r_drawentities;
@@ -254,6 +339,7 @@ extern cvar_t *gl_modulate;
 extern cvar_t *gl_monolightmap;
 extern cvar_t *gl_polyblend;
 extern cvar_t *gl_particle_size;
+extern cvar_t *gl_dynamic;
 
 extern int r_visframecount;
 extern int r_framecount;

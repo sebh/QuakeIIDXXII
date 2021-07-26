@@ -46,6 +46,7 @@ cvar_t *vid_ref;
 
 cvar_t *r_norefresh;
 cvar_t *r_novis;
+cvar_t *r_nocull;
 cvar_t *r_speeds;
 cvar_t *r_lightlevel;
 cvar_t *r_drawentities;
@@ -57,6 +58,7 @@ cvar_t *gl_modulate;
 cvar_t *gl_monolightmap;
 cvar_t *gl_polyblend;
 cvar_t *gl_particle_size;
+cvar_t *gl_dynamic;
 
 int	r_framecount = 1;	// so frame counts initialized to 0 don't match
 int	r_visframecount = 0;
@@ -316,6 +318,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 
 	r_norefresh = ri.Cvar_Get("r_norefresh", "0", 0);
 	r_novis = ri.Cvar_Get("r_novis", "0", 0);
+	r_nocull = ri.Cvar_Get("r_nocull", "0", 0);
 	r_speeds = ri.Cvar_Get("r_speeds", "0", 0);
 	r_lightlevel = ri.Cvar_Get("r_lightlevel", "0", 0);
 	r_drawentities = ri.Cvar_Get("r_drawentities", "1", 0);
@@ -327,6 +330,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	gl_monolightmap = ri.Cvar_Get("gl_monolightmap", "0", 0);
 	gl_polyblend = ri.Cvar_Get("gl_polyblend", "1", 0);
 	gl_particle_size = ri.Cvar_Get("gl_particle_size", "40", CVAR_ARCHIVE);
+	gl_dynamic = ri.Cvar_Get("gl_dynamic", "1", 0);
 
 	registration_sequence = 1;
 

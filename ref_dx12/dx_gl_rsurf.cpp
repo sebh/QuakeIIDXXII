@@ -65,6 +65,45 @@ static qboolean	LM_AllocBlock (int w, int h, int *x, int *y);
 extern void R_SetCacheState( msurface_t *surf );
 extern void R_BuildLightMap (msurface_t *surf, byte *dest, int stride);
 
+qboolean R_CullBox(vec3_t mins, vec3_t maxs)
+{
+	int		i;
+
+	if (r_nocull->value)
+		return false;
+
+	for (i = 0; i < 4; i++)
+		if (BOX_ON_PLANE_SIDE(mins, maxs, &frustum[i]) == 2)
+			return true;
+	return false;
+}
+
+float4x4 LastEntityWorldMatrix;
+void R_RotateForEntity(entity_t *e)
+{
+//	qglTranslatef(e->origin[0], e->origin[1], e->origin[2]);
+//
+//	qglRotatef(e->angles[1], 0, 0, 1);
+//	qglRotatef(-e->angles[0], 0, 1, 0);
+//	qglRotatef(-e->angles[2], 1, 0, 0);
+
+
+	// Convert Q2 to D3d space
+	float4x4 D3dMat0 = XMMatrixScaling(1.0f, 1.0f, -1.0f);
+	float4x4 D3dMat1 = XMMatrixRotationX(DegToRad(-90.0f));
+	float4x4 D3dMat2 = XMMatrixRotationZ(DegToRad(90.0f));
+	// Q2 camera transform
+	float4x4 RotZMat = XMMatrixRotationZ(DegToRad( e->angles[1]));
+	float4x4 RotYMat = XMMatrixRotationY(DegToRad(-e->angles[0]));
+	float4x4 RotXMat = XMMatrixRotationX(DegToRad(-e->angles[2]));
+	float4x4 TranMat = XMMatrixTranslation(e->origin[0], e->origin[1], e->origin[2]);
+
+	LastEntityWorldMatrix = RotZMat;
+	LastEntityWorldMatrix = XMMatrixMultiply(RotYMat, LastEntityWorldMatrix);
+	LastEntityWorldMatrix = XMMatrixMultiply(RotXMat, LastEntityWorldMatrix);
+	LastEntityWorldMatrix = XMMatrixMultiply(TranMat, LastEntityWorldMatrix);
+}
+
 /*
 =============================================================
 
@@ -699,242 +738,370 @@ DrawTextureChains
 //}
 
 
-//static void GL_RenderLightmappedPoly( msurface_t *surf )
-//{
-//	int		i, nv = surf->polys->numverts;
-//	int		map;
-//	float	*v;
-//	image_t *image = R_TextureAnimation( surf->texinfo );
-//	qboolean is_dynamic = false;
-//	unsigned lmtex = surf->lightmaptexturenum;
-//	glpoly_t *p;
-//
-//	for ( map = 0; map < MAXLIGHTMAPS && surf->styles[map] != 255; map++ )
-//	{
-//		if ( r_newrefdef.lightstyles[surf->styles[map]].white != surf->cached_light[map] )
-//			goto dynamic;
-//	}
-//
-//	// dynamic this frame or dynamic previously
-//	if ( ( surf->dlightframe == r_framecount ) )
-//	{
-//dynamic:
-//		if ( gl_dynamic->value )
-//		{
-//			if ( !(surf->texinfo->flags & (SURF_SKY|SURF_TRANS33|SURF_TRANS66|SURF_WARP ) ) )
-//			{
-//				is_dynamic = true;
-//			}
-//		}
-//	}
-//
-//	if ( is_dynamic )
-//	{
-//		unsigned	temp[128*128];
-//		int			smax, tmax;
-//
-//		if ( ( surf->styles[map] >= 32 || surf->styles[map] == 0 ) && ( surf->dlightframe != r_framecount ) )
-//		{
-//			smax = (surf->extents[0]>>4)+1;
-//			tmax = (surf->extents[1]>>4)+1;
-//
-//			R_BuildLightMap( surf, (void *)temp, smax*4 );
-//			R_SetCacheState( surf );
-//
+static void GL_RenderLightmappedPoly( msurface_t *surf )
+{
+	int		i, nv = surf->polys->numverts;
+	int		map;
+	float	*v;
+	image_t *image = R_TextureAnimation( surf->texinfo );
+	qboolean is_dynamic = false;
+	unsigned lmtex = surf->lightmaptexturenum;
+	glpoly_t *p;
+
+	for ( map = 0; map < MAXLIGHTMAPS && surf->styles[map] != 255; map++ )
+	{
+		if ( r_newrefdef.lightstyles[surf->styles[map]].white != surf->cached_light[map] )
+			goto dynamic;
+	}
+
+	// dynamic this frame or dynamic previously
+	if ( ( surf->dlightframe == r_framecount ) )
+	{
+dynamic:
+		if ( gl_dynamic->value )
+		{
+			if ( !(surf->texinfo->flags & (SURF_SKY|SURF_TRANS33|SURF_TRANS66|SURF_WARP ) ) )
+			{
+				is_dynamic = true;
+			}
+		}
+	}
+
+	if ( is_dynamic )
+	{
+		unsigned	temp[128*128];
+		int			smax, tmax;
+
+		if ( ( surf->styles[map] >= 32 || surf->styles[map] == 0 ) && ( surf->dlightframe != r_framecount ) )
+		{
+			smax = (surf->extents[0]>>4)+1;
+			tmax = (surf->extents[1]>>4)+1;
+
+			R_BuildLightMap( surf, (byte*)temp, smax*4 );
+			R_SetCacheState( surf );
+
 //			GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + surf->lightmaptexturenum );
-//
-//			lmtex = surf->lightmaptexturenum;
-//
+
+			lmtex = surf->lightmaptexturenum;
+
 //			qglTexSubImage2D( GL_TEXTURE_2D, 0,
 //							  surf->light_s, surf->light_t, 
 //							  smax, tmax, 
 //							  GL_LIGHTMAP_FORMAT, 
 //							  GL_UNSIGNED_BYTE, temp );
-//
-//		}
-//		else
-//		{
-//			smax = (surf->extents[0]>>4)+1;
-//			tmax = (surf->extents[1]>>4)+1;
-//
-//			R_BuildLightMap( surf, (void *)temp, smax*4 );
-//
+
+		}
+		else
+		{
+			smax = (surf->extents[0]>>4)+1;
+			tmax = (surf->extents[1]>>4)+1;
+
+			R_BuildLightMap( surf, (byte*)temp, smax*4 );
+
 //			GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + 0 );
-//
-//			lmtex = 0;
-//
+
+			lmtex = 0;
+
 //			qglTexSubImage2D( GL_TEXTURE_2D, 0,
 //							  surf->light_s, surf->light_t, 
 //							  smax, tmax, 
 //							  GL_LIGHTMAP_FORMAT, 
 //							  GL_UNSIGNED_BYTE, temp );
-//
-//		}
-//
-//		c_brush_polys++;
-//
+
+		}
+
+		c_brush_polys++;
+
 //		GL_MBind( GL_TEXTURE0, image->texnum );
 //		GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + lmtex );
-//
-////==========
-////PGM
-//		if (surf->texinfo->flags & SURF_FLOWING)
-//		{
-//			float scroll;
-//		
-//			scroll = -64 * ( (r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0) );
-//			if(scroll == 0.0)
-//				scroll = -64.0;
-//
-//			for ( p = surf->polys; p; p = p->chain )
-//			{
-//				v = p->verts[0];
-//				qglBegin (GL_POLYGON);
-//				for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
-//				{
-//					qglMTexCoord2fSGIS( GL_TEXTURE0, (v[3]+scroll), v[4]);
-//					qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
-//					qglVertex3fv (v);
-//				}
-//				qglEnd ();
-//			}
-//		}
-//		else
-//		{
-//			for ( p = surf->polys; p; p = p->chain )
-//			{
-//				v = p->verts[0];
-//				qglBegin (GL_POLYGON);
-//				for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
-//				{
-//					qglMTexCoord2fSGIS( GL_TEXTURE0, v[3], v[4]);
-//					qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
-//					qglVertex3fv (v);
-//				}
-//				qglEnd ();
-//			}
-//		}
-////PGM
-////==========
-//	}
-//	else
-//	{
-//		c_brush_polys++;
-//
+
+//==========
+//PGM
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, LastEntityWorldMatrix);
+		MeshVertexFormat V0;
+		bool bV0Set = false;
+		MeshVertexFormat LastV;
+		bool bLastVSet = false;
+
+		if (surf->texinfo->flags & SURF_FLOWING)
+		{
+			float scroll;
+		
+			scroll = -64 * ( (r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0) );
+			if(scroll == 0.0)
+				scroll = -64.0;
+
+			for ( p = surf->polys; p; p = p->chain )
+			{
+				v = p->verts[0];
+			//	qglBegin (GL_POLYGON);
+			//	for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
+			//	{
+			//		qglMTexCoord2fSGIS( GL_TEXTURE0, (v[3]+scroll), v[4]);
+			//		qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
+			//		qglVertex3fv (v);
+			//	}
+			//	qglEnd ();
+
+				for (i = 0; i < nv; i++, v += VERTEXSIZE)
+				{
+					MeshVertexFormat Vertex;
+					memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+					Vertex.ColorAlpha[0] = 1.0f;
+					Vertex.ColorAlpha[1] = 1.0f;
+					Vertex.ColorAlpha[2] = 0.0f;
+					Vertex.ColorAlpha[3] = 1.0f;
+
+					if (bLastVSet)
+					{
+						gMeshRenderer->AppendVertex(V0);
+						gMeshRenderer->AppendVertex(LastV);
+						gMeshRenderer->AppendVertex(Vertex);
+					}
+
+					if (bV0Set)
+					{
+						LastV = Vertex;
+						bLastVSet = true;
+					}
+					if (!bV0Set)
+					{
+						V0 = Vertex;
+						bV0Set = true;
+					}
+				}
+			}
+		}
+		else
+		{
+			for ( p = surf->polys; p; p = p->chain )
+			{
+				v = p->verts[0];
+			//	qglBegin (GL_POLYGON);
+			//	for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
+			//	{
+			//		qglMTexCoord2fSGIS( GL_TEXTURE0, v[3], v[4]);
+			//		qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
+			//		qglVertex3fv (v);
+			//	}
+			//	qglEnd ();
+
+				for (i = 0; i < nv; i++, v += VERTEXSIZE)
+				{
+					MeshVertexFormat Vertex;
+					memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+					Vertex.ColorAlpha[0] = 1.0f;
+					Vertex.ColorAlpha[1] = 1.0f;
+					Vertex.ColorAlpha[2] = 0.0f;
+					Vertex.ColorAlpha[3] = 1.0f;
+
+					if (bLastVSet)
+					{
+						gMeshRenderer->AppendVertex(V0);
+						gMeshRenderer->AppendVertex(LastV);
+						gMeshRenderer->AppendVertex(Vertex);
+					}
+
+					if (bV0Set)
+					{
+						LastV = Vertex;
+						bLastVSet = true;
+					}
+					if (!bV0Set)
+					{
+						V0 = Vertex;
+						bV0Set = true;
+					}
+				}
+			}
+			gMeshRenderer->EndCommand();
+		}
+//PGM
+//==========
+	}
+	else
+	{
+		c_brush_polys++;
+
 //		GL_MBind( GL_TEXTURE0, image->texnum );
 //		GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + lmtex );
-//
-////==========
-////PGM
-//		if (surf->texinfo->flags & SURF_FLOWING)
-//		{
-//			float scroll;
-//		
-//			scroll = -64 * ( (r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0) );
-//			if(scroll == 0.0)
-//				scroll = -64.0;
-//
-//			for ( p = surf->polys; p; p = p->chain )
-//			{
-//				v = p->verts[0];
-//				qglBegin (GL_POLYGON);
-//				for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
-//				{
-//					qglMTexCoord2fSGIS( GL_TEXTURE0, (v[3]+scroll), v[4]);
-//					qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
-//					qglVertex3fv (v);
-//				}
-//				qglEnd ();
-//			}
-//		}
-//		else
-//		{
-////PGM
-////==========
-//			for ( p = surf->polys; p; p = p->chain )
-//			{
-//				v = p->verts[0];
-//				qglBegin (GL_POLYGON);
-//				for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
-//				{
-//					qglMTexCoord2fSGIS( GL_TEXTURE0, v[3], v[4]);
-//					qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
-//					qglVertex3fv (v);
-//				}
-//				qglEnd ();
-//			}
-////==========
-////PGM
-//		}
-////PGM
-////==========
-//	}
-//}
+
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, LastEntityWorldMatrix);
+		MeshVertexFormat V0;
+		bool bV0Set = false;
+		MeshVertexFormat LastV;
+		bool bLastVSet = false;
+
+//==========
+//PGM
+		if (surf->texinfo->flags & SURF_FLOWING)
+		{
+			float scroll;
+		
+			scroll = -64 * ( (r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0) );
+			if(scroll == 0.0)
+				scroll = -64.0;
+
+			for ( p = surf->polys; p; p = p->chain )
+			{
+				v = p->verts[0];
+				//qglBegin (GL_POLYGON);
+				//for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
+				//{
+				//	qglMTexCoord2fSGIS( GL_TEXTURE0, (v[3]+scroll), v[4]);
+				//	qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
+				//	qglVertex3fv (v);
+				//}
+				//qglEnd ();
+
+
+				for (i = 0; i < nv; i++, v += VERTEXSIZE)
+				{
+					MeshVertexFormat Vertex;
+					memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+					Vertex.ColorAlpha[0] = 0.0f;
+					Vertex.ColorAlpha[1] = 1.0f;
+					Vertex.ColorAlpha[2] = 1.0f;
+					Vertex.ColorAlpha[3] = 1.0f;
+
+					if (bLastVSet)
+					{
+						gMeshRenderer->AppendVertex(V0);
+						gMeshRenderer->AppendVertex(LastV);
+						gMeshRenderer->AppendVertex(Vertex);
+					}
+
+					if (bV0Set)
+					{
+						LastV = Vertex;
+						bLastVSet = true;
+					}
+					if (!bV0Set)
+					{
+						V0 = Vertex;
+						bV0Set = true;
+					}
+				}
+			}
+		}
+		else
+		{
+//PGM
+//==========
+			for ( p = surf->polys; p; p = p->chain )
+			{
+				v = p->verts[0];
+				//qglBegin (GL_POLYGON);
+				//for (i=0 ; i< nv; i++, v+= VERTEXSIZE)
+				//{
+				//	qglMTexCoord2fSGIS( GL_TEXTURE0, v[3], v[4]);
+				//	qglMTexCoord2fSGIS( GL_TEXTURE1, v[5], v[6]);
+				//	qglVertex3fv (v);
+				//}
+				//qglEnd ();
+
+				for (i = 0; i < nv; i++, v += VERTEXSIZE)
+				{
+					MeshVertexFormat Vertex;
+					memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+					Vertex.ColorAlpha[0] = 0.0f;
+					Vertex.ColorAlpha[1] = 1.0f;
+					Vertex.ColorAlpha[2] = 1.0f;
+					Vertex.ColorAlpha[3] = 1.0f;
+
+					if (bLastVSet)
+					{
+						gMeshRenderer->AppendVertex(V0);
+						gMeshRenderer->AppendVertex(LastV);
+						gMeshRenderer->AppendVertex(Vertex);
+					}
+
+					if (bV0Set)
+					{
+						LastV = Vertex;
+						bLastVSet = true;
+					}
+					if (!bV0Set)
+					{
+						V0 = Vertex;
+						bV0Set = true;
+					}
+				}
+			}
+//==========
+//PGM
+		}
+		gMeshRenderer->EndCommand();
+//PGM
+//==========
+	}
+}
 
 /*
 =================
 R_DrawInlineBModel
 =================
 */
-//void R_DrawInlineBModel (void)
-//{
-//	int			i, k;
-//	cplane_t	*pplane;
-//	float		dot;
-//	msurface_t	*psurf;
-//	dlight_t	*lt;
-//
-//	// calculate dynamic lighting for bmodel
-//	if ( !gl_flashblend->value )
-//	{
-//		lt = r_newrefdef.dlights;
-//		for (k=0 ; k<r_newrefdef.num_dlights ; k++, lt++)
-//		{
-//			R_MarkLights (lt, 1<<k, currentmodel->nodes + currentmodel->firstnode);
-//		}
-//	}
-//
-//	psurf = &currentmodel->surfaces[currentmodel->firstmodelsurface];
-//
-//	if ( currententity->flags & RF_TRANSLUCENT )
-//	{
+void R_DrawInlineBModel (void)
+{
+	int			i, k;
+	cplane_t	*pplane;
+	float		dot;
+	msurface_t	*psurf;
+	dlight_t	*lt;
+
+	// calculate dynamic lighting for bmodel
+	if ( !gl_flashblend->value )
+	{
+		lt = r_newrefdef.dlights;
+		for (k=0 ; k<r_newrefdef.num_dlights ; k++, lt++)
+		{
+			R_MarkLights (lt, 1<<k, currentmodel->nodes + currentmodel->firstnode);
+		}
+	}
+
+	psurf = &currentmodel->surfaces[currentmodel->firstmodelsurface];
+
+	if ( currententity->flags & RF_TRANSLUCENT )
+	{
 //		qglEnable (GL_BLEND);
 //		qglColor4f (1,1,1,0.25);
 //		GL_TexEnv( GL_MODULATE );
-//	}
-//
-//	//
-//	// draw texture
-//	//
-//	for (i=0 ; i<currentmodel->nummodelsurfaces ; i++, psurf++)
-//	{
-//	// find which side of the node we are on
-//		pplane = psurf->plane;
-//
-//		dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
-//
-//	// draw the polygon
-//		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-//			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
-//		{
-//			if (psurf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66) )
-//			{	// add to the translucent chain
-//				psurf->texturechain = r_alpha_surfaces;
-//				r_alpha_surfaces = psurf;
-//			}
-//			else if ( qglMTexCoord2fSGIS && !( psurf->flags & SURF_DRAWTURB ) )
-//			{
-//				GL_RenderLightmappedPoly( psurf );
-//			}
-//			else
-//			{
-//				GL_EnableMultitexture( false );
-//				R_RenderBrushPoly( psurf );
-//				GL_EnableMultitexture( true );
-//			}
-//		}
-//	}
-//
+	}
+
+	//
+	// draw texture
+	//
+	for (i=0 ; i<currentmodel->nummodelsurfaces ; i++, psurf++)
+	{
+	// find which side of the node we are on
+		pplane = psurf->plane;
+
+		dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
+
+	// draw the polygon
+		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+		{
+			if (psurf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66) )
+			{	// add to the translucent chain
+				psurf->texturechain = r_alpha_surfaces;
+				r_alpha_surfaces = psurf;
+			}
+			else if ( true && !( psurf->flags & SURF_DRAWTURB ) )
+			{
+				GL_RenderLightmappedPoly( psurf );
+			}
+			else
+			{
+				ATLASSERT(false);	// SebH Should this reall happen ?
+				// GL_EnableMultitexture( false );
+				// R_RenderBrushPoly( psurf );
+				// GL_EnableMultitexture( true );
+			}
+		}
+	}
+
 //	if ( !(currententity->flags & RF_TRANSLUCENT) )
 //	{
 //		if ( !qglMTexCoord2fSGIS )
@@ -946,78 +1113,78 @@ R_DrawInlineBModel
 //		qglColor4f (1,1,1,1);
 //		GL_TexEnv( GL_REPLACE );
 //	}
-//}
+}
 
 /*
 =================
 R_DrawBrushModel
 =================
 */
-//void R_DrawBrushModel (entity_t *e)
-//{
-//	vec3_t		mins, maxs;
-//	int			i;
-//	qboolean	rotated;
-//
-//	if (currentmodel->nummodelsurfaces == 0)
-//		return;
-//
-//	currententity = e;
+void R_DrawBrushModel (entity_t *e)
+{
+	vec3_t		mins, maxs;
+	int			i;
+	qboolean	rotated;
+
+	if (currentmodel->nummodelsurfaces == 0)
+		return;
+
+	currententity = e;
 //	gl_state.currenttextures[0] = gl_state.currenttextures[1] = -1;
-//
-//	if (e->angles[0] || e->angles[1] || e->angles[2])
-//	{
-//		rotated = true;
-//		for (i=0 ; i<3 ; i++)
-//		{
-//			mins[i] = e->origin[i] - currentmodel->radius;
-//			maxs[i] = e->origin[i] + currentmodel->radius;
-//		}
-//	}
-//	else
-//	{
-//		rotated = false;
-//		VectorAdd (e->origin, currentmodel->mins, mins);
-//		VectorAdd (e->origin, currentmodel->maxs, maxs);
-//	}
-//
-//	if (R_CullBox (mins, maxs))
-//		return;
-//
+
+	if (e->angles[0] || e->angles[1] || e->angles[2])
+	{
+		rotated = true;
+		for (i=0 ; i<3 ; i++)
+		{
+			mins[i] = e->origin[i] - currentmodel->radius;
+			maxs[i] = e->origin[i] + currentmodel->radius;
+		}
+	}
+	else
+	{
+		rotated = false;
+		VectorAdd (e->origin, currentmodel->mins, mins);
+		VectorAdd (e->origin, currentmodel->maxs, maxs);
+	}
+
+	if (R_CullBox (mins, maxs))
+		return;
+
 //	qglColor3f (1,1,1);
-//	memset (gl_lms.lightmap_surfaces, 0, sizeof(gl_lms.lightmap_surfaces));
-//
-//	VectorSubtract (r_newrefdef.vieworg, e->origin, modelorg);
-//	if (rotated)
-//	{
-//		vec3_t	temp;
-//		vec3_t	forward, right, up;
-//
-//		VectorCopy (modelorg, temp);
-//		AngleVectors (e->angles, forward, right, up);
-//		modelorg[0] = DotProduct (temp, forward);
-//		modelorg[1] = -DotProduct (temp, right);
-//		modelorg[2] = DotProduct (temp, up);
-//	}
-//
-//    qglPushMatrix ();
-//e->angles[0] = -e->angles[0];	// stupid quake bug
-//e->angles[2] = -e->angles[2];	// stupid quake bug
-//	R_RotateForEntity (e);
-//e->angles[0] = -e->angles[0];	// stupid quake bug
-//e->angles[2] = -e->angles[2];	// stupid quake bug
-//
+	memset (gl_lms.lightmap_surfaces, 0, sizeof(gl_lms.lightmap_surfaces));
+
+	VectorSubtract (r_newrefdef.vieworg, e->origin, modelorg);
+	if (rotated)
+	{
+		vec3_t	temp;
+		vec3_t	forward, right, up;
+
+		VectorCopy (modelorg, temp);
+		AngleVectors (e->angles, forward, right, up);
+		modelorg[0] = DotProduct (temp, forward);
+		modelorg[1] = -DotProduct (temp, right);
+		modelorg[2] = DotProduct (temp, up);
+	}
+
+ //   qglPushMatrix ();
+e->angles[0] = -e->angles[0];	// stupid quake bug
+e->angles[2] = -e->angles[2];	// stupid quake bug
+	R_RotateForEntity (e);
+e->angles[0] = -e->angles[0];	// stupid quake bug
+e->angles[2] = -e->angles[2];	// stupid quake bug
+
 //	GL_EnableMultitexture( true );
 //	GL_SelectTexture( GL_TEXTURE0);
 //	GL_TexEnv( GL_REPLACE );
 //	GL_SelectTexture( GL_TEXTURE1);
 //	GL_TexEnv( GL_MODULATE );
-//
-//	R_DrawInlineBModel ();
+
+	R_DrawInlineBModel ();
 //	GL_EnableMultitexture( false );
-//
+
 //	qglPopMatrix ();
-//}
+}
 
 /*
 =============================================================
