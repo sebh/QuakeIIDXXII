@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "dx_local.h"
 
 // We always support multiple texturing.
-static bool qglMTexCoord2fSGIS = true;
+static const bool qglMTexCoord2fSGIS = true;
 
 static vec3_t	modelorg;		// relative to viewpoint
 
@@ -41,6 +41,9 @@ msurface_t	*r_alpha_surfaces;
 
 int		c_visible_lightmaps;
 int		c_visible_textures;
+
+//int lightmap_textures;
+image_t* currenttextures[2];
 
 #define GL_LIGHTMAP_FORMAT GL_RGBA
 
@@ -1113,7 +1116,7 @@ void R_DrawInlineBModel (void)
 			}
 			else
 			{
-				ATLASSERT(false);	// SebH Should this really happen ?
+				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ?
 				// GL_EnableMultitexture( false );
 				// R_RenderBrushPoly( psurf );
 				// GL_EnableMultitexture( true );
@@ -1149,7 +1152,7 @@ void R_DrawBrushModel (entity_t *e)
 		return;
 
 	currententity = e;
-//	gl_state.currenttextures[0] = gl_state.currenttextures[1] = -1;
+	currenttextures[0] = currenttextures[1] = nullptr;
 
 	if (e->angles[0] || e->angles[1] || e->angles[2])
 	{
@@ -1200,6 +1203,7 @@ e->angles[2] = -e->angles[2];	// stupid quake bug
 //	GL_TexEnv( GL_MODULATE );
 
 	R_DrawInlineBModel ();
+	LastEntityWorldMatrix = XMMatrixIdentity();
 //	GL_EnableMultitexture( false );
 
 //	qglPopMatrix ();
@@ -1218,160 +1222,164 @@ e->angles[2] = -e->angles[2];	// stupid quake bug
 R_RecursiveWorldNode
 ================
 */
-//void R_RecursiveWorldNode (mnode_t *node)
-//{
-//	int			c, side, sidebit;
-//	cplane_t	*plane;
-//	msurface_t	*surf, **mark;
-//	mleaf_t		*pleaf;
-//	float		dot;
-//	image_t		*image;
-//
-//	if (node->contents == CONTENTS_SOLID)
-//		return;		// solid
-//
-//	if (node->visframe != r_visframecount)
-//		return;
-//	if (R_CullBox (node->minmaxs, node->minmaxs+3))
-//		return;
-//	
-//// if a leaf node, draw stuff
-//	if (node->contents != -1)
-//	{
-//		pleaf = (mleaf_t *)node;
-//
-//		// check for door connected areas
-//		if (r_newrefdef.areabits)
-//		{
-//			if (! (r_newrefdef.areabits[pleaf->area>>3] & (1<<(pleaf->area&7)) ) )
-//				return;		// not visible
-//		}
-//
-//		mark = pleaf->firstmarksurface;
-//		c = pleaf->nummarksurfaces;
-//
-//		if (c)
-//		{
-//			do
-//			{
-//				(*mark)->visframe = r_framecount;
-//				mark++;
-//			} while (--c);
-//		}
-//
-//		return;
-//	}
-//
-//// node is just a decision point, so go down the apropriate sides
-//
-//// find which side of the node we are on
-//	plane = node->plane;
-//
-//	switch (plane->type)
-//	{
-//	case PLANE_X:
-//		dot = modelorg[0] - plane->dist;
-//		break;
-//	case PLANE_Y:
-//		dot = modelorg[1] - plane->dist;
-//		break;
-//	case PLANE_Z:
-//		dot = modelorg[2] - plane->dist;
-//		break;
-//	default:
-//		dot = DotProduct (modelorg, plane->normal) - plane->dist;
-//		break;
-//	}
-//
-//	if (dot >= 0)
-//	{
-//		side = 0;
-//		sidebit = 0;
-//	}
-//	else
-//	{
-//		side = 1;
-//		sidebit = SURF_PLANEBACK;
-//	}
-//
-//// recurse down the children, front side first
-//	R_RecursiveWorldNode (node->children[side]);
-//
-//	// draw stuff
-//	for ( c = node->numsurfaces, surf = r_worldmodel->surfaces + node->firstsurface; c ; c--, surf++)
-//	{
-//		if (surf->visframe != r_framecount)
-//			continue;
-//
-//		if ( (surf->flags & SURF_PLANEBACK) != sidebit )
-//			continue;		// wrong side
-//
-//		if (surf->texinfo->flags & SURF_SKY)
-//		{	// just adds to visible sky bounds
-//			R_AddSkySurface (surf);
-//		}
-//		else if (surf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66))
-//		{	// add to the translucent chain
-//			surf->texturechain = r_alpha_surfaces;
-//			r_alpha_surfaces = surf;
-//		}
-//		else
-//		{
-//			if ( qglMTexCoord2fSGIS && !( surf->flags & SURF_DRAWTURB ) )
-//			{
-//				GL_RenderLightmappedPoly( surf );
-//			}
-//			else
-//			{
-//				// the polygon is visible, so add it to the texture
-//				// sorted chain
-//				// FIXME: this is a hack for animation
-//				image = R_TextureAnimation (surf->texinfo);
-//				surf->texturechain = image->texturechain;
-//				image->texturechain = surf;
-//			}
-//		}
-//	}
-//
-//	// recurse down the back side
-//	R_RecursiveWorldNode (node->children[!side]);
-///*
-//	for ( ; c ; c--, surf++)
-//	{
-//		if (surf->visframe != r_framecount)
-//			continue;
-//
-//		if ( (surf->flags & SURF_PLANEBACK) != sidebit )
-//			continue;		// wrong side
-//
-//		if (surf->texinfo->flags & SURF_SKY)
-//		{	// just adds to visible sky bounds
-//			R_AddSkySurface (surf);
-//		}
-//		else if (surf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66))
-//		{	// add to the translucent chain
-////			surf->texturechain = alpha_surfaces;
-////			alpha_surfaces = surf;
-//		}
-//		else
-//		{
-//			if ( qglMTexCoord2fSGIS && !( surf->flags & SURF_DRAWTURB ) )
-//			{
-//				GL_RenderLightmappedPoly( surf );
-//			}
-//			else
-//			{
-//				// the polygon is visible, so add it to the texture
-//				// sorted chain
-//				// FIXME: this is a hack for animation
-//				image = R_TextureAnimation (surf->texinfo);
-//				surf->texturechain = image->texturechain;
-//				image->texturechain = surf;
-//			}
-//		}
-//	}
-//*/
-//}
+void R_RecursiveWorldNode (mnode_t *node)
+{
+	int			c, side, sidebit;
+	cplane_t	*plane;
+	msurface_t	*surf, **mark;
+	mleaf_t		*pleaf;
+	float		dot;
+	//image_t		*image;
+
+	if (node->contents == CONTENTS_SOLID)
+		return;		// solid
+
+	if (node->visframe != r_visframecount)
+		return;
+	if (R_CullBox (node->minmaxs, node->minmaxs+3))
+		return;
+	
+// if a leaf node, draw stuff
+	if (node->contents != -1)
+	{
+		pleaf = (mleaf_t *)node;
+
+		// check for door connected areas
+		if (r_newrefdef.areabits)
+		{
+			if (! (r_newrefdef.areabits[pleaf->area>>3] & (1<<(pleaf->area&7)) ) )
+				return;		// not visible
+		}
+
+		mark = pleaf->firstmarksurface;
+		c = pleaf->nummarksurfaces;
+
+		if (c)
+		{
+			do
+			{
+				(*mark)->visframe = r_framecount;
+				mark++;
+			} while (--c);
+		}
+
+		return;
+	}
+
+// node is just a decision point, so go down the apropriate sides
+
+// find which side of the node we are on
+	plane = node->plane;
+
+	switch (plane->type)
+	{
+	case PLANE_X:
+		dot = modelorg[0] - plane->dist;
+		break;
+	case PLANE_Y:
+		dot = modelorg[1] - plane->dist;
+		break;
+	case PLANE_Z:
+		dot = modelorg[2] - plane->dist;
+		break;
+	default:
+		dot = DotProduct (modelorg, plane->normal) - plane->dist;
+		break;
+	}
+
+	if (dot >= 0)
+	{
+		side = 0;
+		sidebit = 0;
+	}
+	else
+	{
+		side = 1;
+		sidebit = SURF_PLANEBACK;
+	}
+
+// recurse down the children, front side first
+	R_RecursiveWorldNode (node->children[side]);
+
+	// draw stuff
+	for ( c = node->numsurfaces, surf = r_worldmodel->surfaces + node->firstsurface; c ; c--, surf++)
+	{
+		if (surf->visframe != r_framecount)
+			continue;
+
+		if ( (surf->flags & SURF_PLANEBACK) != sidebit )
+			continue;		// wrong side
+
+		// We do not render the sky this way
+		//if (surf->texinfo->flags & SURF_SKY)
+		//{	// just adds to visible sky bounds
+		//	R_AddSkySurface (surf);
+		//}
+		//else 
+		if (surf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66))
+		{	// add to the translucent chain
+			surf->texturechain = r_alpha_surfaces;
+			r_alpha_surfaces = surf;
+		}
+		else
+		{
+			if ( qglMTexCoord2fSGIS && !( surf->flags & SURF_DRAWTURB ) )
+			{
+				GL_RenderLightmappedPoly( surf );
+			}
+			else
+			{
+				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ?
+
+				// the polygon is visible, so add it to the texture
+				// sorted chain
+				// FIXME: this is a hack for animation
+				//image = R_TextureAnimation (surf->texinfo);
+				//surf->texturechain = image->texturechain;
+				//image->texturechain = surf;
+			}
+		}
+	}
+
+	// recurse down the back side
+	R_RecursiveWorldNode (node->children[!side]);
+/*
+	for ( ; c ; c--, surf++)
+	{
+		if (surf->visframe != r_framecount)
+			continue;
+
+		if ( (surf->flags & SURF_PLANEBACK) != sidebit )
+			continue;		// wrong side
+
+		if (surf->texinfo->flags & SURF_SKY)
+		{	// just adds to visible sky bounds
+			R_AddSkySurface (surf);
+		}
+		else if (surf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66))
+		{	// add to the translucent chain
+//			surf->texturechain = alpha_surfaces;
+//			alpha_surfaces = surf;
+		}
+		else
+		{
+			if ( qglMTexCoord2fSGIS && !( surf->flags & SURF_DRAWTURB ) )
+			{
+				GL_RenderLightmappedPoly( surf );
+			}
+			else
+			{
+				// the polygon is visible, so add it to the texture
+				// sorted chain
+				// FIXME: this is a hack for animation
+				image = R_TextureAnimation (surf->texinfo);
+				surf->texturechain = image->texturechain;
+				image->texturechain = surf;
+			}
+		}
+	}
+*/
+}
 
 
 /*
@@ -1379,78 +1387,82 @@ R_RecursiveWorldNode
 R_DrawWorld
 =============
 */
-//void R_DrawWorld (void)
-//{
-//	entity_t	ent;
-//
-//	if (!r_drawworld->value)
-//		return;
-//
-//	if ( r_newrefdef.rdflags & RDF_NOWORLDMODEL )
-//		return;
-//
-//	currentmodel = r_worldmodel;
-//
-//	VectorCopy (r_newrefdef.vieworg, modelorg);
-//
-//	// auto cycle the world frame for texture animation
-//	memset (&ent, 0, sizeof(ent));
-//	ent.frame = (int)(r_newrefdef.time*2);
-//	currententity = &ent;
-//
-//	gl_state.currenttextures[0] = gl_state.currenttextures[1] = -1;
-//
+void R_DrawWorld (void)
+{
+	entity_t	ent;
+
+	//if (!r_drawworld->value)
+	//	return;
+
+	if ( r_newrefdef.rdflags & RDF_NOWORLDMODEL )
+		return;
+
+	currentmodel = r_worldmodel;
+
+	VectorCopy (r_newrefdef.vieworg, modelorg);
+
+	// auto cycle the world frame for texture animation
+	memset (&ent, 0, sizeof(ent));
+	ent.frame = (int)(r_newrefdef.time*2);
+	currententity = &ent;
+
+	currenttextures[0] = currenttextures[1] = nullptr;
+
 //	qglColor3f (1,1,1);
-//	memset (gl_lms.lightmap_surfaces, 0, sizeof(gl_lms.lightmap_surfaces));
+	memset (gl_lms.lightmap_surfaces, 0, sizeof(gl_lms.lightmap_surfaces));
 //	R_ClearSkyBox ();
-//
-//	//SebH test
-//#define TRANSPARENT_TEST 0
-//#if TRANSPARENT_TEST
-//	qglClearColor(0, 0, 0, 1);
-//	qglClear(GL_COLOR_BUFFER_BIT);
-//	qglDepthFunc(GL_ALWAYS);
-//	qglEnable(GL_BLEND);
-//	qglBlendFunc(GL_ONE, GL_ONE);
-//#endif
-//
-//	if ( qglMTexCoord2fSGIS )
-//	{
-//		GL_EnableMultitexture( true );
-//
-//		GL_SelectTexture( GL_TEXTURE0);
-//		GL_TexEnv( GL_REPLACE );
-//		GL_SelectTexture( GL_TEXTURE1);
-//
-//		if ( gl_lightmap->value )
-//			GL_TexEnv( GL_REPLACE );
-//		else 
-//			GL_TexEnv( GL_MODULATE );
-//
-//		R_RecursiveWorldNode (r_worldmodel->nodes);
-//
-//		GL_EnableMultitexture( false );
-//	}
-//	else
-//	{
-//		R_RecursiveWorldNode (r_worldmodel->nodes);
-//	}
-//
-//#if TRANSPARENT_TEST
-//	qglDisable(GL_BLEND);
-//#endif
-//
-//	/*
-//	** theoretically nothing should happen in the next two functions
-//	** if multitexture is enabled
-//	*/
-//	DrawTextureChains ();
-//	R_BlendLightmaps ();
-//	
-//	R_DrawSkyBox ();
-//
-//	R_DrawTriangleOutlines ();
-//}
+
+	//SebH test
+#define TRANSPARENT_TEST 0
+#if TRANSPARENT_TEST
+	qglClearColor(0, 0, 0, 1);
+	qglClear(GL_COLOR_BUFFER_BIT);
+	qglDepthFunc(GL_ALWAYS);
+	qglEnable(GL_BLEND);
+	qglBlendFunc(GL_ONE, GL_ONE);
+#endif
+
+	if ( qglMTexCoord2fSGIS )
+	{
+		//GL_EnableMultitexture( true );
+
+		//GL_SelectTexture( GL_TEXTURE0);
+		//GL_TexEnv( GL_REPLACE );
+		//GL_SelectTexture( GL_TEXTURE1);
+
+		//if ( gl_lightmap->value )
+		//	GL_TexEnv( GL_REPLACE );
+		//else 
+		//	GL_TexEnv( GL_MODULATE );
+
+		R_RecursiveWorldNode (r_worldmodel->nodes);
+
+		//GL_EnableMultitexture( false );
+	}
+	else
+	{
+		ATLASSERT(false);	// we should never get there
+		//R_RecursiveWorldNode (r_worldmodel->nodes);
+	}
+
+#if TRANSPARENT_TEST
+	qglDisable(GL_BLEND);
+#endif
+
+	/*
+	** theoretically nothing should happen in the next two functions
+	** if multitexture is enabled
+	*/
+	// ==> So skit them because we always have multiple texturing enabled with dx12
+	//DrawTextureChains ();
+	//R_BlendLightmaps ();
+	
+	// This is achieved differently
+	//R_DrawSkyBox ();
+
+	// SebH: This is some debug we can implement later.
+	//R_DrawTriangleOutlines ();
+}
 
 
 /*

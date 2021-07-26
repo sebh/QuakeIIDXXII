@@ -45,6 +45,7 @@ cvar_t *vid_gamma;
 cvar_t *vid_ref;
 
 cvar_t *r_norefresh;
+cvar_t *r_drawworld;
 cvar_t *r_novis;
 cvar_t *r_nocull;
 cvar_t *r_speeds;
@@ -147,12 +148,12 @@ void R_DX12_RenderFrame(refdef_t *fd)
 	DEBUGPRINT("R_DX12_RenderFrame\n");
 	// See R_RenderFrame
 
-	if (r_norefresh->value)
+	r_newrefdef = *fd;
+
+	if (r_norefresh->value || !r_drawworld->value)
 	{
 		return;
 	}
-
-	r_newrefdef = *fd;
 
 	if (!WorldMapLoaded && !(r_newrefdef.rdflags & RDF_NOWORLDMODEL))
 	{
@@ -317,6 +318,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	vid_ref = ri.Cvar_Get("vid_ref", "soft", CVAR_ARCHIVE);
 
 	r_norefresh = ri.Cvar_Get("r_norefresh", "0", 0);
+	r_drawworld = ri.Cvar_Get("r_drawworld", "1", 0);
 	r_novis = ri.Cvar_Get("r_novis", "0", 0);
 	r_nocull = ri.Cvar_Get("r_nocull", "0", 0);
 	r_speeds = ri.Cvar_Get("r_speeds", "0", 0);

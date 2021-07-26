@@ -195,7 +195,7 @@ void R_MarkLights(dlight_t *light, int bit, /*mnode_t*/void *node);
 // Surfaces
 
 void R_MarkLeaves(void);
-
+void R_DrawWorld();
 void R_DrawBrushModel(entity_t *e);
 
 

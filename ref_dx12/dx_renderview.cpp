@@ -81,7 +81,7 @@ MeshRenderer::~MeshRenderer()
 {
 	delete MeshVertexRenderBuffer;
 	delete MeshIndexRenderBuffer;
-	free(RenderCommands);
+	delete RenderCommands;
 }
 
 void MeshRenderer::StartRecording()
@@ -788,7 +788,7 @@ void R_RenderView(void)
 	// Decompress the PVS and mark potentially Visible Polygons
 	R_MarkLeaves();
 
-////////	R_DrawWorld();
+	R_DrawWorld();
 
 	// Last render the sky
 	SkyRender();
