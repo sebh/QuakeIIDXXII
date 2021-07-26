@@ -53,7 +53,7 @@ VertexOutput SkyVertexShader(uint VertexID : SV_VertexID)
 	{
 		WorldPos = float3(-Norm2d.y, Norm2d.x, -1.0);
 	}
-	WorldPos *= 2000.0f; // scale
+	WorldPos *= 10000.0f; // scale
 
 	//output.position = mul(ViewProjectionMatrix, mul(MeshWorldMatrix, float4(WorldPos, 1.0)));
 	output.position = mul(ViewProjectionMatrix, float4(WorldPos, 1.0));
