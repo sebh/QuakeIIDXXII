@@ -147,6 +147,7 @@ void MeshRenderer::StartCommand(
 		&& CurrentCommand->SurfaceTexture == SurfaceTexture
 		&& CurrentCommand->LightmapTexture == LightmapTexture
 		&& CurrentCommand->Topology == Topology
+		&& Topology == D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST	// We can only merge command with triangle list (strip would result in broken transition triangles)
 		&& CurrentCommand->bEnableAlphaBlending == bEnableAlphaBlending)
 	{
 		// Fall through, re-use the same command as the last one to insert triangle in the same batch
