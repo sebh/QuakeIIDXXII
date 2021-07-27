@@ -225,20 +225,56 @@ Warp the vertex coordinates
 DrawGLPoly
 ================
 */
-//void DrawGLPoly (glpoly_t *p)
-//{
-//	int		i;
-//	float	*v;
-//
-//	qglBegin (GL_POLYGON);
-//	v = p->verts[0];
-//	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
-//	{
-//		qglTexCoord2f (v[3], v[4]);
-//		qglVertex3fv (v);
-//	}
-//	qglEnd ();
-//}
+void DrawGLPoly (glpoly_t *p, image_t* image)
+{
+	int		i;
+	float	*v;
+
+
+	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, image->RenderTexture);
+	MeshVertexFormat V0;
+	bool bV0Set = false;
+	MeshVertexFormat LastV;
+	bool bLastVSet = false;
+
+	//qglBegin (GL_POLYGON);
+	v = p->verts[0];
+	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	{
+		//qglTexCoord2f (v[3], v[4]);
+		//qglVertex3fv (v);
+
+		MeshVertexFormat Vertex;
+		memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+		Vertex.ColorAlpha[0] = 1.0f;
+		Vertex.ColorAlpha[1] = 1.0f;
+		Vertex.ColorAlpha[2] = 1.0f;
+		Vertex.ColorAlpha[3] = 1.0f;
+		Vertex.SurfaceUV[0] = v[3];
+		Vertex.SurfaceUV[1] = v[4];
+
+		if (bLastVSet)
+		{
+			gMeshRenderer->AppendVertex(V0);
+			gMeshRenderer->AppendVertex(LastV);
+			gMeshRenderer->AppendVertex(Vertex);
+		}
+
+		if (bV0Set)
+		{
+			LastV = Vertex;
+			bLastVSet = true;
+		}
+		if (!bV0Set)
+		{
+			V0 = Vertex;
+			bV0Set = true;
+		}
+	}
+	//qglEnd ();
+
+	gMeshRenderer->EndCommand();
+}
 
 //============
 //PGM
@@ -247,28 +283,65 @@ DrawGLPoly
 DrawGLFlowingPoly -- version of DrawGLPoly that handles scrolling texture
 ================
 */
-//void DrawGLFlowingPoly (msurface_t *fa)
-//{
-//	int		i;
-//	float	*v;
-//	glpoly_t *p;
-//	float	scroll;
-//
-//	p = fa->polys;
-//
-//	scroll = -64 * ( (r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0) );
-//	if(scroll == 0.0)
-//		scroll = -64.0;
-//
-//	qglBegin (GL_POLYGON);
-//	v = p->verts[0];
-//	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
-//	{
-//		qglTexCoord2f ((v[3] + scroll), v[4]);
-//		qglVertex3fv (v);
-//	}
-//	qglEnd ();
-//}
+void DrawGLFlowingPoly (msurface_t *fa, image_t* image)
+{
+	int		i;
+	float	*v;
+	glpoly_t *p;
+	float	scroll;
+
+	p = fa->polys;
+
+	scroll = -64 * ( (r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0) );
+	if(scroll == 0.0)
+		scroll = -64.0;
+
+	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, image->RenderTexture);
+	MeshVertexFormat V0;
+	bool bV0Set = false;
+	MeshVertexFormat LastV;
+	bool bLastVSet = false;
+
+	//qglBegin (GL_POLYGON);
+	v = p->verts[0];
+	for (i=0 ; i<p->numverts ; i++, v+= VERTEXSIZE)
+	{
+		//qglTexCoord2f ((v[3] + scroll), v[4]);
+		//qglVertex3fv (v);
+
+		MeshVertexFormat Vertex;
+		memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+		Vertex.ColorAlpha[0] = 1.0f;
+		Vertex.ColorAlpha[1] = 1.0f;
+		Vertex.ColorAlpha[2] = 1.0f;	// meant to be rgb = gl_state.inverse_intensity
+		Vertex.ColorAlpha[3] = 1.0f;
+		Vertex.LightmapUV[0] = v[5];
+		Vertex.LightmapUV[1] = v[6];
+		Vertex.SurfaceUV[0] = v[3] + scroll;
+		Vertex.SurfaceUV[1] = v[4];
+
+		if (bLastVSet)
+		{
+			gMeshRenderer->AppendVertex(V0);
+			gMeshRenderer->AppendVertex(LastV);
+			gMeshRenderer->AppendVertex(Vertex);
+		}
+
+		if (bV0Set)
+		{
+			LastV = Vertex;
+			bLastVSet = true;
+		}
+		if (!bV0Set)
+		{
+			V0 = Vertex;
+			bV0Set = true;
+		}
+	}
+	//qglEnd ();
+
+	gMeshRenderer->EndCommand();
+}
 //PGM
 //============
 
@@ -517,110 +590,191 @@ void R_DrawTriangleOutlines (void)
 //	qglDepthMask( 1 );
 //}
 
+void EmitWaterPolys(msurface_t *fa, image_t *image)
+{
+	glpoly_t	*p, *bp;
+	float		*v;
+	int			i;
+	float		s, t, os, ot;
+	float		scroll;
+	float		rdt = r_newrefdef.time;
+
+	if (fa->texinfo->flags & SURF_FLOWING)
+		scroll = -64 * ((r_newrefdef.time*0.5) - (int)(r_newrefdef.time*0.5));
+	else
+		scroll = 0;
+	for (bp = fa->polys; bp; bp = bp->next)
+	{
+		p = bp;
+
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, image->RenderTexture);
+		MeshVertexFormat V0;
+		bool bV0Set = false;
+		MeshVertexFormat LastV;
+		bool bLastVSet = false;
+
+		//qglBegin(GL_TRIANGLE_FAN);
+		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE)
+		{
+			os = v[3];
+			ot = v[4];
+
+#if !id386
+			s = os + r_turbsin[(int)((ot*0.125 + r_newrefdef.time) * TURBSCALE) & 255];
+#else
+			s = os + r_turbsin[Q_ftol(((ot*0.125 + rdt) * TURBSCALE)) & 255];
+#endif
+			s += scroll;
+			s *= (1.0 / 64);
+
+#if !id386
+			t = ot + r_turbsin[(int)((os*0.125 + rdt) * TURBSCALE) & 255];
+#else
+			t = ot + r_turbsin[Q_ftol(((os*0.125 + rdt) * TURBSCALE)) & 255];
+#endif
+			t *= (1.0 / 64);
+
+			//qglTexCoord2f(s, t);
+			//qglVertex3fv(v);
+
+
+			MeshVertexFormat Vertex;
+			memcpy(Vertex.Position, v, sizeof(Vertex.Position));
+			Vertex.ColorAlpha[0] = 1.0f;
+			Vertex.ColorAlpha[1] = 1.0f;
+			Vertex.ColorAlpha[2] = 1.0f;
+			Vertex.ColorAlpha[3] = 1.0f;
+			Vertex.SurfaceUV[0] = s;
+			Vertex.SurfaceUV[1] = t;
+
+			if (bLastVSet)
+			{
+				gMeshRenderer->AppendVertex(V0);
+				gMeshRenderer->AppendVertex(LastV);
+				gMeshRenderer->AppendVertex(Vertex);
+			}
+
+			if (bV0Set)
+			{
+				LastV = Vertex;
+				bLastVSet = true;
+			}
+			if (!bV0Set)
+			{
+				V0 = Vertex;
+				bV0Set = true;
+			}
+		}
+		//qglEnd();
+
+		gMeshRenderer->EndCommand();
+	}
+}
+
 /*
 ================
 R_RenderBrushPoly
 ================
 */
-//void R_RenderBrushPoly (msurface_t *fa)
-//{
-//	int			maps;
-//	image_t		*image;
-//	qboolean is_dynamic = false;
-//
-//	c_brush_polys++;
-//
-//	image = R_TextureAnimation (fa->texinfo);
-//
-//	if (fa->flags & SURF_DRAWTURB)
-//	{	
+void R_RenderBrushPoly (msurface_t *fa)
+{
+	int			maps;
+	image_t		*image;
+	qboolean is_dynamic = false;
+
+	c_brush_polys++;
+
+	image = R_TextureAnimation (fa->texinfo);
+
+	if (fa->flags & SURF_DRAWTURB)
+	{	
 //		GL_Bind( image->texnum );
-//
+//		
 //		// warp texture, no lightmaps
 //		GL_TexEnv( GL_MODULATE );
 //		qglColor4f( gl_state.inverse_intensity, 
 //			        gl_state.inverse_intensity,
 //					gl_state.inverse_intensity,
 //					1.0F );
-//		EmitWaterPolys (fa);
+		EmitWaterPolys (fa, image);
 //		GL_TexEnv( GL_REPLACE );
-//
-//		return;
-//	}
-//	else
-//	{
+
+		return;
+	}
+	else
+	{
 //		GL_Bind( image->texnum );
 //
 //		GL_TexEnv( GL_REPLACE );
-//	}
-//
-////======
-////PGM
-//	if(fa->texinfo->flags & SURF_FLOWING)
-//		DrawGLFlowingPoly (fa);
-//	else
-//		DrawGLPoly (fa->polys);
-////PGM
-////======
-//
-//	/*
-//	** check for lightmap modification
-//	*/
-//	for ( maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++ )
-//	{
-//		if ( r_newrefdef.lightstyles[fa->styles[maps]].white != fa->cached_light[maps] )
-//			goto dynamic;
-//	}
-//
-//	// dynamic this frame or dynamic previously
-//	if ( ( fa->dlightframe == r_framecount ) )
-//	{
-//dynamic:
-//		if ( gl_dynamic->value )
-//		{
-//			if (!( fa->texinfo->flags & (SURF_SKY|SURF_TRANS33|SURF_TRANS66|SURF_WARP ) ) )
-//			{
-//				is_dynamic = true;
-//			}
-//		}
-//	}
-//
-//	if ( is_dynamic )
-//	{
-//		if ( ( fa->styles[maps] >= 32 || fa->styles[maps] == 0 ) && ( fa->dlightframe != r_framecount ) )
-//		{
-//			unsigned	temp[34*34];
-//			int			smax, tmax;
-//
-//			smax = (fa->extents[0]>>4)+1;
-//			tmax = (fa->extents[1]>>4)+1;
-//
-//			R_BuildLightMap( fa, (void *)temp, smax*4 );
-//			R_SetCacheState( fa );
-//
-//			GL_Bind( gl_state.lightmap_textures + fa->lightmaptexturenum );
-//
-//			qglTexSubImage2D( GL_TEXTURE_2D, 0,
-//							  fa->light_s, fa->light_t, 
-//							  smax, tmax, 
-//							  GL_LIGHTMAP_FORMAT, 
-//							  GL_UNSIGNED_BYTE, temp );
-//
-//			fa->lightmapchain = gl_lms.lightmap_surfaces[fa->lightmaptexturenum];
-//			gl_lms.lightmap_surfaces[fa->lightmaptexturenum] = fa;
-//		}
-//		else
-//		{
-//			fa->lightmapchain = gl_lms.lightmap_surfaces[0];
-//			gl_lms.lightmap_surfaces[0] = fa;
-//		}
-//	}
-//	else
-//	{
-//		fa->lightmapchain = gl_lms.lightmap_surfaces[fa->lightmaptexturenum];
-//		gl_lms.lightmap_surfaces[fa->lightmaptexturenum] = fa;
-//	}
-//}
+	}
+
+//======
+//PGM
+	if(fa->texinfo->flags & SURF_FLOWING)
+		DrawGLFlowingPoly (fa, image);
+	else
+		DrawGLPoly (fa->polys, image);
+//PGM
+//======
+
+	/*
+	** check for lightmap modification
+	*/
+	for ( maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++ )
+	{
+		if ( r_newrefdef.lightstyles[fa->styles[maps]].white != fa->cached_light[maps] )
+			goto dynamic;
+	}
+
+	// dynamic this frame or dynamic previously
+	if ( ( fa->dlightframe == r_framecount ) )
+	{
+dynamic:
+		if ( gl_dynamic->value )
+		{
+			if (!( fa->texinfo->flags & (SURF_SKY|SURF_TRANS33|SURF_TRANS66|SURF_WARP ) ) )
+			{
+				is_dynamic = true;
+			}
+		}
+	}
+
+	if ( is_dynamic )
+	{
+		if ( ( fa->styles[maps] >= 32 || fa->styles[maps] == 0 ) && ( fa->dlightframe != r_framecount ) )
+		{
+			unsigned	temp[34*34];
+			int			smax, tmax;
+
+			smax = (fa->extents[0]>>4)+1;
+			tmax = (fa->extents[1]>>4)+1;
+
+			R_BuildLightMap( fa, (byte *)temp, smax*4 );
+			R_SetCacheState( fa );
+
+			//GL_Bind( gl_state.lightmap_textures + fa->lightmaptexturenum );
+			//
+			//qglTexSubImage2D( GL_TEXTURE_2D, 0,
+			//				  fa->light_s, fa->light_t, 
+			//				  smax, tmax, 
+			//				  GL_LIGHTMAP_FORMAT, 
+			//				  GL_UNSIGNED_BYTE, temp );
+
+			fa->lightmapchain = gl_lms.lightmap_surfaces[fa->lightmaptexturenum];
+			gl_lms.lightmap_surfaces[fa->lightmaptexturenum] = fa;
+		}
+		else
+		{
+			fa->lightmapchain = gl_lms.lightmap_surfaces[0];
+			gl_lms.lightmap_surfaces[0] = fa;
+		}
+	}
+	else
+	{
+		fa->lightmapchain = gl_lms.lightmap_surfaces[fa->lightmaptexturenum];
+		gl_lms.lightmap_surfaces[fa->lightmaptexturenum] = fa;
+	}
+}
 
 
 /*
@@ -1093,6 +1247,9 @@ void R_DrawInlineBModel (void)
 
 	if ( currententity->flags & RF_TRANSLUCENT )
 	{
+		// Sebh TODO
+		ATLASSERT(false);
+		int i = 0;
 //		qglEnable (GL_BLEND);
 //		qglColor4f (1,1,1,0.25);
 //		GL_TexEnv( GL_MODULATE );
@@ -1123,9 +1280,8 @@ void R_DrawInlineBModel (void)
 			}
 			else
 			{
-				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ? Yes, it can happen when loading map fact1
 				// GL_EnableMultitexture( false );
-				// R_RenderBrushPoly( psurf );
+				R_RenderBrushPoly( psurf );
 				// GL_EnableMultitexture( true );
 			}
 		}

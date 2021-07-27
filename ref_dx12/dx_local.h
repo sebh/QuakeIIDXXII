@@ -402,3 +402,8 @@ ViewData GetViewData();
 
 extern RenderTexture* DepthTexture;
 
+
+extern float r_turbsin[];
+#define TURBSCALE (256.0 / (2 * M_PI))
+
+

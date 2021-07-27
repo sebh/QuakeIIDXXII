@@ -4,7 +4,6 @@
 
 
 // TODO
-// - SebH in this dx_gl_rsurf.cpp
 // - lightmap, keep cpu lightmap representation and only upload once.
 
 int c_brush_polys, c_alias_polys;
@@ -60,7 +59,6 @@ float	r_turbsin[] =
  -3.06147, -2.87916, -2.69512, -2.50945, -2.32228, -2.1337, -1.94384, -1.75281,
  -1.56072, -1.3677, -1.17384, -0.979285, -0.784137, -0.588517, -0.392541, -0.19633,
 };
-#define TURBSCALE (256.0 / (2 * M_PI))
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
