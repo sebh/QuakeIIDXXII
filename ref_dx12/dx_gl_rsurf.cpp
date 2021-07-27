@@ -1237,7 +1237,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 	msurface_t	*surf, **mark;
 	mleaf_t		*pleaf;
 	float		dot;
-	//image_t		*image;
+	image_t		*image;
 
 	if (node->contents == CONTENTS_SOLID)
 		return;		// solid
@@ -1340,14 +1340,12 @@ void R_RecursiveWorldNode (mnode_t *node)
 			}
 			else
 			{
-				ATLASSERT(false);	// SebH Should this really happen when qglMTexCoord2fSGIS is always true ? YES, it can happen when playing map boss1 and taking an elevator
-
 				// the polygon is visible, so add it to the texture
 				// sorted chain
 				// FIXME: this is a hack for animation
-				//image = R_TextureAnimation (surf->texinfo);
-				//surf->texturechain = image->texturechain;
-				//image->texturechain = surf;
+				image = R_TextureAnimation (surf->texinfo);
+				surf->texturechain = image->texturechain;
+				image->texturechain = surf;
 			}
 		}
 	}
@@ -1423,16 +1421,6 @@ void R_DrawWorld (void)
 	memset (gl_lms.lightmap_surfaces, 0, sizeof(gl_lms.lightmap_surfaces));
 //	R_ClearSkyBox ();
 
-	//SebH test
-#define TRANSPARENT_TEST 0
-#if TRANSPARENT_TEST
-	qglClearColor(0, 0, 0, 1);
-	qglClear(GL_COLOR_BUFFER_BIT);
-	qglDepthFunc(GL_ALWAYS);
-	qglEnable(GL_BLEND);
-	qglBlendFunc(GL_ONE, GL_ONE);
-#endif
-
 	if ( qglMTexCoord2fSGIS )
 	{
 		//GL_EnableMultitexture( true );
@@ -1456,22 +1444,18 @@ void R_DrawWorld (void)
 		//R_RecursiveWorldNode (r_worldmodel->nodes);
 	}
 
-#if TRANSPARENT_TEST
-	qglDisable(GL_BLEND);
-#endif
-
 	/*
 	** theoretically nothing should happen in the next two functions
 	** if multitexture is enabled
 	*/
-	// ==> So skit them because we always have multiple texturing enabled with dx12
+	// ==> Skip those functions because we always have multiple texturing enabled with dx12
 	//DrawTextureChains ();
 	//R_BlendLightmaps ();
 	
 	// This is achieved differently
 	//R_DrawSkyBox ();
 
-	// SebH: This is some debug we can implement later.
+	// This is some debug render so we can implement later if needed
 	//R_DrawTriangleOutlines ();
 }
 
