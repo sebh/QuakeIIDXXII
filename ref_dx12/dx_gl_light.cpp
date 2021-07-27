@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_light.c
 
+////////// => adapted to c++ for QuakeIIDXXII
+
 #include "dx_local.h"
 
 int	r_dlightframecount;

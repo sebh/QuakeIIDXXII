@@ -22,8 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 d*_t structures are on-disk representations
 m*_t structures are in-memory
-
+ 
 */
+
+////////// => adapted to c++ for QuakeIIDXXII
 
 /*
 ==============================================================================
