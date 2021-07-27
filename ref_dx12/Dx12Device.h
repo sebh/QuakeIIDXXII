@@ -34,7 +34,7 @@
 #endif
 
 // This is interesting to disable in case one wants to capture using renderdoc. Otherwise, NSight Graphics will be required.
-#define D_ENABLE_DXRT 0
+#define D_ENABLE_DXR 0
 
 // Truncate to SIZE_T to handle 32 and 64 bits systems
 #define INVALID_DESCRIPTOR_HANDLE ((SIZE_T)0xFFFFFFFFFFFFFFFF)
@@ -47,7 +47,7 @@ class DispatchRaysCallSBTHeapCPU;
 class FrameConstantBuffers;
 class RenderResource;
 class RenderBufferGeneric;
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 class RayTracingPipelineStateSimple;
 class RayTracingPipelineStateClosestAndAnyHit;
 #endif
@@ -83,7 +83,7 @@ public:
 
 	const RootSignature& GetDefaultGraphicRootSignature() const { return *mGfxRootSignature; }
 	const RootSignature& GetDefaultComputeRootSignature() const { return *mCptRootSignature; }
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	const RootSignature& GetDefaultRayTracingGlobalRootSignature() const { return *mRtGlobalRootSignature; }
 	const RootSignature& GetDefaultRayTracingLocalRootSignature() const { return *mRtLocalRootSignature; }
 #endif
@@ -121,7 +121,7 @@ public:
 	};
 	GPUTimersReport GetGPUTimerReport();
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	void AppendToGarbageCollector(RayTracingPipelineStateSimple* ToBeRemoved) { mFrameGarbageCollector[mFrameIndex].mRayTracingPipelineStateSimple.push_back(ToBeRemoved); }
 	void AppendToGarbageCollector(RayTracingPipelineStateClosestAndAnyHit* ToBeRemoved) { mFrameGarbageCollector[mFrameIndex].mRayTracingPipelineStateClosestAndAnyHit.push_back(ToBeRemoved); }
 #endif
@@ -171,7 +171,7 @@ private:
 
 	RootSignature*								mGfxRootSignature;							// Graphics default root signature
 	RootSignature*								mCptRootSignature;							// Compute default root signature
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	RootSignature*								mRtGlobalRootSignature;						// Ray tracing global root signature
 	RootSignature*								mRtLocalRootSignature;						// Ray tracing local root signature
 #endif
@@ -200,7 +200,7 @@ private:
 	GPUTimer									mLastValidGPUTimers[GPUTimerMaxCount];
 	uint64										mLastValidTimeStampTickPerSeconds;
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	// This is in fact a dumb garbage collector since the application must register the garbage to be deleted.
 	struct FrameGarbageCollector
 	{
@@ -662,7 +662,7 @@ const DepthStencilState&			getDepthStencilState_Disabled();
 typedef D3D12_BLEND_DESC			BlendState;
 const BlendState&					getBlendState_Default();			// Disabled
 const BlendState&					getBlendState_PremultipledAlpha();	// Premultiplied alpha on destination buffer RGB. A contains transmittance (requires clearing to alpha=1).
-const BlendState&					getBlendState_AlphaBlending();	// Alpha blending on destination buffer RGB. A contains transmittance (requires clearing to alpha=1).
+const BlendState&					getBlendState_AlphaBlending();		// Alpha blending on destination buffer RGB. A contains transmittance (requires clearing to alpha=1).
 
 typedef D3D12_RASTERIZER_DESC		RasterizerState;
 const RasterizerState&				getRasterizerState_Default();		// solide, front=clockwise, cull back, everything else off.

@@ -4,7 +4,7 @@
 
 
 
-#if D_ENABLE_RT
+#if D_ENABLE_DXR
 
 
 
@@ -751,6 +751,6 @@ void DispatchRaysCallSBTHeapCPU::AllocatedSBTMemory::setHitGroupLocalRootSignatu
 
 
 
-#endif // D_ENABLE_RT
+#endif // D_ENABLE_DXR
 
 

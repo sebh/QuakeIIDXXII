@@ -12,7 +12,7 @@
 #include <DXGIDebug.h>
 #endif
 
-// #include "../DirectXTex/WICTextureLoader/WICTextureLoader12.h"
+//#include "../DirectXTex/WICTextureLoader/WICTextureLoader12.h"
 
 // Good tutorial: https://www.braynzarsoft.net/viewtutorial/q16390-04-directx-12-braynzar-soft-tutorials
 // https://www.codeproject.com/Articles/1180619/Managing-Descriptor-Heaps-in-Direct-D
@@ -156,7 +156,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 		OutputDebugStringA("Available for reservation  = "); sprintf_s(tmp, "%llu", (UINT64)(mVideoMemInfo.AvailableForReservation / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
 	}
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	// Get some information about ray tracing support
 	{
 		D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
@@ -274,7 +274,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 	mGfxRootSignature->setDebugName(L"DefaultGfxRootSignature");
 	mCptRootSignature = new RootSignature(RootSignatureType_Global);
 	mCptRootSignature->setDebugName(L"DefaultCptRootSignature");
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	mRtGlobalRootSignature = new RootSignature(RootSignatureType_Global_RT);
 	mRtGlobalRootSignature->setDebugName(L"DefaultRtGlobalRootSignature");
 	mRtLocalRootSignature = new RootSignature(RootSignatureType_Local_RT);
@@ -293,7 +293,7 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 		mFrameDispatchDrawCallDescriptorHeapGPU[i] = new DescriptorHeap(true, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, FrameDispatchDrawCallResourceDescriptorCount);
 		mFrameConstantBuffers[i] = new FrameConstantBuffers(10 * 1024 * 1024); // 10MB
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 		mDispatchRaysCallSBTHeapCPU[i] = new DispatchRaysCallSBTHeapCPU(FrameSBTSizeBytes);
 #endif
 	}
@@ -365,7 +365,7 @@ void Dx12Device::internalShutdown()
 
 	resetPtr(&mGfxRootSignature);
 	resetPtr(&mCptRootSignature);
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	resetPtr(&mRtGlobalRootSignature);
 	resetPtr(&mRtLocalRootSignature);
 #endif
@@ -380,7 +380,7 @@ void Dx12Device::internalShutdown()
 
 		resetPtr(&mDispatchDrawCallDescriptorHeapCPU[i]);
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 		resetPtr(&mDispatchRaysCallSBTHeapCPU[i]);
 #endif
 	}
@@ -448,7 +448,7 @@ void Dx12Device::beginFrame()
 	// Start the recodring of draw/dispatch call resource table.
 	getDispatchDrawCallCpuDescriptorHeap().BeginRecording();
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	// Begin the recording of SBT and enqueue a copy command to upload SBT to fast GPU memory from upload heap.
 	getDispatchRaysCallCpuSBTHeap().BeginRecording(*mCommandList[0]);
 #endif
@@ -468,7 +468,7 @@ void Dx12Device::endFrameAndSwap(bool vsyncEnabled)
 
 	mCommandList[0]->ResolveQueryData(mFrameTimeStampQueryHeaps[mFrameIndex], D3D12_QUERY_TYPE_TIMESTAMP, 0, 256 * 2, mFrameTimeStampQueryReadBackBuffers[mFrameIndex]->getD3D12Resource(), 0);
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	// Stop recoring SBT
 	getDispatchRaysCallCpuSBTHeap().EndRecording();
 #endif
@@ -543,7 +543,7 @@ void Dx12Device::waitForPreviousFrame(int frameIndex)
 	// increment fenceValue for next frame
 	mFrameFenceValue[mFrameIndex]++;
 
-#if D_ENABLE_DXRT
+#if D_ENABLE_DXR
 	// Garbage collector
 	{
 		FrameGarbageCollector* FGC = &mFrameGarbageCollector[mFrameIndex];
