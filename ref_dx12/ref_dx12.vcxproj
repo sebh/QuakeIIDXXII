@@ -210,6 +210,8 @@
     <ClInclude Include="..\client\ref.h" />
     <ClInclude Include="..\game\q_shared.h" />
     <ClInclude Include="..\qcommon\qcommon.h" />
+    <ClInclude Include="anorms.h" />
+    <ClInclude Include="anormtab.h" />
     <ClInclude Include="d3dx12.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -258,6 +260,7 @@
     <ClCompile Include="Dx12Utilities.cpp" />
     <ClCompile Include="dx_draw.cpp" />
     <ClCompile Include="dx_gl_light.cpp" />
+    <ClCompile Include="dx_gl_mesh.cpp" />
     <ClCompile Include="dx_gl_rsurf.cpp" />
     <ClCompile Include="dx_image.cpp" />
     <ClCompile Include="dx_gl_model.cpp" />

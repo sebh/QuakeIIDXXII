@@ -6,6 +6,7 @@
 // TODO
 // - R_DrawAliasModel
 // - SebH in this dx_gl_rsurf.cpp
+// - lightmap, keep cpu lightmap representation and only upload once.
 
 int c_brush_polys, c_alias_polys;
 int	r_viewcluster, r_viewcluster2, r_oldviewcluster, r_oldviewcluster2;
@@ -556,9 +557,6 @@ void R_DrawBeam(entity_t *e)
 
 //	qglBegin(GL_TRIANGLE_STRIP);
 
-	MeshVertexFormat LastVertex0;
-	MeshVertexFormat LastVertex1;
-
 	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, XMMatrixIdentity(), nullptr, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	gMeshRenderer->SetCurrentCommandUseAlphaBlending();
 
@@ -781,7 +779,7 @@ void R_DrawEntitiesOnList()
 			switch (currentmodel->type)
 			{
 			case mod_alias:
-				//R_DrawAliasModel(currententity);
+				R_DrawAliasModel(currententity);
 				break;
 			case mod_brush:
 				R_DrawBrushModel(currententity);
@@ -822,7 +820,7 @@ void R_DrawEntitiesOnList()
 			switch (currentmodel->type)
 			{
 			case mod_alias:
-				//R_DrawAliasModel(currententity);
+				R_DrawAliasModel(currententity);
 				break;
 			case mod_brush:
 				R_DrawBrushModel(currententity);

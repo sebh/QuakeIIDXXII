@@ -108,6 +108,11 @@ void R_RotateForEntity(entity_t *e)
 	LastEntityWorldMatrix = XMMatrixMultiply(RotZMat, LastEntityWorldMatrix);
 }
 
+void R_SetIdentityTransformForEntity()
+{
+	LastEntityWorldMatrix = XMMatrixIdentity();
+}
+
 /*
 =============================================================
 
@@ -1205,7 +1210,8 @@ e->angles[2] = -e->angles[2];	// stupid quake bug
 //	GL_TexEnv( GL_MODULATE );
 
 	R_DrawInlineBModel ();
-	LastEntityWorldMatrix = XMMatrixIdentity();
+	R_SetIdentityTransformForEntity();
+
 //	GL_EnableMultitexture( false );
 
 //	qglPopMatrix ();

@@ -128,6 +128,7 @@ extern RenderBufferGeneric* IndexBufferQuadTris;
 extern RenderTextureDynamic* MovieTextureDynamic;
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Draw
 
@@ -192,6 +193,7 @@ void R_PushDlights(void);
 void R_MarkLights(dlight_t *light, int bit, /*mnode_t*/void *node);
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Surfaces
 
@@ -203,6 +205,7 @@ void R_DrawBrushModel(entity_t *e);
 extern RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Particles
 
@@ -210,6 +213,16 @@ void R_InitParticleRenderer(void);
 void R_RenderParticles(void);
 void R_ShutdownParticleRenderer(void);
 
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Model and draw
+
+void R_DrawAliasModel(entity_t *e);
+
+extern float4x4 LastEntityWorldMatrix;
+void R_RotateForEntity(entity_t *e);
+void R_SetIdentityTransformForEntity();
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -352,6 +365,7 @@ extern cvar_t *r_nocull;
 extern cvar_t *r_speeds;
 extern cvar_t *r_lightlevel;
 extern cvar_t *r_drawentities;
+extern cvar_t *r_lefthand;
 
 extern cvar_t *gl_lockpvs;
 extern cvar_t *gl_flashblend;

@@ -53,6 +53,7 @@ cvar_t *r_nocull;
 cvar_t *r_speeds;
 cvar_t *r_lightlevel;
 cvar_t *r_drawentities;
+cvar_t *r_lefthand;
 
 cvar_t *gl_mode;	// Reusing that mode
 cvar_t *gl_lockpvs;
@@ -326,6 +327,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	r_speeds = ri.Cvar_Get("r_speeds", "0", 0);
 	r_lightlevel = ri.Cvar_Get("r_lightlevel", "0", 0);
 	r_drawentities = ri.Cvar_Get("r_drawentities", "1", 0);
+	r_lefthand = ri.Cvar_Get("hand", "0", CVAR_USERINFO | CVAR_ARCHIVE);
 
 	gl_mode = ri.Cvar_Get("gl_mode", "3", CVAR_ARCHIVE);
 	gl_lockpvs = ri.Cvar_Get("gl_lockpvs", "0", 0);
