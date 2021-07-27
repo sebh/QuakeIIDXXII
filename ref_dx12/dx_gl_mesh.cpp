@@ -89,7 +89,7 @@ interpolates between two frames and origins
 FIXME: batch lerp all vertexes
 =============
 */
-void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp)
+void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTranslucent, RenderTexture* SkinTexture)
 {
 	float 	l;
 	daliasframe_t	*frame, *oldframe;
@@ -125,6 +125,8 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp)
 	// PMM - added double shell
 ///	if ( currententity->flags & ( RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE | RF_SHELL_DOUBLE | RF_SHELL_HALF_DAM) )
 ///		qglDisable( GL_TEXTURE_2D );
+	const bool bDisableTexture = (currententity->flags & (RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE | RF_SHELL_DOUBLE | RF_SHELL_HALF_DAM)) > 0;
+	RenderTexture* FinalRenderTexture = bDisableTexture ? r_whitetexture->RenderTexture : SkinTexture;
 
 	frontlerp = 1.0 - backlerp;
 
@@ -294,6 +296,154 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp)
 ///	// PMM - added double damage shell
 ///	if ( currententity->flags & ( RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE | RF_SHELL_DOUBLE | RF_SHELL_HALF_DAM) )
 ///		qglEnable( GL_TEXTURE_2D );
+
+	// Hard to interleave the index array code above so I am trying to reproduce it here indepenedently
+
+	// TODO: implement the gl_vertex_arrays indexed path. Going simple for now to move forward
+	{
+		//bDisableTexture bEntityIsTranslucent FinalRenderTexture
+
+		while (1)
+		{
+			// get the vertex count and primitive type
+			count = *order++;
+			if (!count)
+				break;		// done
+
+			bool IsTriangleStrip = false;	// instead of triangle FAN
+			if (count < 0)
+			{
+				count = -count;
+				//qglBegin (GL_TRIANGLE_FAN);
+
+				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			}
+			else
+			{
+				//qglBegin (GL_TRIANGLE_STRIP);
+
+				IsTriangleStrip = true;
+				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			}
+			if (bEntityIsTranslucent)
+			{
+				gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+			}
+
+			MeshVertexFormat V0;
+			bool bV0Set = false;
+			MeshVertexFormat LastV;
+			bool bLastVSet = false;
+
+			if ( currententity->flags & ( RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE ) )
+			{
+				do
+				{
+					index_xyz = order[2];
+					order += 3;
+
+					//qglColor4f( shadelight[0], shadelight[1], shadelight[2], alpha);
+					//qglVertex3fv (s_lerped[index_xyz]);
+
+					MeshVertexFormat Vertex;
+					memcpy(Vertex.Position, s_lerped[index_xyz], sizeof(Vertex.Position));
+					Vertex.ColorAlpha[0] = shadelight[0];
+					Vertex.ColorAlpha[1] = shadelight[1];
+					Vertex.ColorAlpha[2] = shadelight[2];
+					Vertex.ColorAlpha[3] = alpha;
+					
+					if (IsTriangleStrip)
+					{
+						gMeshRenderer->AppendVertex(Vertex);
+					}
+					else
+					{
+						if (bLastVSet)
+						{
+							gMeshRenderer->AppendVertex(V0);
+							gMeshRenderer->AppendVertex(LastV);
+							gMeshRenderer->AppendVertex(Vertex);
+						}
+
+						if (bV0Set)
+						{
+							LastV = Vertex;
+							bLastVSet = true;
+						}
+						if (!bV0Set)
+						{
+							V0 = Vertex;
+							bV0Set = true;
+						}
+					}
+				} while (--count);
+			}
+			else
+			{
+				do
+				{
+					// texture coordinates come from the draw list
+					//qglTexCoord2f (((float *)order)[0], ((float *)order)[1]);
+					//index_xyz = order[2];
+					//order += 3;
+					//
+					//// normals and vertexes come from the frame list
+					//l = shadedots[verts[index_xyz].lightnormalindex];
+					//
+					//qglColor4f (l* shadelight[0], l*shadelight[1], l*shadelight[2], alpha);
+					//qglVertex3fv (s_lerped[index_xyz]);
+
+					index_xyz = order[2];
+					l = shadedots[verts[index_xyz].lightnormalindex];
+
+					MeshVertexFormat Vertex;
+					memcpy(Vertex.Position, s_lerped[index_xyz], sizeof(Vertex.Position));
+					Vertex.ColorAlpha[0] = l * shadelight[0];
+					Vertex.ColorAlpha[1] = l * shadelight[1];
+					Vertex.ColorAlpha[2] = l * shadelight[2];
+					Vertex.ColorAlpha[3] = alpha;
+					Vertex.SurfaceUV[0] = ((float *)order)[0];
+					Vertex.SurfaceUV[1] = ((float *)order)[1];
+
+					if (IsTriangleStrip)
+					{
+						gMeshRenderer->AppendVertex(Vertex);
+					}
+					else
+					{
+						if (bLastVSet)
+						{
+							gMeshRenderer->AppendVertex(V0);
+							gMeshRenderer->AppendVertex(LastV);
+							gMeshRenderer->AppendVertex(Vertex);
+						}
+
+						if (bV0Set)
+						{
+							LastV = Vertex;
+							bLastVSet = true;
+						}
+						if (!bV0Set)
+						{
+							V0 = Vertex;
+							bV0Set = true;
+						}
+					}
+
+					order += 3;
+
+				} while (--count);
+			}
+
+			//qglEnd ();
+			gMeshRenderer->EndCommand();
+		}
+	}
+
+//	if ( currententity->flags & ( RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE ) )
+	// PMM - added double damage shell
+//	if ( currententity->flags & ( RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE | RF_SHELL_DOUBLE | RF_SHELL_HALF_DAM) )
+//		qglEnable( GL_TEXTURE_2D );
 }
 
 
@@ -734,9 +884,11 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// draw all the triangles
 	//
+	// SebH TODO hack depth range
 ///	if (currententity->flags & RF_DEPTHHACK) // hack the depth range to prevent view model from poking into walls
 ///		qglDepthRange (gldepthmin, gldepthmin + 0.3*(gldepthmax-gldepthmin));
-///
+
+	// Let's not care about left handed gun for now.
 ///	if ( ( currententity->flags & RF_WEAPONMODEL ) && ( r_lefthand->value == 1.0F ) )
 ///	{
 ///		extern void MYgluPerspective( GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar );
@@ -783,29 +935,31 @@ void R_DrawAliasModel (entity_t *e)
 ///	{
 ///		qglEnable (GL_BLEND);
 ///	}
-///
-///
-///	if ( (currententity->frame >= paliashdr->num_frames) 
-///		|| (currententity->frame < 0) )
-///	{
-///		ri.Con_Printf (PRINT_ALL, "R_DrawAliasModel %s: no such frame %d\n",
-///			currentmodel->name, currententity->frame);
-///		currententity->frame = 0;
-///		currententity->oldframe = 0;
-///	}
-///
-///	if ( (currententity->oldframe >= paliashdr->num_frames)
-///		|| (currententity->oldframe < 0))
-///	{
-///		ri.Con_Printf (PRINT_ALL, "R_DrawAliasModel %s: no such oldframe %d\n",
-///			currentmodel->name, currententity->oldframe);
-///		currententity->frame = 0;
-///		currententity->oldframe = 0;
-///	}
-///
-///	if ( !r_lerpmodels->value )
-///		currententity->backlerp = 0;
-///	GL_DrawAliasFrameLerp (paliashdr, currententity->backlerp);
+	bool bEntityIsTranslucent = (currententity->flags & RF_TRANSLUCENT) != 0;
+
+	if ( (currententity->frame >= paliashdr->num_frames) 
+		|| (currententity->frame < 0) )
+	{
+		ri.Con_Printf (PRINT_ALL, "R_DrawAliasModel %s: no such frame %d\n",
+			currentmodel->name, currententity->frame);
+		currententity->frame = 0;
+		currententity->oldframe = 0;
+	}
+
+	if ( (currententity->oldframe >= paliashdr->num_frames)
+		|| (currententity->oldframe < 0))
+	{
+		ri.Con_Printf (PRINT_ALL, "R_DrawAliasModel %s: no such oldframe %d\n",
+			currentmodel->name, currententity->oldframe);
+		currententity->frame = 0;
+		currententity->oldframe = 0;
+	}
+
+	if ( !r_lerpmodels->value )
+		currententity->backlerp = 0;
+
+	GL_DrawAliasFrameLerp (paliashdr, currententity->backlerp, bEntityIsTranslucent, skin->RenderTexture);
+
 ///
 ///	GL_TexEnv( GL_REPLACE );
 ///	qglShadeModel (GL_FLAT);
