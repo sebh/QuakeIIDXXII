@@ -922,8 +922,10 @@ void R_DrawAliasModel (entity_t *e)
 ///
 ///    qglPushMatrix ();
 	e->angles[PITCH] = -e->angles[PITCH];	// sigh.
+	e->angles[ROLL] = -e->angles[ROLL];		// sigh.
 	R_RotateForEntity (e);
 	e->angles[PITCH] = -e->angles[PITCH];	// sigh.
+	e->angles[ROLL] = -e->angles[ROLL];		// sigh.
 
 	// select skin
 	if (currententity->skin)

@@ -103,9 +103,9 @@ void R_RotateForEntity(entity_t *e)
 	float4x4 TranMat = XMMatrixTranslation(e->origin[0], e->origin[1], e->origin[2]);
 
 	LastEntityWorldMatrix = TranMat;
-	LastEntityWorldMatrix = XMMatrixMultiply(RotXMat, LastEntityWorldMatrix);
-	LastEntityWorldMatrix = XMMatrixMultiply(RotYMat, LastEntityWorldMatrix);
 	LastEntityWorldMatrix = XMMatrixMultiply(RotZMat, LastEntityWorldMatrix);
+	LastEntityWorldMatrix = XMMatrixMultiply(RotYMat, LastEntityWorldMatrix);
+	LastEntityWorldMatrix = XMMatrixMultiply(RotXMat, LastEntityWorldMatrix);
 }
 
 void R_SetIdentityTransformForEntity()
