@@ -301,7 +301,8 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 
 	// TODO: implement the gl_vertex_arrays indexed path. Going simple for now to move forward
 	{
-		//bDisableTexture bEntityIsTranslucent FinalRenderTexture
+	// We reduce batch count by rendering the tris list and fan using simple triangles (requires more memory but fine)
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		while (1)
 		{
@@ -310,20 +311,18 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 			if (!count)
 				break;		// done
 
-			bool IsTriangleStrip = false;	// instead of triangle FAN
+			bool IsTriangleStrip = false;	// false means triangle fan
 			if (count < 0)
 			{
 				count = -count;
 				//qglBegin (GL_TRIANGLE_FAN);
 
-				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			}
 			else
 			{
 				//qglBegin (GL_TRIANGLE_STRIP);
 
 				IsTriangleStrip = true;
-				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 			}
 			if (bEntityIsTranslucent)
 			{
@@ -334,6 +333,10 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 			bool bV0Set = false;
 			MeshVertexFormat LastV;
 			bool bLastVSet = false;
+
+			MeshVertexFormat PrevVertex = {};
+			MeshVertexFormat PrevPrevVertex = {};
+			uint SetVertexCount = 0;
 
 			if ( currententity->flags & ( RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE ) )
 			{
@@ -354,7 +357,16 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 					
 					if (IsTriangleStrip)
 					{
-						gMeshRenderer->AppendVertex(Vertex);
+						SetVertexCount++;
+						if (SetVertexCount >= 3)
+						{
+							gMeshRenderer->AppendVertex(PrevPrevVertex);
+							gMeshRenderer->AppendVertex(PrevVertex);
+							gMeshRenderer->AppendVertex(Vertex);
+						}
+
+						PrevPrevVertex = PrevVertex;
+						PrevVertex = Vertex;
 					}
 					else
 					{
@@ -407,7 +419,16 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 
 					if (IsTriangleStrip)
 					{
-						gMeshRenderer->AppendVertex(Vertex);
+						SetVertexCount++;
+						if (SetVertexCount >= 3)
+						{
+							gMeshRenderer->AppendVertex(PrevPrevVertex);
+							gMeshRenderer->AppendVertex(PrevVertex);
+							gMeshRenderer->AppendVertex(Vertex);
+						}
+
+						PrevPrevVertex = PrevVertex;
+						PrevVertex = Vertex;
 					}
 					else
 					{
@@ -436,8 +457,8 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 			}
 
 			//qglEnd ();
-			gMeshRenderer->EndCommand();
 		}
+		gMeshRenderer->EndCommand();
 	}
 
 //	if ( currententity->flags & ( RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE ) )
