@@ -120,56 +120,73 @@ void MeshRenderer::StopRecording()
 	bRecordingStarted = false;
 }
 
+#define D_BATCH_SURFACE 1
+
 void MeshRenderer::StartCommand(
 	MeshRenderCommand::EType Type, 
 	float4x4 MeshWorldMatrix,
 	RenderTexture* SurfaceTexture,
 	RenderTexture* LightmapTexture,
-	D3D_PRIMITIVE_TOPOLOGY Topology)
+	D3D_PRIMITIVE_TOPOLOGY Topology,
+	bool bEnableAlphaBlending)
 {
 	ATLASSERT(bRecordingStarted == true);
 	ATLASSERT(bCommandStarted == false);
 	ATLASSERT(RecordedRenderCommandCount < MaxCommandCount);
 
-	CurrentCommand = &RenderCommands[RecordedRenderCommandCount++];
-	bCommandStarted = true;
+	SurfaceTexture = SurfaceTexture ? SurfaceTexture : r_whitetexture->RenderTexture;
+	LightmapTexture = LightmapTexture ? LightmapTexture : r_whitetexture->RenderTexture;
 
-	//memset(CurrentCommand, 0, sizeof(MeshRenderCommand));
+	XMFLOAT4X4 MeshWorldMatrix2;
+	XMStoreFloat4x4(&MeshWorldMatrix2, MeshWorldMatrix);
 
-	CurrentCommand->Type = Type;
-	CurrentCommand->Topology = Topology;
-
-	CurrentCommand->bEnableAlphaBlending = false;
-
-	CurrentCommand->SurfaceTexture = SurfaceTexture ? SurfaceTexture : r_whitetexture->RenderTexture;
-	CurrentCommand->LightmapTexture = LightmapTexture ? LightmapTexture : r_whitetexture->RenderTexture;
-
-	XMStoreFloat4x4(&CurrentCommand->MeshWorldMatrix, MeshWorldMatrix);
-
-	CurrentCommand->InstanceCount = 1;
-	CurrentCommand->StartInstanceLocation = 0;
-
-	if (Type == MeshRenderCommand::EType::DrawInstanced_Colored
-		|| Type == MeshRenderCommand::EType::DrawInstanced_ColoredSurface
-		|| Type == MeshRenderCommand::EType::DrawInstanced_LightmapSurface)
+#if D_BATCH_SURFACE
+	if (CurrentCommand != nullptr
+		&& CurrentCommand->Type == Type
+		&& memcmp(&CurrentCommand->MeshWorldMatrix, &MeshWorldMatrix2, sizeof(XMFLOAT4X4))==0	// CurrentCommand->MeshWorldMatrix == MeshWorldMatrix2
+		&& CurrentCommand->SurfaceTexture == SurfaceTexture
+		&& CurrentCommand->LightmapTexture == LightmapTexture
+		&& CurrentCommand->Topology == Topology
+		&& CurrentCommand->bEnableAlphaBlending == bEnableAlphaBlending)
 	{
-		CurrentCommand->VertexCountPerInstance = 0;
-		CurrentCommand->StartVertexLocation = RecordedVertexCount;
+		// Fall through, re-use the same command as the last one to insert triangle in the same batch
+		bCommandStarted = true;
 	}
 	else
+#endif
 	{
-		CurrentCommand->IndexCountPerInstance = 0;
-		CurrentCommand->StartIndexLocation = RecordedIndexCount;
-		CurrentCommand->BaseVertexLocation = RecordedVertexCount;
+		CurrentCommand = &RenderCommands[RecordedRenderCommandCount++];
+		bCommandStarted = true;
+
+		//memset(CurrentCommand, 0, sizeof(MeshRenderCommand));
+
+		CurrentCommand->Type = Type;
+		CurrentCommand->Topology = Topology;
+
+		CurrentCommand->bEnableAlphaBlending = bEnableAlphaBlending;
+
+		CurrentCommand->SurfaceTexture = SurfaceTexture ? SurfaceTexture : r_whitetexture->RenderTexture;
+		CurrentCommand->LightmapTexture = LightmapTexture ? LightmapTexture : r_whitetexture->RenderTexture;
+
+		XMStoreFloat4x4(&CurrentCommand->MeshWorldMatrix, MeshWorldMatrix);
+
+		CurrentCommand->InstanceCount = 1;
+		CurrentCommand->StartInstanceLocation = 0;
+
+		if (Type == MeshRenderCommand::EType::DrawInstanced_Colored
+			|| Type == MeshRenderCommand::EType::DrawInstanced_ColoredSurface
+			|| Type == MeshRenderCommand::EType::DrawInstanced_LightmapSurface)
+		{
+			CurrentCommand->VertexCountPerInstance = 0;
+			CurrentCommand->StartVertexLocation = RecordedVertexCount;
+		}
+		else
+		{
+			CurrentCommand->IndexCountPerInstance = 0;
+			CurrentCommand->StartIndexLocation = RecordedIndexCount;
+			CurrentCommand->BaseVertexLocation = RecordedVertexCount;
+		}
 	}
-}
-
-void MeshRenderer::SetCurrentCommandUseAlphaBlending()
-{
-	ATLASSERT(bRecordingStarted == true);
-	ATLASSERT(bCommandStarted == true);
-
-	CurrentCommand->bEnableAlphaBlending = true;
 }
 
 void MeshRenderer::AppendVertex(MeshVertexFormat& NewVertex)
@@ -202,7 +219,9 @@ void MeshRenderer::EndCommand()
 	ATLASSERT(bRecordingStarted == true);
 	ATLASSERT(bCommandStarted == true);
 
+#if D_BATCH_SURFACE==0
 	CurrentCommand = nullptr;
+#endif
 	bCommandStarted = false;
 }
 
@@ -554,8 +573,7 @@ void R_DrawBeam(entity_t *e)
 
 //	qglBegin(GL_TRIANGLE_STRIP);
 
-	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, XMMatrixIdentity(), nullptr, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, XMMatrixIdentity(), nullptr, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, true);
 
 	for (i = 0; i < NUM_BEAM_SEGS; i++)
 	{
@@ -655,9 +673,7 @@ void R_DrawSpriteModel (entity_t *e)
 	if ( e->flags & RF_TRANSLUCENT )
 		alpha = e->alpha;
 
-	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), currentmodel->skins[e->frame]->RenderTexture);
-	if (alpha != 1.0F)
-		gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), currentmodel->skins[e->frame]->RenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, alpha != 1.0F);
 
 //	if ( alpha != 1.0F )
 //		qglEnable( GL_BLEND );
@@ -885,8 +901,7 @@ void R_DrawAlphaSurfaces(void)
 			else
 				scroll = 0;
 
-			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
-			gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true);
 
 			for (bp = fa->polys; bp; bp = bp->next)
 			{
@@ -970,8 +985,7 @@ void R_DrawAlphaSurfaces(void)
 			if (scroll == 0.0)
 				scroll = -64.0;
 
-			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
-			gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true);
 			MeshVertexFormat V0;
 			bool bV0Set = false;
 			MeshVertexFormat LastV;
@@ -1023,8 +1037,7 @@ void R_DrawAlphaSurfaces(void)
 			int		i;
 			float	*v;
 
-			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
-			gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true);
 			MeshVertexFormat V0;
 			bool bV0Set = false;
 			MeshVertexFormat LastV;

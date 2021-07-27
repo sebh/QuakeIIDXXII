@@ -306,9 +306,8 @@ public:
 		float4x4 MeshWorldMatrix = XMMatrixIdentity(), 
 		RenderTexture* SurfaceTexture = nullptr,
 		RenderTexture* LightmapTexture = nullptr,
-		D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	void SetCurrentCommandUseAlphaBlending();
+		D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+		bool bEnableAlphaBlending = false);
 
 	void AppendVertex(MeshVertexFormat& NewVertex);
 
