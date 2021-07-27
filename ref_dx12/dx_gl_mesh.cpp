@@ -301,8 +301,12 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 
 	// TODO: implement the gl_vertex_arrays indexed path. Going simple for now to move forward
 	{
-	// We reduce batch count by rendering the tris list and fan using simple triangles (requires more memory but fine)
+		// We reduce batch count by rendering the tris list and fan using simple triangles (requires more memory but fine)
 		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		if (bEntityIsTranslucent)
+		{
+			gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+		}
 
 		while (1)
 		{
@@ -323,10 +327,6 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 				//qglBegin (GL_TRIANGLE_STRIP);
 
 				IsTriangleStrip = true;
-			}
-			if (bEntityIsTranslucent)
-			{
-				gMeshRenderer->SetCurrentCommandUseAlphaBlending();
 			}
 
 			MeshVertexFormat V0;
