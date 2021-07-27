@@ -128,7 +128,8 @@ void MeshRenderer::StartCommand(
 	RenderTexture* SurfaceTexture,
 	RenderTexture* LightmapTexture,
 	D3D_PRIMITIVE_TOPOLOGY Topology,
-	bool bEnableAlphaBlending)
+	bool bEnableAlphaBlending,
+	bool bViewWeaponMesh)
 {
 	ATLASSERT(bRecordingStarted == true);
 	ATLASSERT(bCommandStarted == false);
@@ -148,7 +149,8 @@ void MeshRenderer::StartCommand(
 		&& CurrentCommand->LightmapTexture == LightmapTexture
 		&& CurrentCommand->Topology == Topology
 		&& Topology == D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST	// We can only merge command with triangle list (strip would result in broken transition triangles)
-		&& CurrentCommand->bEnableAlphaBlending == bEnableAlphaBlending)
+		&& CurrentCommand->bEnableAlphaBlending == bEnableAlphaBlending
+		&& CurrentCommand->bViewWeaponMesh == bViewWeaponMesh)
 	{
 		// Fall through, re-use the same command as the last one to insert triangle in the same batch
 		bCommandStarted = true;
@@ -165,6 +167,7 @@ void MeshRenderer::StartCommand(
 		CurrentCommand->Topology = Topology;
 
 		CurrentCommand->bEnableAlphaBlending = bEnableAlphaBlending;
+		CurrentCommand->bViewWeaponMesh = bViewWeaponMesh;
 
 		CurrentCommand->SurfaceTexture = SurfaceTexture ? SurfaceTexture : r_whitetexture->RenderTexture;
 		CurrentCommand->LightmapTexture = LightmapTexture ? LightmapTexture : r_whitetexture->RenderTexture;
@@ -267,6 +270,21 @@ void MeshRenderer::ExecuteRenderCommands()
 	D3D12_VERTEX_BUFFER_VIEW MeshVertexRenderBufferView = MeshVertexRenderBuffer->getRenderBuffer().getVertexBufferView(sizeof(MeshVertexFormat));
 	CommandList->IASetVertexBuffers(0, 1, &MeshVertexRenderBufferView);
 
+	D3D12_VIEWPORT DefaultViewport;
+	DefaultViewport.TopLeftX = r_newrefdef.x;
+	DefaultViewport.TopLeftY = r_newrefdef.y;
+	DefaultViewport.Width = r_newrefdef.width;
+	DefaultViewport.Height = r_newrefdef.height;
+	DefaultViewport.MinDepth = 0.0f;
+	DefaultViewport.MaxDepth = 1.0f;
+	D3D12_VIEWPORT ViewWeaponViewport;
+	ViewWeaponViewport.TopLeftX = r_newrefdef.x;
+	ViewWeaponViewport.TopLeftY = r_newrefdef.y;
+	ViewWeaponViewport.Width = r_newrefdef.width;
+	ViewWeaponViewport.Height = r_newrefdef.height;
+	ViewWeaponViewport.MinDepth = 0.0f;
+	ViewWeaponViewport.MaxDepth = 0.3f;
+	CommandList->RSSetViewports(1, &DefaultViewport);
 
 	for (uint i = 0; i < RecordedRenderCommandCount; ++i)
 	{
@@ -324,6 +342,11 @@ void MeshRenderer::ExecuteRenderCommands()
 
 		CommandList->IASetPrimitiveTopology(Cmd.Topology);
 
+		if (Cmd.bViewWeaponMesh)
+		{
+			CommandList->RSSetViewports(1, &ViewWeaponViewport);
+		}
+
 		switch (Cmd.Type)
 		{
 		case MeshRenderCommand::EType::DrawInstanced_Colored:
@@ -338,6 +361,11 @@ void MeshRenderer::ExecuteRenderCommands()
 			ATLASSERT(false);
 			break;
 		}
+		}
+
+		if (Cmd.bViewWeaponMesh)
+		{
+			CommandList->RSSetViewports(1, &DefaultViewport);
 		}
 	}
 		

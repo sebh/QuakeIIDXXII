@@ -266,6 +266,7 @@ struct MeshRenderCommand
 	EType Type;
 
 	bool bEnableAlphaBlending;
+	bool bViewWeaponMesh;
 
 	RenderTexture* SurfaceTexture;
 	RenderTexture* LightmapTexture;
@@ -307,7 +308,8 @@ public:
 		RenderTexture* SurfaceTexture = nullptr,
 		RenderTexture* LightmapTexture = nullptr,
 		D3D_PRIMITIVE_TOPOLOGY Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-		bool bEnableAlphaBlending = false);
+		bool bEnableAlphaBlending = false,
+		bool bViewWeaponMesh = false);
 
 	void AppendVertex(MeshVertexFormat& NewVertex);
 

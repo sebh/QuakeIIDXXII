@@ -89,7 +89,7 @@ interpolates between two frames and origins
 FIXME: batch lerp all vertexes
 =============
 */
-void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTranslucent, RenderTexture* SkinTexture)
+void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTranslucent, RenderTexture* SkinTexture, bool bViewWeaponMesh)
 {
 	float 	l;
 	daliasframe_t	*frame, *oldframe;
@@ -302,7 +302,7 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 	// TODO: implement the gl_vertex_arrays indexed path. Going simple for now to move forward
 	{
 		// We reduce batch count by rendering the tris list and fan using simple triangles (requires more memory but fine)
-		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, bEntityIsTranslucent);
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, LastEntityWorldMatrix, FinalRenderTexture, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, bEntityIsTranslucent, bViewWeaponMesh);
 
 		while (1)
 		{
@@ -977,7 +977,7 @@ void R_DrawAliasModel (entity_t *e)
 	if ( !r_lerpmodels->value )
 		currententity->backlerp = 0;
 
-	GL_DrawAliasFrameLerp (paliashdr, currententity->backlerp, bEntityIsTranslucent, skin->RenderTexture);
+	GL_DrawAliasFrameLerp (paliashdr, currententity->backlerp, bEntityIsTranslucent, skin->RenderTexture, (currententity->flags & RF_DEPTHHACK) > 0);
 
 ///
 ///	GL_TexEnv( GL_REPLACE );
