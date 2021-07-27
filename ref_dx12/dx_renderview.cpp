@@ -4,7 +4,6 @@
 
 
 // TODO
-// - R_DrawAliasModel
 // - SebH in this dx_gl_rsurf.cpp
 // - lightmap, keep cpu lightmap representation and only upload once.
 
@@ -888,13 +887,13 @@ void R_DrawAlphaSurfaces(void)
 			else
 				scroll = 0;
 
+			gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
+			gMeshRenderer->SetCurrentCommandUseAlphaBlending();
 
 			for (bp = fa->polys; bp; bp = bp->next)
 			{
 				p = bp;
 
-				gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_ColoredSurface, XMMatrixIdentity(), SurfaceTexture->RenderTexture);
-				gMeshRenderer->SetCurrentCommandUseAlphaBlending();
 				MeshVertexFormat V0;
 				bool bV0Set = false;
 				MeshVertexFormat LastV;
@@ -953,8 +952,9 @@ void R_DrawAlphaSurfaces(void)
 				}
 //				qglEnd();
 
-				gMeshRenderer->EndCommand();
 			}
+
+			gMeshRenderer->EndCommand();
 		}
 		else if (s->texinfo->flags & SURF_FLOWING)			// PGM	9/16/98
 		{
