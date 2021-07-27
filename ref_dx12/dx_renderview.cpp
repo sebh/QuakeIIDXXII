@@ -3,6 +3,10 @@
 #include "stdlib.h"
 
 
+// TODO
+// - R_DrawAliasModel
+// - SebH in this dx_gl_rsurf.cpp
+
 int c_brush_polys, c_alias_polys;
 int	r_viewcluster, r_viewcluster2, r_oldviewcluster, r_oldviewcluster2;
 
@@ -495,6 +499,118 @@ void R_SetLightLevel(void)
 	}
 }
 
+
+/*
+** R_DrawBeam
+*/
+void R_DrawBeam(entity_t *e)
+{
+#define NUM_BEAM_SEGS 6
+
+	int	i;
+	float r, g, b;
+
+	vec3_t perpvec;
+	vec3_t direction, normalized_direction;
+	vec3_t	start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
+	vec3_t oldorigin, origin;
+
+	oldorigin[0] = e->oldorigin[0];
+	oldorigin[1] = e->oldorigin[1];
+	oldorigin[2] = e->oldorigin[2];
+
+	origin[0] = e->origin[0];
+	origin[1] = e->origin[1];
+	origin[2] = e->origin[2];
+
+	normalized_direction[0] = direction[0] = oldorigin[0] - origin[0];
+	normalized_direction[1] = direction[1] = oldorigin[1] - origin[1];
+	normalized_direction[2] = direction[2] = oldorigin[2] - origin[2];
+
+	if (VectorNormalize(normalized_direction) == 0)
+		return;
+
+	PerpendicularVector(perpvec, normalized_direction);
+	VectorScale(perpvec, e->frame / 2, perpvec);
+
+	for (i = 0; i < 6; i++)
+	{
+		RotatePointAroundVector(start_points[i], normalized_direction, perpvec, (360.0 / NUM_BEAM_SEGS)*i);
+		VectorAdd(start_points[i], origin, start_points[i]);
+		VectorAdd(start_points[i], direction, end_points[i]);
+	}
+
+//	qglDisable(GL_TEXTURE_2D);
+//	qglEnable(GL_BLEND);
+//	qglDepthMask(GL_FALSE);
+
+	r = (d_8to24table[e->skinnum & 0xFF]) & 0xFF;
+	g = (d_8to24table[e->skinnum & 0xFF] >> 8) & 0xFF;
+	b = (d_8to24table[e->skinnum & 0xFF] >> 16) & 0xFF;
+
+	r *= 1 / 255.0F;
+	g *= 1 / 255.0F;
+	b *= 1 / 255.0F;
+
+//	qglColor4f(r, g, b, e->alpha);
+
+//	qglBegin(GL_TRIANGLE_STRIP);
+
+	MeshVertexFormat LastVertex0;
+	MeshVertexFormat LastVertex1;
+
+	gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_Colored, XMMatrixIdentity(), nullptr, nullptr, D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	gMeshRenderer->SetCurrentCommandUseAlphaBlending();
+
+	for (i = 0; i < NUM_BEAM_SEGS; i++)
+	{
+		//qglVertex3fv(start_points[i]);
+		//qglVertex3fv(end_points[i]);
+		//qglVertex3fv(start_points[(i + 1) % NUM_BEAM_SEGS]);
+		//qglVertex3fv(end_points[(i + 1) % NUM_BEAM_SEGS]);
+
+		MeshVertexFormat Vertex0;
+		memcpy(Vertex0.Position, start_points[i], sizeof(Vertex0.Position));
+		Vertex0.ColorAlpha[0] = r;
+		Vertex0.ColorAlpha[1] = g;
+		Vertex0.ColorAlpha[2] = b;
+		Vertex0.ColorAlpha[3] = e->alpha;
+
+		MeshVertexFormat Vertex1;
+		memcpy(Vertex1.Position, end_points[i], sizeof(Vertex1.Position));
+		Vertex1.ColorAlpha[0] = r;
+		Vertex1.ColorAlpha[1] = g;
+		Vertex1.ColorAlpha[2] = b;
+		Vertex1.ColorAlpha[3] = e->alpha;
+
+		MeshVertexFormat Vertex2;
+		memcpy(Vertex2.Position, start_points[(i + 1) % NUM_BEAM_SEGS], sizeof(Vertex2.Position));
+		Vertex2.ColorAlpha[0] = r;
+		Vertex2.ColorAlpha[1] = g;
+		Vertex2.ColorAlpha[2] = b;
+		Vertex2.ColorAlpha[3] = e->alpha;
+
+		MeshVertexFormat Vertex3;
+		memcpy(Vertex3.Position, end_points[(i + 1) % NUM_BEAM_SEGS], sizeof(Vertex3.Position));
+		Vertex3.ColorAlpha[0] = r;
+		Vertex3.ColorAlpha[1] = g;
+		Vertex3.ColorAlpha[2] = b;
+		Vertex3.ColorAlpha[3] = e->alpha;
+
+		gMeshRenderer->AppendVertex(Vertex0);
+		gMeshRenderer->AppendVertex(Vertex1);
+		gMeshRenderer->AppendVertex(Vertex2);
+		gMeshRenderer->AppendVertex(Vertex3);
+	}
+//	qglEnd();
+
+//	qglEnable(GL_TEXTURE_2D);
+//	qglDisable(GL_BLEND);
+//	qglDepthMask(GL_TRUE);
+
+	gMeshRenderer->EndCommand();
+}
+
 /*
 =================
 R_DrawSpriteModel
@@ -652,8 +768,7 @@ void R_DrawEntitiesOnList()
 
 		if (currententity->flags & RF_BEAM)
 		{
-			//R_DrawBeam(currententity);
-			int i = 0;
+			R_DrawBeam(currententity);
 		}
 		else
 		{
@@ -693,8 +808,7 @@ void R_DrawEntitiesOnList()
 
 		if (currententity->flags & RF_BEAM)
 		{
-			//R_DrawBeam(currententity);
-			int i = 0;
+			R_DrawBeam(currententity);
 		}
 		else
 		{
