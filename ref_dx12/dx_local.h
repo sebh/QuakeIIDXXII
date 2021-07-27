@@ -366,6 +366,7 @@ extern cvar_t *r_speeds;
 extern cvar_t *r_lightlevel;
 extern cvar_t *r_drawentities;
 extern cvar_t *r_lefthand;
+extern cvar_t *r_lerpmodels;
 
 extern cvar_t *gl_lockpvs;
 extern cvar_t *gl_flashblend;
