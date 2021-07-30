@@ -64,6 +64,7 @@ cvar_t *gl_monolightmap;
 cvar_t *gl_polyblend;
 cvar_t *gl_particle_size;
 cvar_t *gl_dynamic;
+cvar_t *dx_batchworldtriangles;
 
 int	r_framecount = 1;	// so frame counts initialized to 0 don't match
 int	r_visframecount = 0;
@@ -339,6 +340,8 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	gl_polyblend = ri.Cvar_Get("gl_polyblend", "1", 0);
 	gl_particle_size = ri.Cvar_Get("gl_particle_size", "40", CVAR_ARCHIVE);
 	gl_dynamic = ri.Cvar_Get("gl_dynamic", "1", 0);
+
+	dx_batchworldtriangles = ri.Cvar_Get("dx_batchworldtriangles", "1", 0);
 
 	registration_sequence = 1;
 

@@ -120,8 +120,6 @@ void MeshRenderer::StopRecording()
 	bRecordingStarted = false;
 }
 
-#define D_BATCH_SURFACE 1
-
 void MeshRenderer::StartCommand(
 	MeshRenderCommand::EType Type, 
 	float4x4 MeshWorldMatrix,
@@ -141,8 +139,8 @@ void MeshRenderer::StartCommand(
 	XMFLOAT4X4 MeshWorldMatrix2;
 	XMStoreFloat4x4(&MeshWorldMatrix2, MeshWorldMatrix);
 
-#if D_BATCH_SURFACE
-	if (CurrentCommand != nullptr
+	if (dx_batchworldtriangles->value > 0
+		&& CurrentCommand != nullptr
 		&& CurrentCommand->Type == Type
 		&& CurrentCommand->Topology == Topology
 		&& Topology == D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST	// We can only merge command with triangle list (strip would result in broken transition triangles)
@@ -156,7 +154,6 @@ void MeshRenderer::StartCommand(
 		bCommandStarted = true;
 	}
 	else
-#endif
 	{
 		CurrentCommand = &RenderCommands[RecordedRenderCommandCount++];
 		bCommandStarted = true;
@@ -223,9 +220,11 @@ void MeshRenderer::EndCommand()
 	ATLASSERT(bRecordingStarted == true);
 	ATLASSERT(bCommandStarted == true);
 
-#if D_BATCH_SURFACE==0
-	CurrentCommand = nullptr;
-#endif
+	if (dx_batchworldtriangles->value <= 0)
+	{
+		CurrentCommand = nullptr;
+	}
+
 	bCommandStarted = false;
 }
 
@@ -338,6 +337,15 @@ void MeshRenderer::ExecuteRenderCommands()
 
 		CBData->MeshWorldMatrix = XMLoadFloat4x4(&Cmd.MeshWorldMatrix);
 		CBData->ViewProjectionMatrix = vd.ViewProjectionMatrix;
+#if 0
+		uint ColIdx = (i * 543) % 255;
+		float Red	= float(( d_8to24table[ColIdx] >> 0  ) & 0xff)/255.0f;
+		float Green	= float(( d_8to24table[ColIdx] >> 8  ) & 0xff)/255.0f;
+		float Blue	= float(( d_8to24table[ColIdx] >> 16 ) & 0xff)/255.0f;
+		CBData->DebugColor = XMVectorSet(Red, Green, Blue, 1.0f);
+#else
+		CBData->DebugColor = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+#endif
 		CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
 
 		CommandList->IASetPrimitiveTopology(Cmd.Topology);

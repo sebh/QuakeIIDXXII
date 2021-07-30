@@ -9,6 +9,7 @@ cbuffer MeshConstantBuffer	: register(b0)
 {
 	float4x4	MeshWorldMatrix;
 	float4x4	ViewProjectionMatrix;
+	float4		BatchDebugColor;
 }
 
 
@@ -53,17 +54,23 @@ float4 MeshDebugPixelShader(VertexOutput Input) : SV_TARGET
 
 float4 MeshColorPixelShader(VertexOutput Input) : SV_TARGET
 {
-	return Input.ColorAlpha;
+	return lerp(
+		Input.ColorAlpha,
+		BatchDebugColor, BatchDebugColor.a);
 }
 
 float4 MeshLightmapSurfacePixelShader(VertexOutput Input) : SV_TARGET
 {
-	return float4(LightmapTexture.Sample(SamplerLinearRepeat, Input.LightmapUV).rgb, 1.0f) * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
+	return lerp(
+		float4(LightmapTexture.Sample(SamplerLinearRepeat, Input.LightmapUV).rgb, 1.0f) * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV),
+		BatchDebugColor, BatchDebugColor.a);
 }
 
 float4 MeshColoredSurfacePixelShader(VertexOutput Input) : SV_TARGET
 {
-	return Input.ColorAlpha * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV);
+	return lerp(
+		Input.ColorAlpha * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV),
+		BatchDebugColor, BatchDebugColor.a);
 }
 
 

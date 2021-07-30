@@ -97,6 +97,7 @@ struct MeshConstantBuffer
 {
 	float4x4	MeshWorldMatrix;
 	float4x4	ViewProjectionMatrix;
+	float4		DebugColor;
 };
 extern VertexShader* MeshVertexShader;
 extern PixelShader* MeshDebugPixelShader;
@@ -378,6 +379,8 @@ extern cvar_t *gl_monolightmap;
 extern cvar_t *gl_polyblend;
 extern cvar_t *gl_particle_size;
 extern cvar_t *gl_dynamic;
+
+extern cvar_t *dx_batchworldtriangles;
 
 extern int r_visframecount;
 extern int r_framecount;
