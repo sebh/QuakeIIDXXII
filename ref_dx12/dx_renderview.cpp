@@ -1148,14 +1148,6 @@ void R_Flash()
 
 	FrameConstantBuffers::FrameConstantBuffer CB = ConstantBuffers.AllocateFrameConstantBuffer(sizeof(ImageDrawConstantBuffer));
 	ImageDrawConstantBuffer* CBData = (ImageDrawConstantBuffer*)CB.getCPUMemory();
-	CBData->OutputWidthAndInv[0] = 1.0f;
-	CBData->OutputWidthAndInv[1] = 1.0f / CBData->OutputWidthAndInv[0];
-	CBData->OutputHeightAndInv[0] = 1.0f;
-	CBData->OutputHeightAndInv[1] = 1.0f / CBData->OutputHeightAndInv[0];
-	CBData->ImageBottomLeft[0] = 0;
-	CBData->ImageBottomLeft[1] = 0;
-	CBData->ImageSize[0] = 32768;
-	CBData->ImageSize[1] = 32768;
 	CBData->ColorAlpha[0] = v_blend[0];
 	CBData->ColorAlpha[1] = v_blend[1];
 	CBData->ColorAlpha[2] = v_blend[2];

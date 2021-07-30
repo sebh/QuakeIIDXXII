@@ -72,17 +72,9 @@ extern PixelShader*  UvPixelShader;
 
 struct ImageDrawConstantBuffer
 {
-	float	OutputWidthAndInv[2];
-	float	OutputHeightAndInv[2];
-	float	ImageBottomLeft[2];
-	float	ImageSize[2];
 	float	ColorAlpha[4];
 };
-extern VertexShader* ImageDrawVertexShader;
-extern PixelShader*  ImageDrawPixelShader;
-extern PixelShader*  TiledImageDrawPixelShader;
 extern PixelShader*  ColorDrawPixelShader;
-extern PixelShader*  CharDrawPixelShader;
 
 struct ColoredImageConstantBuffer
 {

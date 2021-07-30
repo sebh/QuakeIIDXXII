@@ -32,57 +32,16 @@ float4 UvPixelShader(VertexOutput input) : SV_TARGET
 
 
 
-#if DRAW2DSHADER
+#if COLORDRAWSHADER
 
 cbuffer ImageDrawConstantBuffer : register(b0)
 {
-	float2	OutputWidthAndInv;
-	float2	OutputHeightAndInv;
-	float2	ImageBottomLeft;
-	float2	ImageSize;
 	float4	ColorAlpha;
 }
 
-Texture2D ImageTexture : register(t0);
-
-struct VertexOutput
-{
-	float4 position		: SV_POSITION;
-	float2 uv			: TEXCOORD0;
-};
-
-VertexOutput ImageDrawVertexShader(uint VertexID : SV_VertexID)
-{
-	VertexOutput output;	// TODO init to 0
-	
-	float2 Norm2d = float2((VertexID == 1 || VertexID == 4 || VertexID == 5) ? 1.0 : 0.0, (VertexID == 2 || VertexID == 3 || VertexID == 5) ? 1.0 : 0.0);
-
-	output.position = float4((ImageBottomLeft + Norm2d * ImageSize) * float2(OutputWidthAndInv.y, OutputHeightAndInv.y) * float2(2.0f, -2.0f) + float2(-1.0, 1.0), 0.1, 1.0);
-	output.uv = Norm2d;
-
-	return output;
-}
-
-float4 ImageDrawPixelShader(VertexOutput input) : SV_TARGET
-{
-	return ImageTexture.Sample(SamplerLinearClamp, float2(input.uv));
-}
-
-float4 TiledImageDrawPixelShader(VertexOutput input) : SV_TARGET
-{
-	return ImageTexture.Sample(SamplerPointRepeat, input.position.xy / 64.0f);
-}
-
-float4 ColorDrawPixelShader(VertexOutput input) : SV_TARGET
+float4 ColorDrawPixelShader() : SV_TARGET
 {
 	return ColorAlpha;
-}
-
-float4 CharDrawPixelShader(VertexOutput input) : SV_TARGET
-{
-	const float2 UvOffset = ColorAlpha.xy;
-	const float2 UvSize = ColorAlpha.zw;
-	return ImageTexture.Sample(SamplerPointRepeat, input.uv * UvSize + UvOffset);
 }
 
 #endif // DRAW2DSHADER
