@@ -198,14 +198,34 @@ void R_MarkLights(dlight_t *light, int bit, /*mnode_t*/void *node);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Lightmaps
+
+#define LIGHTMAP_BYTES 4
+
+#define	BLOCK_WIDTH		128
+#define	BLOCK_HEIGHT	128
+
+#define	MAX_LIGHTMAPS	128
+
+extern RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
+
+void R_InitLightmaps();
+void R_ResetLightmaps();
+void dxglTexImage2DClearToBlack(uint LightmapIndex);
+void dxglTexImage2D(uint LightmapIndex, const byte *pixels);
+void dxglTexSubImage2D(uint LightmapIndex, uint xoffset, uint yoffset, uint width, uint height, const byte *pixels);
+void R_UploadLightmaps();
+void R_ShutdownLightmaps();
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Surfaces
 
 void R_MarkLeaves(void);
 void R_DrawWorld();
 void R_DrawBrushModel(entity_t *e);
-
-#define	MAX_LIGHTMAPS	128
-extern RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
 
 
 

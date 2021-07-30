@@ -21,8 +21,6 @@ cplane_t	frustum[4];
 model_t		*currentmodel;
 entity_t	*currententity;
 
-RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
-
 // speed up sin calculations - Ed
 float	r_turbsin[] =
 {
@@ -399,11 +397,6 @@ void R_InitRenderView(void)
 	gMeshRenderer = new MeshRenderer();
 
 	R_InitParticleRenderer();
-
-	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
-	{
-		Dx12Lightmaps[i] = new RenderTextureDynamic(128, 128, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
-	}
 }
 
 void R_SetupFrame(void)
@@ -1246,6 +1239,9 @@ void R_RenderView(void)
 	R_DrawAlphaSurfaces();
 
 	gMeshRenderer->StopRecording();
+
+	R_UploadLightmaps();
+
 	gMeshRenderer->ExecuteRenderCommands();
 
 	// Blend over particles
@@ -1274,12 +1270,6 @@ void R_ShutdownRenderView(void)
 	{
 		delete gMeshRenderer;
 		gMeshRenderer = nullptr;
-	}
-
-	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
-	{
-		delete Dx12Lightmaps[i];
-		Dx12Lightmaps[i] = nullptr;
 	}
 }
 

@@ -82,6 +82,7 @@ void R_DX12_BeginRegistration(char* map)
 {
 	DEBUGPRINTF("R_DX12_BeginRegistration - %s\n", map);
 	WorldMapLoaded = true;
+	R_ResetLightmaps();
 	R_BeginRegistration(map);
 }
 
@@ -482,6 +483,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	LoadAllShaders();
 
 	R_InitDrawImage();
+	R_InitLightmaps();
 	R_InitRenderView();
 
 	return true;
@@ -501,6 +503,7 @@ void R_DX12_Shutdown(void)
 
 	R_ShutdownDrawImage();
 	R_ShutdownRenderView();
+	R_ShutdownLightmaps();
 	UnloadAllTextures();
 
 	delete DepthTexture;

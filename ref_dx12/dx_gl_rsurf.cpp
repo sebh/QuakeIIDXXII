@@ -35,13 +35,6 @@ msurface_t	*r_alpha_surfaces;
 #define DYNAMIC_LIGHT_WIDTH  128
 #define DYNAMIC_LIGHT_HEIGHT 128
 
-#define LIGHTMAP_BYTES 4
-
-#define	BLOCK_WIDTH		128
-#define	BLOCK_HEIGHT	128
-
-#define	MAX_LIGHTMAPS	128
-
 int		c_visible_lightmaps;
 int		c_visible_textures;
 
@@ -759,6 +752,7 @@ dynamic:
 			//				  smax, tmax, 
 			//				  GL_LIGHTMAP_FORMAT, 
 			//				  GL_UNSIGNED_BYTE, temp );
+			dxglTexSubImage2D(fa->lightmaptexturenum, fa->light_s, fa->light_t, smax, tmax, (byte *)temp);
 
 			fa->lightmapchain = gl_lms.lightmap_surfaces[fa->lightmaptexturenum];
 			gl_lms.lightmap_surfaces[fa->lightmaptexturenum] = fa;
@@ -952,6 +946,7 @@ dynamic:
 //							  smax, tmax, 
 //							  GL_LIGHTMAP_FORMAT, 
 //							  GL_UNSIGNED_BYTE, temp );
+			dxglTexSubImage2D(lmtex, surf->light_s, surf->light_t, smax, tmax, (byte *)temp);
 
 //			Dx12Lightmaps[lmtex]->Upload(temp, 128 * 4, 128 * 128 * 4);
 //			Dx12Lightmaps[lmtex]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -972,6 +967,7 @@ dynamic:
 //							  smax, tmax, 
 //							  GL_LIGHTMAP_FORMAT, 
 //							  GL_UNSIGNED_BYTE, temp );
+			dxglTexSubImage2D(lmtex, surf->light_s, surf->light_t, smax, tmax, (byte *)temp);
 
 //			Dx12Lightmaps[lmtex]->Upload(temp, 128 * 4, 128 * 128 * 4);
 //			Dx12Lightmaps[lmtex]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -984,7 +980,7 @@ dynamic:
 
 //==========
 //PGM
-		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture); // , &Dx12Lightmaps[lmtex]->getRenderTexture());
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture, &Dx12Lightmaps[lmtex]->getRenderTexture(), D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false, false);
 		MeshVertexFormat V0;
 		bool bV0Set = false;
 		MeshVertexFormat LastV;
@@ -1101,7 +1097,7 @@ dynamic:
 //		GL_MBind( GL_TEXTURE0, image->texnum );
 //		GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + lmtex );
 
-		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture); //, &Dx12Lightmaps[lmtex]->getRenderTexture());
+		gMeshRenderer->StartCommand(MeshRenderCommand::EType::DrawInstanced_LightmapSurface, LastEntityWorldMatrix, image->RenderTexture, &Dx12Lightmaps[lmtex]->getRenderTexture(), D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false, false);
 		MeshVertexFormat V0;
 		bool bV0Set = false;
 		MeshVertexFormat LastV;
@@ -1754,6 +1750,7 @@ static void LM_UploadBlock( qboolean dynamic )
 		//				  GL_LIGHTMAP_FORMAT,
 		//				  GL_UNSIGNED_BYTE,
 		//				  gl_lms.lightmap_buffer );
+		dxglTexSubImage2D(texture, 0, 0, BLOCK_WIDTH, height, gl_lms.lightmap_buffer);
 
 //		Dx12Lightmaps[texture]->Upload(gl_lms.lightmap_buffer, BLOCK_WIDTH * 4, BLOCK_WIDTH * BLOCK_HEIGHT * 4);
 //		Dx12Lightmaps[texture]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
@@ -1768,7 +1765,9 @@ static void LM_UploadBlock( qboolean dynamic )
 		//			   GL_LIGHTMAP_FORMAT, 
 		//			   GL_UNSIGNED_BYTE, 
 		//			   gl_lms.lightmap_buffer );
-
+		dxglTexImage2D(texture, gl_lms.lightmap_buffer);
+		
+		//qglTexImage2D )(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
 //		Dx12Lightmaps[texture]->Upload(gl_lms.lightmap_buffer, BLOCK_WIDTH * 4, BLOCK_WIDTH * BLOCK_HEIGHT * 4);
 //		Dx12Lightmaps[texture]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
@@ -2018,6 +2017,8 @@ void GL_BeginBuildingLightmaps (model_t *m)
 //				   GL_LIGHTMAP_FORMAT, 
 //				   GL_UNSIGNED_BYTE, 
 //				   dummy );
+	const uint LightMapIndex = 0;
+	dxglTexImage2DClearToBlack(LightMapIndex);
 }
 
 /*

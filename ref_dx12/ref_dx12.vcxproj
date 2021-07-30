@@ -264,6 +264,7 @@
     <ClCompile Include="dx_gl_rsurf.cpp" />
     <ClCompile Include="dx_image.cpp" />
     <ClCompile Include="dx_gl_model.cpp" />
+    <ClCompile Include="dx_lightmap.cpp" />
     <ClCompile Include="dx_renderparticle.cpp" />
     <ClCompile Include="dx_renderview.cpp" />
     <ClCompile Include="dx_shader.cpp" />
