@@ -54,8 +54,8 @@ struct VertexOutput
 VertexOutput ImageDrawVertexShader(uint VertexID : SV_VertexID)
 {
 	VertexOutput output;	// TODO init to 0
-
-	float2 Norm2d = float2((VertexID == 1 || VertexID == 3) ? 1.0 : 0.0, (VertexID == 2 || VertexID == 3) ? 1.0 : 0.0);
+	
+	float2 Norm2d = float2((VertexID == 1 || VertexID == 4 || VertexID == 5) ? 1.0 : 0.0, (VertexID == 2 || VertexID == 3 || VertexID == 5) ? 1.0 : 0.0);
 
 	output.position = float4((ImageBottomLeft + Norm2d * ImageSize) * float2(OutputWidthAndInv.y, OutputHeightAndInv.y) * float2(2.0f, -2.0f) + float2(-1.0, 1.0), 0.1, 1.0);
 	output.uv = Norm2d;

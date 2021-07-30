@@ -54,9 +54,6 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 	ScissorRect.bottom = BackBufferHeight;
 	CommandList->RSSetScissorRects(1, &ScissorRect);
 
-	IndexBufferQuadTris->resourceTransitionBarrier(D3D12_RESOURCE_STATE_INDEX_BUFFER);
-	D3D12_INDEX_BUFFER_VIEW QuadIndexBufferView = IndexBufferQuadTris->getIndexBufferView(DXGI_FORMAT_R32_UINT);
-
 	// Some rendering tests
 #if 0
 	{
@@ -254,11 +251,10 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 		g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
 
 		CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
-		CommandList->IASetIndexBuffer(&QuadIndexBufferView);
 
 		CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
 
-		CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+		CommandList->DrawInstanced(6, 1, 0, 0);
 	}
 }
 
