@@ -462,32 +462,6 @@ void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight)
 	gImageRenderer->StopRecording();
 
 	gImageRenderer->ExecuteRenderCommands(BackBufferWidth, BackBufferHeight);
-
-	// Some rendering tests
-#if 0
-	{
-		// Set PSO and render targets
-		CachedRasterPsoDesc PSODesc;
-		PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
-		PSODesc.mLayout = nullptr;
-		PSODesc.mVS = FullScreenTriangleVertexShader;
-		PSODesc.mPS = UvPixelShader;
-		PSODesc.mDepthStencilState = &getDepthStencilState_Disabled();
-		PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
-		PSODesc.mBlendState = &getBlendState_Default();
-		PSODesc.mRenderTargetCount = 1;
-		PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
-		PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		g_CachedPSOManager->SetPipelineState(CommandList, PSODesc);
-
-		// Set other raster properties
-		CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	// set the primitive topology
-
-		CommandList->IASetIndexBuffer(&QuadIndexBufferView);
-
-		CommandList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-	}
-#endif
 }
 
 void R_ShutdownDrawImage()
