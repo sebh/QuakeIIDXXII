@@ -144,11 +144,11 @@ void MeshRenderer::StartCommand(
 #if D_BATCH_SURFACE
 	if (CurrentCommand != nullptr
 		&& CurrentCommand->Type == Type
-		&& memcmp(&CurrentCommand->MeshWorldMatrix, &MeshWorldMatrix2, sizeof(XMFLOAT4X4))==0	// CurrentCommand->MeshWorldMatrix == MeshWorldMatrix2
-		&& CurrentCommand->SurfaceTexture == SurfaceTexture
-		&& CurrentCommand->LightmapTexture == LightmapTexture
 		&& CurrentCommand->Topology == Topology
 		&& Topology == D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST	// We can only merge command with triangle list (strip would result in broken transition triangles)
+		&& CurrentCommand->SurfaceTexture == SurfaceTexture
+		&& CurrentCommand->LightmapTexture == LightmapTexture
+		&& memcmp(&CurrentCommand->MeshWorldMatrix, &MeshWorldMatrix2, sizeof(XMFLOAT4X4))==0	// CurrentCommand->MeshWorldMatrix == MeshWorldMatrix2
 		&& CurrentCommand->bEnableAlphaBlending == bEnableAlphaBlending
 		&& CurrentCommand->bViewWeaponMesh == bViewWeaponMesh)
 	{
