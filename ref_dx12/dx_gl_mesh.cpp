@@ -356,9 +356,18 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 						SetVertexCount++;
 						if (SetVertexCount >= 3)
 						{
-							gMeshRenderer->AppendVertex(PrevPrevVertex);
-							gMeshRenderer->AppendVertex(PrevVertex);
-							gMeshRenderer->AppendVertex(Vertex);
+							if (((SetVertexCount - 3) % 2) == 0)
+							{
+								gMeshRenderer->AppendVertex(PrevPrevVertex);
+								gMeshRenderer->AppendVertex(PrevVertex);
+								gMeshRenderer->AppendVertex(Vertex);
+							}
+							else
+							{
+								gMeshRenderer->AppendVertex(PrevPrevVertex);
+								gMeshRenderer->AppendVertex(Vertex);
+								gMeshRenderer->AppendVertex(PrevVertex);
+							}
 						}
 
 						PrevPrevVertex = PrevVertex;
@@ -418,9 +427,22 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp, bool bEntityIsTra
 						SetVertexCount++;
 						if (SetVertexCount >= 3)
 						{
-							gMeshRenderer->AppendVertex(PrevPrevVertex);
-							gMeshRenderer->AppendVertex(PrevVertex);
-							gMeshRenderer->AppendVertex(Vertex);
+							Vertex.ColorAlpha[0] = l * shadelight[0];
+							Vertex.ColorAlpha[1] = l * shadelight[1];
+							Vertex.ColorAlpha[2] = l * shadelight[2];
+
+							if (((SetVertexCount - 3) % 2) == 0)
+							{
+								gMeshRenderer->AppendVertex(PrevPrevVertex);
+								gMeshRenderer->AppendVertex(PrevVertex);
+								gMeshRenderer->AppendVertex(Vertex);
+							}
+							else
+							{
+								gMeshRenderer->AppendVertex(PrevPrevVertex);
+								gMeshRenderer->AppendVertex(Vertex);
+								gMeshRenderer->AppendVertex(PrevVertex);
+							}
 						}
 
 						PrevPrevVertex = PrevVertex;

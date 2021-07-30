@@ -255,7 +255,7 @@ void MeshRenderer::ExecuteRenderCommands()
 	CachedRasterPsoDesc PSODesc;
 	PSODesc.mRootSign = &g_dx12Device->GetDefaultGraphicRootSignature();
 	PSODesc.mLayout = &MeshVertexFormatLayout;
-	PSODesc.mRasterizerState = &getRasterizerState_DefaultNoCulling();
+	PSODesc.mRasterizerState = &getRasterizerState_Default();
 	PSODesc.mRenderTargetCount = 1;
 	PSODesc.mRenderTargetDescriptors[0] = BackBufferDescriptor;
 	PSODesc.mRenderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -772,12 +772,12 @@ void R_DrawSpriteModel (entity_t *e)
 	Vertex3.SurfaceUV[0] = 1;
 	Vertex3.SurfaceUV[1] = 1;
 
+	gMeshRenderer->AppendVertex(Vertex0);
 	gMeshRenderer->AppendVertex(Vertex1);
 	gMeshRenderer->AppendVertex(Vertex2);
 	gMeshRenderer->AppendVertex(Vertex0);
-	gMeshRenderer->AppendVertex(Vertex3);
 	gMeshRenderer->AppendVertex(Vertex2);
-	gMeshRenderer->AppendVertex(Vertex0);
+	gMeshRenderer->AppendVertex(Vertex3);
 
 	gMeshRenderer->EndCommand();
 	
