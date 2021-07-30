@@ -11,4 +11,4 @@ Build the solution
 6. Open *dx_shader.cpp* and update the full path to the shader file. (this really needs to be fixed)
 7. Hit F5
 
-
+The dx12 implementation is far from perfect and lots could be done, (especially around data upload to GPU and batching).

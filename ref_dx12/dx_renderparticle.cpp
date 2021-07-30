@@ -101,7 +101,7 @@ void R_RenderParticles(void)
 	CBData->ViewRight[0] = vd.right[0];
 	CBData->ViewRight[1] = vd.right[1];
 	CBData->ViewRight[2] = vd.right[2];
-	CBData->ParticleSize = gl_particle_size->value * 0.03f;
+	CBData->ParticleSize = gl_particle_size->value * 0.025f; // Could implement https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glPointSize.xml but a world space size will do for now.
 	CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
 
 	CommandList->DrawInstanced(6, r_newrefdef.num_particles, 0, 0);
