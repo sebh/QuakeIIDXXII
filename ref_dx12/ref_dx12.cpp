@@ -478,6 +478,7 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 
 	LoadAllShaders();
 
+	R_InitDrawImage();
 	R_InitRenderView();
 
 	return true;
@@ -495,6 +496,7 @@ void R_DX12_Shutdown(void)
 
 	SkyUnregisterTexture();
 
+	R_ShutdownDrawImage();
 	R_ShutdownRenderView();
 	UnloadAllTextures();
 
@@ -529,7 +531,7 @@ void R_DX12_BeginFrame(float camera_separation)
 
 		UploadAllTextures();
 
-		DrawBeginFrame();
+		DrawImageBeginFrame();
 
 		// Get device resources
 		ID3D12GraphicsCommandList* CommandList = g_dx12Device->getFrameCommandList();

@@ -84,6 +84,14 @@ extern PixelShader*  TiledImageDrawPixelShader;
 extern PixelShader*  ColorDrawPixelShader;
 extern PixelShader*  CharDrawPixelShader;
 
+struct ColoredImageConstantBuffer
+{
+	float	OutputWidthAndInv[2];
+	float	OutputHeightAndInv[2];
+};
+extern VertexShader* ColoredImageVertexShader;
+extern PixelShader*  ColoredImagePixelShader;
+
 struct SkyConstantBuffer
 {
 	float4x4	ViewProjectionMatrix;
@@ -161,7 +169,7 @@ struct DrawImageCall
 	{
 		Type = DrawImageCallType::Draw_Pic;
 		Image = nullptr;
-		c = -1;
+		c = 15;	// white
 		x = -1;
 		y = -1;
 		w = -1;
@@ -169,9 +177,11 @@ struct DrawImageCall
 	}
 };
 
-void DrawBeginFrame();
+void R_InitDrawImage(void);
+void DrawImageBeginFrame();
 void AddDrawImage(DrawImageCall& DrawImageCall);
 void DrawAllImages(unsigned int BackBufferWidth, unsigned int BackBufferHeight);
+void R_ShutdownDrawImage(void);
 
 
 

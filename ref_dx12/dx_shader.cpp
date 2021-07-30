@@ -21,9 +21,12 @@ PixelShader* MeshColorPixelShader = nullptr;
 PixelShader* MeshLightmapSurfacePixelShader = nullptr;
 PixelShader* MeshColoredSurfacePixelShader = nullptr;
 
+VertexShader* ColoredImageVertexShader = nullptr;
+PixelShader* ColoredImagePixelShader = nullptr;
+
+
 VertexShader* ParticleVertexShader = nullptr;
 PixelShader* ParticlePixelShader = nullptr;
-
 
 void LoadAllShaders()
 {
@@ -59,6 +62,12 @@ void LoadAllShaders()
 	}
 	{
 		Macros Macros;
+		Macros.push_back({ L"DRAWIMAGESHADER", L"1" });
+		ColoredImageVertexShader = new VertexShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"ColoredImageVertexShader", &Macros);
+		ColoredImagePixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ImageDrawShader.hlsl", L"ColoredImagePixelShader", &Macros);
+	}
+	{
+		Macros Macros;
 		ParticleVertexShader = new VertexShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ParticleDrawShader.hlsl", L"ParticleVertexShader", &Macros);
 		ParticlePixelShader = new PixelShader(L"D:\\Projects\\Git\\QuakeIIDXXII\\ref_dx12\\Shaders\\ParticleDrawShader.hlsl", L"ParticlePixelShader", &Macros);
 	}
@@ -83,6 +92,9 @@ void UnloadAllShaders()
 	delete MeshColorPixelShader;
 	delete MeshLightmapSurfacePixelShader;
 	delete MeshColoredSurfacePixelShader;
+
+	delete ColoredImageVertexShader;
+	delete ColoredImagePixelShader;
 
 	delete ParticleVertexShader;
 	delete ParticlePixelShader;
