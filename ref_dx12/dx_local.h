@@ -207,7 +207,12 @@ void R_MarkLights(dlight_t *light, int bit, /*mnode_t*/void *node);
 
 #define	MAX_LIGHTMAPS	128
 
-extern RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
+// To avoid uploading sub part of texture multiple times per frame, we instead have 128 static and 128 dynamic light lightmaps. All uploaded at once during the frame if used.
+// before, lightmap 0 was reserved for dynamic surfaces, uploaded once for each GL_POLY or FAN. This is not nice so instead we simply change the dynamic version of the lightmap and upload once a frame.
+// So more texture memory is used but at least the copy can all be done together so that the rendered batches can all be processed in parallel (as much as possible)
+#define	ALL_LIGHTMAPS	(MAX_LIGHTMAPS*2)
+
+extern RenderTextureDynamic* Dx12Lightmaps[ALL_LIGHTMAPS];
 
 void R_InitLightmaps();
 void R_ResetLightmaps();

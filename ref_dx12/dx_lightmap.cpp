@@ -4,8 +4,8 @@
 
 
 
-RenderTextureDynamic* Dx12Lightmaps[MAX_LIGHTMAPS];
-byte* Dx12LightmapsCPUData[MAX_LIGHTMAPS];
+RenderTextureDynamic* Dx12Lightmaps[ALL_LIGHTMAPS];
+byte* Dx12LightmapsCPUData[ALL_LIGHTMAPS];
 
 
 #define LIGHTMAP_UNINITIALISED		0
@@ -17,7 +17,7 @@ byte Dx12LightmapsStatus[MAX_LIGHTMAPS];
 
 void R_InitLightmaps()
 {
-	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
+	for (int i = 0; i < ALL_LIGHTMAPS; ++i)
 	{
 		Dx12Lightmaps[i] = new RenderTextureDynamic(BLOCK_WIDTH, BLOCK_HEIGHT, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
 
@@ -34,7 +34,7 @@ void R_ResetLightmaps()
 
 void dxglTexImage2DClearToBlack(uint LightmapIndex)
 {
-	ATLASSERT(LightmapIndex < MAX_LIGHTMAPS);
+	ATLASSERT(LightmapIndex < ALL_LIGHTMAPS);
 
 	memset(Dx12LightmapsCPUData[LightmapIndex], 0, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
 	Dx12LightmapsStatus[LightmapIndex] = LIGHTMAP_NEEDUPLOAD;
@@ -42,7 +42,7 @@ void dxglTexImage2DClearToBlack(uint LightmapIndex)
 
 void dxglTexImage2D(uint LightmapIndex, const byte *pixels)
 {
-	ATLASSERT(LightmapIndex < MAX_LIGHTMAPS);
+	ATLASSERT(LightmapIndex < ALL_LIGHTMAPS);
 
 	memcpy(Dx12LightmapsCPUData[LightmapIndex], (const byte*)pixels, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
 	Dx12LightmapsStatus[LightmapIndex] = LIGHTMAP_NEEDUPLOAD;
@@ -50,7 +50,7 @@ void dxglTexImage2D(uint LightmapIndex, const byte *pixels)
 
 void dxglTexSubImage2D(uint LightmapIndex, uint xoffset, uint yoffset, uint width, uint height, const byte *pixels)
 {
-	ATLASSERT(LightmapIndex < MAX_LIGHTMAPS);
+	ATLASSERT(LightmapIndex < ALL_LIGHTMAPS);
 
 	for (uint y = 0; y < height; ++y)
 	{
@@ -70,7 +70,7 @@ void dxglTexSubImage2D(uint LightmapIndex, uint xoffset, uint yoffset, uint widt
 
 void R_UploadLightmaps()
 {
-	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
+	for (int i = 0; i < ALL_LIGHTMAPS; ++i)
 	{
 		switch (Dx12LightmapsStatus[i])
 		{
@@ -92,7 +92,7 @@ void R_UploadLightmaps()
 
 void R_ShutdownLightmaps()
 {
-	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
+	for (int i = 0; i < ALL_LIGHTMAPS; ++i)
 	{
 		delete Dx12Lightmaps[i];
 		delete [] Dx12LightmapsCPUData[i];

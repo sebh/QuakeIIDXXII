@@ -939,7 +939,8 @@ dynamic:
 
 //			GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + surf->lightmaptexturenum );
 
-			lmtex = surf->lightmaptexturenum;
+			// We use the dynamic version of the polygon lightmap, being MAX_LIGHTMAPS + surf->lightmaptexturenum
+			lmtex = MAX_LIGHTMAPS + surf->lightmaptexturenum;
 
 //			qglTexSubImage2D( GL_TEXTURE_2D, 0,
 //							  surf->light_s, surf->light_t, 
@@ -960,7 +961,9 @@ dynamic:
 
 //			GL_MBind( GL_TEXTURE1, gl_state.lightmap_textures + 0 );
 
-			lmtex = 0;
+			//lmtex = 0;
+			// Instead of using lightmap 0, we use the dynamic version of the polygon lightmap, being MAX_LIGHTMAPS + surf->lightmaptexturenum
+			lmtex = MAX_LIGHTMAPS + surf->lightmaptexturenum;
 
 //			qglTexSubImage2D( GL_TEXTURE_2D, 0,
 //							  surf->light_s, surf->light_t, 
