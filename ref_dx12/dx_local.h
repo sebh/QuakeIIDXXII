@@ -405,6 +405,9 @@ extern cvar_t *gl_polyblend;
 extern cvar_t *gl_particle_size;
 extern cvar_t *gl_dynamic;
 
+extern cvar_t *intensity;
+extern cvar_t *vid_gamma;
+
 extern cvar_t *dx_batchworldtriangles;
 
 extern int r_visframecount;

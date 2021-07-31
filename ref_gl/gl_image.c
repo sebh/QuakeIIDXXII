@@ -1262,7 +1262,7 @@ image_t *GL_LoadPic (char *name, byte *pic, int width, int height, imagetype_t t
 
 	if (strlen(name) >= sizeof(image->name))
 		ri.Sys_Error (ERR_DROP, "Draw_LoadPic: \"%s\" is too long", name);
-	strcpy (image->name, name);
+	strcpy_s (image->name, 64, name);
 	image->registration_sequence = registration_sequence;
 
 	image->width = width;

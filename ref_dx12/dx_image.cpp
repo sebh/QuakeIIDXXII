@@ -16,6 +16,9 @@ image_t* r_notexture;
 image_t* r_charstexture;
 unsigned d_8to24table[256];
 
+static byte			 intensitytable[256];
+static unsigned char gammatable[256];
+
 /*
 ==============
 LoadPCX
@@ -318,6 +321,49 @@ void LoadTGA(char *name, byte **pic, int *width, int *height)
 
 /*
 ================
+GL_LightScaleTexture
+
+Scale up the pixel values in a texture to increase the
+lighting range
+================
+*/
+void GL_LightScaleTexture(unsigned *in, int inwidth, int inheight, qboolean only_gamma)
+{
+	if (only_gamma)
+	{
+		int		i, c;
+		byte	*p;
+
+		p = (byte *)in;
+
+		c = inwidth * inheight;
+		for (i = 0; i < c; i++, p += 4)
+		{
+			p[0] = gammatable[p[0]];
+			p[1] = gammatable[p[1]];
+			p[2] = gammatable[p[2]];
+		}
+	}
+	else
+	{
+		int		i, c;
+		byte	*p;
+
+		p = (byte *)in;
+
+		c = inwidth * inheight;
+		for (i = 0; i < c; i++, p += 4)
+		{
+			p[0] = gammatable[intensitytable[p[0]]];
+			p[1] = gammatable[intensitytable[p[1]]];
+			p[2] = gammatable[intensitytable[p[2]]];
+		}
+	}
+}
+
+
+/*
+================
 GL_LoadPic
 
 This is also used as an entry point for the generated r_notexture
@@ -391,6 +437,15 @@ image_t *GL_LoadPic(char *name, byte *pic, int width, int height, imagetype_t ty
 		Image->width = width;
 		Image->height = height;
 		Image->type = type;
+
+#if 1
+		// See GL_LoadPic
+		const bool bMipmap = (Image->type != it_pic && Image->type != it_sky);
+		if (bMipmap) // Look in GL_Upload32 from gl_image.c, texture without mipmap pass through without the rescaling.
+		{
+			GL_LightScaleTexture((unsigned*)Image->pic, width, height, !bMipmap);
+		}
+#endif
 
 		if (strlen(name) >= sizeof(Image->name))
 			ri.Sys_Error(ERR_DROP, "Draw_LoadPic: \"%s\" is too long", name);
@@ -580,6 +635,37 @@ void UploadAllTextures()
 
 		{
 			r_charstexture = FindImage("pics/conchars.pcx", it_pic);
+		}
+
+		{
+			float g = vid_gamma->value;
+
+			for (int i = 0; i < 256; i++)
+			{
+				if (g == 1)
+				{
+					gammatable[i] = i;
+				}
+				else
+				{
+					float inf;
+
+					inf = 255 * pow((i + 0.5) / 255.5, g) + 0.5;
+					if (inf < 0)
+						inf = 0;
+					if (inf > 255)
+						inf = 255;
+					gammatable[i] = inf;
+				}
+			}
+
+			for (int i = 0; i < 256; i++)
+			{
+				int j = i * intensity->value;
+				if (j > 255)
+					j = 255;
+				intensitytable[i] = j;
+			}
 		}
 
 		bImageInitialised = true;
