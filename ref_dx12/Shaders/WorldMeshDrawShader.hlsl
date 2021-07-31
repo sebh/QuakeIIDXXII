@@ -63,7 +63,7 @@ float4 MeshLightmapSurfacePixelShader(VertexOutput Input) : SV_TARGET
 {
 	return lerp(
 		//float4(LightmapTexture.Sample(SamplerPointClamp, Input.LightmapUV).rgb * 2, 1.0f),
-		float4(LightmapTexture.Sample(SamplerPointClamp, Input.LightmapUV).rgb * 2, 1.0f) * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV),
+		float4(LightmapTexture.Sample(SamplerLinearClamp, Input.LightmapUV).rgb * 2, 1.0f) * SurfaceTexture.Sample(SamplerLinearRepeat, Input.SurfaceUV),
 		BatchDebugColor, BatchDebugColor.a);
 }
 
