@@ -52,25 +52,25 @@ void dxglTexSubImage2D(uint LightmapIndex, uint xoffset, uint yoffset, uint widt
 {
 	ATLASSERT(LightmapIndex < MAX_LIGHTMAPS);
 
-	//xoffset = xoffset > BLOCK_WIDTH  ? BLOCK_WIDTH  : xoffset;
-	//yoffset = yoffset > BLOCK_HEIGHT ? BLOCK_HEIGHT : yoffset;
-	//width  = (xoffset + width)  > BLOCK_WIDTH  ? BLOCK_WIDTH  - xoffset : width;
-	//height = (yoffset + height) > BLOCK_HEIGHT ? BLOCK_HEIGHT - yoffset : height;
+//	xoffset = xoffset >= BLOCK_WIDTH  ? BLOCK_WIDTH -1 : xoffset;
+//	yoffset = yoffset >= BLOCK_HEIGHT ? BLOCK_HEIGHT-1 : yoffset;
+//	width  = (xoffset + width)  > BLOCK_WIDTH  ? BLOCK_WIDTH  - xoffset : width;
+//	height = (yoffset + height) > BLOCK_HEIGHT ? BLOCK_HEIGHT - yoffset : height;
 
-/*	uint xEnd = xoffset + width;
+	uint xEnd = xoffset + width;
 	uint yEnd = yoffset + height;
 	for (uint x = xoffset; x < xEnd; ++x)
 	{
 		for (uint y = yoffset; y < yEnd; ++y)
 		{
 			uint iDst = y * BLOCK_WIDTH * LIGHTMAP_BYTES + x * LIGHTMAP_BYTES;
-			uint iSrc = (y - yoffset) * BLOCK_WIDTH * LIGHTMAP_BYTES + (x - xoffset) * LIGHTMAP_BYTES;
+			uint iSrc = (y - yoffset) * width * LIGHTMAP_BYTES + (x - xoffset) * LIGHTMAP_BYTES;
 			Dx12LightmapsCPUData[LightmapIndex][iDst + 0] = pixels[iSrc + 0];
 			Dx12LightmapsCPUData[LightmapIndex][iDst + 1] = pixels[iSrc + 1];
 			Dx12LightmapsCPUData[LightmapIndex][iDst + 2] = pixels[iSrc + 2];
-			Dx12LightmapsCPUData[LightmapIndex][iDst + 3] = pixels[iSrc + 3];
+			Dx12LightmapsCPUData[LightmapIndex][iDst + 3] = 1.0;// pixels[iSrc + 3];
 		}
-	}*/
+	}
 
 	Dx12LightmapsStatus[LightmapIndex] = LIGHTMAP_NEEDUPLOAD;
 }
