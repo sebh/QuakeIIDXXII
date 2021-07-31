@@ -923,7 +923,7 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// draw all the triangles
 	//
-	// SebH TODO hack depth range
+	// Depth range specified in GL_DrawAliasFrameLerp
 ///	if (currententity->flags & RF_DEPTHHACK) // hack the depth range to prevent view model from poking into walls
 ///		qglDepthRange (gldepthmin, gldepthmin + 0.3*(gldepthmax-gldepthmin));
 
