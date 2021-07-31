@@ -8,10 +8,11 @@ RenderTextureDynamic* Dx12Lightmaps[ALL_LIGHTMAPS];
 byte* Dx12LightmapsCPUData[ALL_LIGHTMAPS];
 
 
-#define LIGHTMAP_UNINITIALISED		0
-#define LIGHTMAP_NEEDUPLOAD			1
-#define LIGHTMAP_VALID				2
-byte Dx12LightmapsStatus[MAX_LIGHTMAPS];
+#define LIGHTMAP_UNINITIALISED		0x00
+#define LIGHTMAP_NEEDUPLOAD			0x01
+#define LIGHTMAP_VALID				0x02
+byte Dx12LightmapsStatus[ALL_LIGHTMAPS];
+byte Dx12LightmapsNotOnlyCleared[ALL_LIGHTMAPS];
 
 
 
@@ -22,6 +23,7 @@ void R_InitLightmaps()
 		Dx12Lightmaps[i] = new RenderTextureDynamic(BLOCK_WIDTH, BLOCK_HEIGHT, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
 
 		Dx12LightmapsCPUData[i] = new byte[BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES];
+		memset(Dx12LightmapsCPUData[i], 0, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
 	}
 	R_ResetLightmaps();
 }
@@ -30,6 +32,7 @@ void R_ResetLightmaps()
 {
 	// Reset all lightmap as not used
 	memset(Dx12LightmapsStatus, LIGHTMAP_UNINITIALISED, sizeof(Dx12LightmapsStatus));
+	memset(Dx12LightmapsNotOnlyCleared, 0, sizeof(Dx12LightmapsNotOnlyCleared));
 }
 
 void dxglTexImage2DClearToBlack(uint LightmapIndex)
@@ -46,6 +49,7 @@ void dxglTexImage2D(uint LightmapIndex, const byte *pixels)
 
 	memcpy(Dx12LightmapsCPUData[LightmapIndex], (const byte*)pixels, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
 	Dx12LightmapsStatus[LightmapIndex] = LIGHTMAP_NEEDUPLOAD;
+	Dx12LightmapsNotOnlyCleared[LightmapIndex] = 1;
 }
 
 void dxglTexSubImage2D(uint LightmapIndex, uint xoffset, uint yoffset, uint width, uint height, const byte *pixels)
@@ -66,6 +70,7 @@ void dxglTexSubImage2D(uint LightmapIndex, uint xoffset, uint yoffset, uint widt
 	}
 
 	Dx12LightmapsStatus[LightmapIndex] = LIGHTMAP_NEEDUPLOAD;
+	Dx12LightmapsNotOnlyCleared[LightmapIndex] = 1;
 }
 
 void R_UploadLightmaps()
@@ -76,7 +81,7 @@ void R_UploadLightmaps()
 		{
 		case LIGHTMAP_UNINITIALISED:
 			memset(Dx12LightmapsCPUData[i], 0, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
-			Dx12LightmapsStatus[i] = LIGHTMAP_VALID;	// Stop here, we only upload if some data has been specified
+			Dx12LightmapsStatus[i] = LIGHTMAP_VALID;
 			break;
 		case LIGHTMAP_NEEDUPLOAD:
 			Dx12Lightmaps[i]->Upload(Dx12LightmapsCPUData[i], BLOCK_WIDTH * LIGHTMAP_BYTES, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
@@ -88,6 +93,51 @@ void R_UploadLightmaps()
 			break;
 		}
 	}
+
+#if 0
+	DrawImageCall DrawImage;
+	DrawImageCall dic;
+	dic.Type = DrawImageCallType::Draw_Tex;
+	dic.x = 0;
+	dic.y = BLOCK_HEIGHT;
+	dic.w = BLOCK_WIDTH;
+	dic.h = BLOCK_HEIGHT;
+	const int DebugPrintWidth = r_newrefdef.width / 2;
+	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
+	{
+		// Only print lightmap with real data (not only cleared)
+		if (Dx12LightmapsNotOnlyCleared[i] == 0)
+			continue;
+
+		while ((dic.x + dic.w) > DebugPrintWidth)
+		{
+			dic.x = dic.x - DebugPrintWidth;
+			if (dic.x < 0)
+			{
+				dic.x = 0;
+			}
+			dic.y += BLOCK_HEIGHT * 2 + 8;
+		}
+
+		DrawImage = dic;
+		DrawImage.Texture = &Dx12Lightmaps[i]->getRenderTexture();
+		AddDrawImage(DrawImage);
+
+		if (Dx12LightmapsNotOnlyCleared[MAX_LIGHTMAPS + i] == 0)
+		{
+			dic.x += BLOCK_WIDTH + 4; // next position
+			continue;
+		}
+
+		dic.y+= BLOCK_HEIGHT + 2;
+		DrawImage = dic;
+		DrawImage.Texture = &Dx12Lightmaps[i + MAX_LIGHTMAPS]->getRenderTexture();
+		AddDrawImage(DrawImage);
+		dic.y -= BLOCK_HEIGHT + 2;
+
+		dic.x += BLOCK_WIDTH + 4; // next position
+	}
+#endif
 }
 
 void R_ShutdownLightmaps()
