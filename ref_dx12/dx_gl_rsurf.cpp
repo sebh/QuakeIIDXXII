@@ -283,6 +283,7 @@ void DrawGLFlowingPoly (msurface_t *fa, image_t* image)
 	glpoly_t *p;
 	float	scroll;
 
+	const float gl_state_inverse_intensity = 1.0f / intensity->value;
 	p = fa->polys;
 
 	scroll = -64 * ( (r_newrefdef.time / 40.0) - (int)(r_newrefdef.time / 40.0) );
@@ -304,10 +305,10 @@ void DrawGLFlowingPoly (msurface_t *fa, image_t* image)
 
 		MeshVertexFormat Vertex;
 		memcpy(Vertex.Position, v, sizeof(Vertex.Position));
-		Vertex.ColorAlpha[0] = 1.0f;
-		Vertex.ColorAlpha[1] = 1.0f;
-		Vertex.ColorAlpha[2] = 1.0f;	// meant to be rgb = gl_state.inverse_intensity
-		Vertex.ColorAlpha[3] = 1.0f;
+		Vertex.ColorAlpha[0] = gl_state_inverse_intensity;
+		Vertex.ColorAlpha[1] = gl_state_inverse_intensity;
+		Vertex.ColorAlpha[2] = gl_state_inverse_intensity;
+		Vertex.ColorAlpha[3] = 1.0;
 		Vertex.LightmapUV[0] = v[5];
 		Vertex.LightmapUV[1] = v[6];
 		Vertex.SurfaceUV[0] = v[3] + scroll;
@@ -592,6 +593,8 @@ void EmitWaterPolys(msurface_t *fa, image_t *image)
 	float		scroll;
 	float		rdt = r_newrefdef.time;
 
+	const float gl_state_inverse_intensity = 1.0f / intensity->value;
+
 	if (fa->texinfo->flags & SURF_FLOWING)
 		scroll = -64 * ((r_newrefdef.time*0.5) - (int)(r_newrefdef.time*0.5));
 	else
@@ -633,10 +636,10 @@ void EmitWaterPolys(msurface_t *fa, image_t *image)
 
 			MeshVertexFormat Vertex;
 			memcpy(Vertex.Position, v, sizeof(Vertex.Position));
-			Vertex.ColorAlpha[0] = 1.0f;
-			Vertex.ColorAlpha[1] = 1.0f;
-			Vertex.ColorAlpha[2] = 1.0f;
-			Vertex.ColorAlpha[3] = 1.0f;
+			Vertex.ColorAlpha[0] = gl_state_inverse_intensity;
+			Vertex.ColorAlpha[1] = gl_state_inverse_intensity;
+			Vertex.ColorAlpha[2] = gl_state_inverse_intensity;
+			Vertex.ColorAlpha[3] = 1.0;
 			Vertex.SurfaceUV[0] = s;
 			Vertex.SurfaceUV[1] = t;
 

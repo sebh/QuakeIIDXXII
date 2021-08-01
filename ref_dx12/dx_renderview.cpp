@@ -898,7 +898,7 @@ void R_DrawAlphaSurfaces(void)
 
 	// the textures are prescaled up for a better lighting range,
 	// so scale it back down
-	intens = 1.0f;// gl_state.inverse_intensity;		// TODO?
+	intens = 1.0f / intensity->value;
 
 	for (s = r_alpha_surfaces; s; s = s->texturechain)
 	{
