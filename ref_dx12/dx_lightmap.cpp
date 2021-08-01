@@ -75,24 +75,6 @@ void dxglTexSubImage2D(uint LightmapIndex, uint xoffset, uint yoffset, uint widt
 
 void R_UploadLightmaps()
 {
-	for (int i = 0; i < ALL_LIGHTMAPS; ++i)
-	{
-		switch (Dx12LightmapsStatus[i])
-		{
-		case LIGHTMAP_UNINITIALISED:
-			memset(Dx12LightmapsCPUData[i], 0, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
-			Dx12LightmapsStatus[i] = LIGHTMAP_VALID;
-			break;
-		case LIGHTMAP_NEEDUPLOAD:
-			Dx12Lightmaps[i]->Upload(Dx12LightmapsCPUData[i], BLOCK_WIDTH * LIGHTMAP_BYTES, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
-			Dx12Lightmaps[i]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			Dx12LightmapsStatus[i] = LIGHTMAP_VALID;
-			break;
-		case LIGHTMAP_VALID:
-			// nothing to do
-			break;
-		}
-	}
 
 
 	if (dx_showlightmaps->value > 0)
@@ -121,6 +103,15 @@ void R_UploadLightmaps()
 				dic.y += BLOCK_HEIGHT * 2 + 8;
 			}
 
+			if (Dx12LightmapsStatus[i] == LIGHTMAP_NEEDUPLOAD)
+			{
+				DrawImage = dic;
+				DrawImage.Type = DrawImageCallType::Draw_Fill;
+				DrawImage.c = 208;
+				DrawImage.x -= 1; DrawImage.y -= 1;
+				DrawImage.w += 2; DrawImage.h += 2;
+				AddDrawImage(DrawImage);
+			}
 			DrawImage = dic;
 			DrawImage.Texture = &Dx12Lightmaps[i]->getRenderTexture();
 			AddDrawImage(DrawImage);
@@ -132,12 +123,40 @@ void R_UploadLightmaps()
 			}
 
 			dic.y += BLOCK_HEIGHT + 2;
+			if (Dx12LightmapsStatus[MAX_LIGHTMAPS + i] == LIGHTMAP_NEEDUPLOAD)
+			{
+				DrawImage = dic;
+				DrawImage.Type = DrawImageCallType::Draw_Fill;
+				DrawImage.c = 208;
+				DrawImage.x -= 1; DrawImage.y -= 1;
+				DrawImage.w += 2; DrawImage.h += 2;
+				AddDrawImage(DrawImage);
+			}
 			DrawImage = dic;
 			DrawImage.Texture = &Dx12Lightmaps[i + MAX_LIGHTMAPS]->getRenderTexture();
 			AddDrawImage(DrawImage);
 			dic.y -= BLOCK_HEIGHT + 2;
 
 			dic.x += BLOCK_WIDTH + 4; // next position
+		}
+	}
+
+	for (int i = 0; i < ALL_LIGHTMAPS; ++i)
+	{
+		switch (Dx12LightmapsStatus[i])
+		{
+		case LIGHTMAP_UNINITIALISED:
+			memset(Dx12LightmapsCPUData[i], 0, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
+			Dx12LightmapsStatus[i] = LIGHTMAP_VALID;
+			break;
+		case LIGHTMAP_NEEDUPLOAD:
+			Dx12Lightmaps[i]->Upload(Dx12LightmapsCPUData[i], BLOCK_WIDTH * LIGHTMAP_BYTES, BLOCK_WIDTH * BLOCK_HEIGHT * LIGHTMAP_BYTES);
+			Dx12Lightmaps[i]->getRenderTexture().resourceTransitionBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			Dx12LightmapsStatus[i] = LIGHTMAP_VALID;
+			break;
+		case LIGHTMAP_VALID:
+			// nothing to do
+			break;
 		}
 	}
 }
