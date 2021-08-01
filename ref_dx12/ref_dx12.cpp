@@ -64,7 +64,10 @@ cvar_t *gl_monolightmap;
 cvar_t *gl_polyblend;
 cvar_t *gl_particle_size;
 cvar_t *gl_dynamic;
+
 cvar_t *dx_batchworldtriangles;
+cvar_t *dx_showlightmaps;
+cvar_t *dx_showworldbatches;
 
 cvar_t *intensity;
 
@@ -347,6 +350,8 @@ qboolean R_DX12_Init(void *hinstance, void *hWnd)
 	intensity = ri.Cvar_Get("intensity", "2", 0);
 
 	dx_batchworldtriangles = ri.Cvar_Get("dx_batchworldtriangles", "1", 0);
+	dx_showlightmaps = ri.Cvar_Get("dx_showlightmaps", "0", 0);
+	dx_showworldbatches = ri.Cvar_Get("dx_showworldbatches", "0", 0);
 
 	registration_sequence = 1;
 

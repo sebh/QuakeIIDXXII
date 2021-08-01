@@ -94,50 +94,52 @@ void R_UploadLightmaps()
 		}
 	}
 
-#if 0
-	DrawImageCall DrawImage;
-	DrawImageCall dic;
-	dic.Type = DrawImageCallType::Draw_Tex;
-	dic.x = 0;
-	dic.y = BLOCK_HEIGHT;
-	dic.w = BLOCK_WIDTH;
-	dic.h = BLOCK_HEIGHT;
-	const int DebugPrintWidth = r_newrefdef.width / 2;
-	for (int i = 0; i < MAX_LIGHTMAPS; ++i)
+
+	if (dx_showlightmaps->value > 0)
 	{
-		// Only print lightmap with real data (not only cleared)
-		if (Dx12LightmapsNotOnlyCleared[i] == 0)
-			continue;
-
-		while ((dic.x + dic.w) > DebugPrintWidth)
+		DrawImageCall DrawImage;
+		DrawImageCall dic;
+		dic.Type = DrawImageCallType::Draw_Tex;
+		dic.x = 0;
+		dic.y = BLOCK_HEIGHT;
+		dic.w = BLOCK_WIDTH;
+		dic.h = BLOCK_HEIGHT;
+		const int DebugPrintWidth = r_newrefdef.width / 2;
+		for (int i = 0; i < MAX_LIGHTMAPS; ++i)
 		{
-			dic.x = dic.x - DebugPrintWidth;
-			if (dic.x < 0)
+			// Only print lightmap with real data (not only cleared)
+			if (Dx12LightmapsNotOnlyCleared[i] == 0)
+				continue;
+
+			while ((dic.x + dic.w) > DebugPrintWidth)
 			{
-				dic.x = 0;
+				dic.x = dic.x - DebugPrintWidth;
+				if (dic.x < 0)
+				{
+					dic.x = 0;
+				}
+				dic.y += BLOCK_HEIGHT * 2 + 8;
 			}
-			dic.y += BLOCK_HEIGHT * 2 + 8;
-		}
 
-		DrawImage = dic;
-		DrawImage.Texture = &Dx12Lightmaps[i]->getRenderTexture();
-		AddDrawImage(DrawImage);
+			DrawImage = dic;
+			DrawImage.Texture = &Dx12Lightmaps[i]->getRenderTexture();
+			AddDrawImage(DrawImage);
 
-		if (Dx12LightmapsNotOnlyCleared[MAX_LIGHTMAPS + i] == 0)
-		{
+			if (Dx12LightmapsNotOnlyCleared[MAX_LIGHTMAPS + i] == 0)
+			{
+				dic.x += BLOCK_WIDTH + 4; // next position
+				continue;
+			}
+
+			dic.y += BLOCK_HEIGHT + 2;
+			DrawImage = dic;
+			DrawImage.Texture = &Dx12Lightmaps[i + MAX_LIGHTMAPS]->getRenderTexture();
+			AddDrawImage(DrawImage);
+			dic.y -= BLOCK_HEIGHT + 2;
+
 			dic.x += BLOCK_WIDTH + 4; // next position
-			continue;
 		}
-
-		dic.y+= BLOCK_HEIGHT + 2;
-		DrawImage = dic;
-		DrawImage.Texture = &Dx12Lightmaps[i + MAX_LIGHTMAPS]->getRenderTexture();
-		AddDrawImage(DrawImage);
-		dic.y -= BLOCK_HEIGHT + 2;
-
-		dic.x += BLOCK_WIDTH + 4; // next position
 	}
-#endif
 }
 
 void R_ShutdownLightmaps()

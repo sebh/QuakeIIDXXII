@@ -77,12 +77,12 @@
     <IntDir>.\release\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <IntDir>.\debug\</IntDir>
     <OutDir>.\..\debug\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <OutDir>.\..\debug\</OutDir>
     <IntDir>.\debug\</IntDir>
   </PropertyGroup>

@@ -409,6 +409,8 @@ extern cvar_t *intensity;
 extern cvar_t *vid_gamma;
 
 extern cvar_t *dx_batchworldtriangles;
+extern cvar_t *dx_showlightmaps;
+extern cvar_t *dx_showworldbatches;
 
 extern int r_visframecount;
 extern int r_framecount;

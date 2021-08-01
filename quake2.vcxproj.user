@@ -8,4 +8,16 @@
     <LocalDebuggerWorkingDirectory>D:\Apps\Steam\steamapps\common\Quake 2</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Alpha|Win32'">
+    <LocalDebuggerWorkingDirectory>D:\Apps\Steam\steamapps\common\Quake 2</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Alpha|Win32'">
+    <LocalDebuggerWorkingDirectory>D:\Apps\Steam\steamapps\common\Quake 2</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <LocalDebuggerWorkingDirectory>D:\Apps\Steam\steamapps\common\Quake 2</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

@@ -283,6 +283,8 @@ void MeshRenderer::ExecuteRenderCommands()
 	ViewWeaponViewport.MaxDepth = 0.3f;
 	CommandList->RSSetViewports(1, &DefaultViewport);
 
+	const float4 DefaultDebugColor = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+
 	for (uint i = 0; i < RecordedRenderCommandCount; ++i)
 	{
 		MeshRenderCommand& Cmd = RenderCommands[i];
@@ -335,15 +337,15 @@ void MeshRenderer::ExecuteRenderCommands()
 
 		CBData->MeshWorldMatrix = XMLoadFloat4x4(&Cmd.MeshWorldMatrix);
 		CBData->ViewProjectionMatrix = vd.ViewProjectionMatrix;
-#if 0
-		uint ColIdx = (i * 543) % 255;
-		float Red	= float(( d_8to24table[ColIdx] >> 0  ) & 0xff)/255.0f;
-		float Green	= float(( d_8to24table[ColIdx] >> 8  ) & 0xff)/255.0f;
-		float Blue	= float(( d_8to24table[ColIdx] >> 16 ) & 0xff)/255.0f;
-		CBData->DebugColor = XMVectorSet(Red, Green, Blue, 1.0f);
-#else
-		CBData->DebugColor = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-#endif
+		CBData->DebugColor = DefaultDebugColor;
+		if (dx_showworldbatches->value > 0)
+		{
+			uint ColIdx = (i * 543) % 255;
+			float Red = float((d_8to24table[ColIdx] >> 0) & 0xff) / 255.0f;
+			float Green = float((d_8to24table[ColIdx] >> 8) & 0xff) / 255.0f;
+			float Blue = float((d_8to24table[ColIdx] >> 16) & 0xff) / 255.0f;
+			CBData->DebugColor = XMVectorSet(Red, Green, Blue, 1.0f);
+		}
 		CommandList->SetGraphicsRootConstantBufferView(RootParameterIndex_CBV0, CB.getGPUVirtualAddress());
 
 		CommandList->IASetPrimitiveTopology(Cmd.Topology);
