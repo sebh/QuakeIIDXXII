@@ -582,6 +582,38 @@ void UploadAllTextures()
 {
 	if (!bImageInitialised)
 	{
+		// Generate some gamma/color LUT
+		{
+			float g = vid_gamma->value;
+
+			for (int i = 0; i < 256; i++)
+			{
+				if (g == 1)
+				{
+					gammatable[i] = i;
+				}
+				else
+				{
+					float inf;
+
+					inf = 255 * pow((i + 0.5) / 255.5, g) + 0.5;
+					if (inf < 0)
+						inf = 0;
+					if (inf > 255)
+						inf = 255;
+					gammatable[i] = inf;
+				}
+			}
+
+			for (int i = 0; i < 256; i++)
+			{
+				int j = i * intensity->value;
+				if (j > 255)
+					j = 255;
+				intensitytable[i] = j;
+			}
+		}
+
 		// Load the color pallette
 		{
 			int		i;
@@ -635,37 +667,6 @@ void UploadAllTextures()
 
 		{
 			r_charstexture = FindImage("pics/conchars.pcx", it_pic);
-		}
-
-		{
-			float g = vid_gamma->value;
-
-			for (int i = 0; i < 256; i++)
-			{
-				if (g == 1)
-				{
-					gammatable[i] = i;
-				}
-				else
-				{
-					float inf;
-
-					inf = 255 * pow((i + 0.5) / 255.5, g) + 0.5;
-					if (inf < 0)
-						inf = 0;
-					if (inf > 255)
-						inf = 255;
-					gammatable[i] = inf;
-				}
-			}
-
-			for (int i = 0; i < 256; i++)
-			{
-				int j = i * intensity->value;
-				if (j > 255)
-					j = 255;
-				intensitytable[i] = j;
-			}
 		}
 
 		bImageInitialised = true;
