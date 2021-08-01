@@ -11,4 +11,8 @@ Build the solution
 6. Open *dx_shader.cpp* and update the full path to the shader file. (this really needs to be fixed)
 7. Hit F5
 
-The dx12 implementation is far from perfect and lots could be done, (especially around data upload to GPU and batching).
+The dx12 implementation is far from perfect and lots could be done, (especially around data upload to GPU and batching). But it works and allowed me to check my [Dx12 basic thin abstraction layer](https://github.com/sebh/Dx12Base).
+
+Only the win32 platform compiles and run correctly for now. So dx12 is limited to 4GB of GPU video memory and no ray tracing is available.
+
+Seb
