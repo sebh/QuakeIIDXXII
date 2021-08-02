@@ -103,7 +103,7 @@ public:
 		}
 		case DrawImageCallType::Draw_TileClear:
 		{
-			SurfaceTexture = dic.Image->RenderTexture;
+			Image = dic.Image;
 			break;
 		}
 		case DrawImageCallType::Draw_FadeScreen:
@@ -187,22 +187,24 @@ public:
 		case DrawImageCallType::Draw_Tex:
 		case DrawImageCallType::Draw_TileClear:
 		{
+			const bool bTC = dic.Type == DrawImageCallType::Draw_TileClear;
+
 			v0.Position[0] = dic.x;
 			v0.Position[1] = dic.y;
-			v0.SurfaceUV[0] = 0;
-			v0.SurfaceUV[1] = 0;
+			v0.SurfaceUV[0] = bTC ? v0.Position[0] / 64.0f : 0;
+			v0.SurfaceUV[1] = bTC ? v0.Position[1] / 64.0f : 0;
 			v1.Position[0] = dic.x + dic.w;
 			v1.Position[1] = dic.y;
-			v1.SurfaceUV[0] = 1;
-			v1.SurfaceUV[1] = 0;
+			v1.SurfaceUV[0] = bTC ? v1.Position[0] / 64.0f : 1;
+			v1.SurfaceUV[1] = bTC ? v1.Position[1] / 64.0f : 0;
 			v2.Position[0] = dic.x + dic.w;
 			v2.Position[1] = dic.y + dic.h;
-			v2.SurfaceUV[0] = 1;
-			v2.SurfaceUV[1] = 1;
+			v2.SurfaceUV[0] = bTC ? v2.Position[0] / 64.0f : 1;
+			v2.SurfaceUV[1] = bTC ? v2.Position[1] / 64.0f : 1;
 			v3.Position[0] = dic.x;
 			v3.Position[1] = dic.y + dic.h;
-			v3.SurfaceUV[0] = 0;
-			v3.SurfaceUV[1] = 1;
+			v3.SurfaceUV[0] = bTC ? v3.Position[0] / 64.0f : 0;
+			v3.SurfaceUV[1] = bTC ? v3.Position[1] / 64.0f : 1;
 
 			SetQuadUniformColor(DefaultQuadColor);
 			AppendQuad();
