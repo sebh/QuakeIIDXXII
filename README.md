@@ -1,6 +1,6 @@
 # QuakeIIDXXII
 
-![dx12appscreenshot](https://github.com/sebh/QuakeIIDXXII/blob/master/QuakeIIDXXII.png)
+![dx12appscreenshot](QuakeIIDXXII.png)
 
 Quake II on Dx12. It has been tarted from [https://github.com/oraoto/quake2-vs2015](https://github.com/oraoto/quake2-vs2015) because it is the original code and it was compiling out of the box.
 
