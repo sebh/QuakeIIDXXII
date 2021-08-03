@@ -1504,6 +1504,8 @@ void R_RecursiveWorldNode (mnode_t *node)
 				image = R_TextureAnimation (surf->texinfo);
 				surf->texturechain = image->texturechain;
 				image->texturechain = surf;
+
+				R_RenderBrushPoly(surf); // This is supposed to render in DrawTextureChains but I simply render brushes here directly. Seems to work for all the cases I have found (lava in Fact1 and Fact2 for instance).
 			}
 		}
 	}
@@ -1606,8 +1608,9 @@ void R_DrawWorld (void)
 	** theoretically nothing should happen in the next two functions
 	** if multitexture is enabled
 	*/
-	// ==> Skip those functions because we always have multiple texturing enabled with dx12
-	//DrawTextureChains ();
+	// SebH: the comment above is correct only for R_BlendLightmaps but DrawTextureChains does render brushes without lightmaps... 
+	// I have implemented that using a simple drawbrush in the R_RecursiveWorldNode code above .
+	//DrawTextureChains();
 	//R_BlendLightmaps ();
 	
 	// This is achieved differently
