@@ -156,6 +156,11 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 		OutputDebugStringA("Available for reservation  = "); sprintf_s(tmp, "%llu", (UINT64)(mVideoMemInfo.AvailableForReservation / (1024 * 1024))); OutputDebugStringA(tmp); OutputDebugStringA(" MB\n");
 	}
 
+	mCbSrvUavDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	mRtvDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	mSamplerDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	mDsvDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
 #if D_ENABLE_DXR
 	// Get some information about ray tracing support
 	{
@@ -179,66 +184,13 @@ void Dx12Device::internalInitialise(const HWND& hWnd, uint BackBufferWidth, uint
 	ATLASSERT(hr == S_OK);
 	setDxDebugName(mCommandQueue, L"CommandQueue0");
 
-	//
-	// Create the Swap Chain (double/tripple buffering)
-	//
-
-	DXGI_MODE_DESC backBufferDesc = {};
-	backBufferDesc.Width = BackBufferWidth;
-	backBufferDesc.Height = BackBufferHeight;
-	backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	DXGI_SAMPLE_DESC sampleDesc = {};
-	sampleDesc.Count = 1;
-
-	// Describe and create the swap chain.
-	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-	swapChainDesc.BufferCount = frameBufferCount;
-	swapChainDesc.BufferDesc = backBufferDesc;
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swapChainDesc.OutputWindow = hWnd;
-	swapChainDesc.SampleDesc = sampleDesc;
-	swapChainDesc.Windowed = TRUE;	// set to true, then if in fullscreen must call SetFullScreenState with true for full screen to get uncapped fps
-
-	IDXGISwapChain* tempSwapChain;
-
-	mDxgiFactory->CreateSwapChain(
-		mCommandQueue,	// the queue will be flushed once the swap chain is created
-		&swapChainDesc,	// give it the swap chain description we created above
-		&tempSwapChain	// store the created swap chain in a temp IDXGISwapChain interface
-	);
-
-	mSwapchain = static_cast<IDXGISwapChain3*>(tempSwapChain);
-	mFrameIndex = mSwapchain->GetCurrentBackBufferIndex();
 
 	//
 	// Create frame resources
 	//
 
-	mCbSrvUavDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	mRtvDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	mSamplerDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-	mDsvDescriptorSize = mDev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-
-	mBackBuffeRtvDescriptorHeap = new DescriptorHeap(false, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2);
-	setDxDebugName(mBackBuffeRtvDescriptorHeap->getHeap(), L"BackBuffeRtvDescriptorHeap");
-
-	// Create a RTV for each back buffer
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(mBackBuffeRtvDescriptorHeap->getCPUHandle());
-	for (int i = 0; i < frameBufferCount; i++)
-	{
-		// First we get the n'th buffer in the swap chain and store it in the n'th
-		// position of our ID3D12Resource array
-		hr = mSwapchain->GetBuffer(i, IID_PPV_ARGS(&mBackBuffeRtv[i]));
-		ATLASSERT(hr == S_OK);
-
-		// Then we create a render target view (descriptor) which binds the swap chain buffer (ID3D12Resource[n]) to the rtv handle
-		mDev->CreateRenderTargetView(mBackBuffeRtv[i], nullptr, rtvHandle);
-		setDxDebugName(mBackBuffeRtv[i], L"BackBuffeRtv");
-
-		// We increment the rtv handle mPtr to the next one according to a rtv descriptor size
-		rtvHandle.ptr += mRtvDescriptorSize;
-	}
+	const bool bRecreate = false;
+	updateSwapChain(bRecreate, BackBufferWidth, BackBufferHeight, &hWnd);
 
 	// Create command allocator per frame
 	for (int i = 0; i < frameBufferCount; i++)
@@ -390,8 +342,8 @@ void Dx12Device::internalShutdown()
 	for (int i = 0; i < frameBufferCount; i++)
 		resetComPtr(&mFrameFence[i]);
 	for (int i = 0; i < frameBufferCount; i++)
-		resetComPtr(&mBackBuffeRtv[i]);
-	resetPtr(&mBackBuffeRtvDescriptorHeap);
+		resetComPtr(&mBackBufferResource[i]);
+	resetPtr(&mBackBufferRTVDescriptorHeap);
 
 	for (int i = 0; i < frameBufferCount; i++)
 		resetComPtr(&mCommandAllocator[i]);
@@ -424,9 +376,115 @@ void Dx12Device::internalShutdown()
 
 D3D12_CPU_DESCRIPTOR_HANDLE Dx12Device::getBackBufferDescriptor() const
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE handle(mBackBuffeRtvDescriptorHeap->getCPUHandle());
+	D3D12_CPU_DESCRIPTOR_HANDLE handle(mBackBufferRTVDescriptorHeap->getCPUHandle());
 	handle.ptr += mFrameIndex * mRtvDescriptorSize;
 	return handle;
+}
+
+
+// updateSwapChain(0 , 0) in constructor?
+
+void Dx12Device::updateSwapChain(bool bRecreate, uint newWidth, uint newHeight, const HWND* OutputWindowhWnd)
+{
+	if (!bRecreate)
+	{
+		//
+		// Create the Swap Chain (double/tripple buffering)
+		//
+		ATLASSERT(OutputWindowhWnd != nullptr);
+
+		DXGI_MODE_DESC backBufferDesc = {};
+		backBufferDesc.Width = newWidth;
+		backBufferDesc.Height = newHeight;
+		backBufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		DXGI_SAMPLE_DESC sampleDesc = {};
+		sampleDesc.Count = 1;
+
+		// Describe and create the swap chain.
+		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+		swapChainDesc.BufferCount = frameBufferCount;
+		swapChainDesc.BufferDesc = backBufferDesc;
+		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		swapChainDesc.OutputWindow = *OutputWindowhWnd;
+		swapChainDesc.SampleDesc = sampleDesc;
+		swapChainDesc.Windowed = TRUE;	// set to true, then if in fullscreen must call SetFullScreenState with true for full screen to get uncapped fps
+
+		IDXGISwapChain* tempSwapChain;
+
+		mDxgiFactory->CreateSwapChain(
+			mCommandQueue,	// the queue will be flushed once the swap chain is created
+			&swapChainDesc,	// give it the swap chain description we created above
+			&tempSwapChain	// store the created swap chain in a temp IDXGISwapChain interface
+		);
+
+		mSwapchain = static_cast<IDXGISwapChain3*>(tempSwapChain);
+		mFrameIndex = mSwapchain->GetCurrentBackBufferIndex();
+
+		mBackBufferRTVDescriptorHeap = new DescriptorHeap(false, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2);
+		setDxDebugName(mBackBufferRTVDescriptorHeap->getHeap(), L"BackBuffeRtvDescriptorHeap");
+	}
+	else
+	{
+		ATLASSERT(OutputWindowhWnd == nullptr);
+		HRESULT hr;
+
+		// This code basically syncs-up CPU and GPU.
+		{
+			ID3D12Fence* SwapChainFence = nullptr;
+			hr = mDev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&SwapChainFence));
+			ATLASSERT(hr == S_OK);
+			uint64 SwapChainFenceValue = 0; // set the initial fence value to 0
+
+			hr = mCommandQueue->Signal(SwapChainFence, SwapChainFenceValue);	// signal a value of 0
+			SwapChainFenceValue++;
+			hr = mCommandQueue->Signal(SwapChainFence, SwapChainFenceValue);	// signal a value of 1
+
+			HANDLE	SwapChainFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+			SwapChainFence->SetEventOnCompletion(SwapChainFenceValue, SwapChainFenceEvent);
+
+			//mCommandQueue->Wait(SwapChainFence, SwapChainFenceValue);
+			WaitForSingleObject(SwapChainFenceEvent, INFINITE);
+
+			CloseHandle(SwapChainFenceEvent);
+			SwapChainFence->Release();
+		}
+
+		// Now that we know no work is currently submitted on GPU
+		// thus the previously created views on the backbuffer are not longer in use (in this simple single threaded environment).
+		// We can now release the buffer handle before resizing the back buffer.
+		for (int i = 0; i < frameBufferCount; i++)
+		{
+			mBackBufferResource[i]->Release();
+		}
+
+		hr = mSwapchain->ResizeBuffers(frameBufferCount, newWidth, newHeight, DXGI_FORMAT_UNKNOWN, 0);
+		ATLASSERT(hr == S_OK);
+
+		mFrameIndex = mSwapchain->GetCurrentBackBufferIndex();
+
+		// We also clear the pso cache (unused now thanks to the cpu/gpu sync above) because pso contains allocated render targets,
+		// which makes them highy dependent on resolution. As such, a lot of them would then be unused after a change of resolution.
+		CachedPSOManager::shutdown();
+		CachedPSOManager::initialise();
+	}
+
+	// Create a RTV for each back buffer
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle(mBackBufferRTVDescriptorHeap->getCPUHandle());
+	for (int i = 0; i < frameBufferCount; i++)
+	{
+		// First we get the n'th buffer in the swap chain and store it in the n'th
+		// position of our ID3D12Resource array
+		HRESULT hr = mSwapchain->GetBuffer(i, IID_PPV_ARGS(&mBackBufferResource[i]));
+		ATLASSERT(hr == S_OK);
+
+		// Then we create a render target view (descriptor) which binds the swap chain buffer (ID3D12Resource[n]) to the rtv handle
+		mDev->CreateRenderTargetView(mBackBufferResource[i], nullptr, rtvHandle);
+		setDxDebugName(mBackBufferResource[i], L"BackBuffeRtv");
+
+		// We increment the rtv handle mPtr to the next one according to a rtv descriptor size
+		rtvHandle.ptr += mRtvDescriptorSize;
+	}
 }
 
 void Dx12Device::beginFrame()
@@ -913,6 +971,26 @@ DispatchDrawCallCpuDescriptorHeap::Call DispatchDrawCallCpuDescriptorHeap::Alloc
 	return NewCall;
 }
 
+DispatchDrawCallCpuDescriptorHeap::SRVsDescriptorArray DispatchDrawCallCpuDescriptorHeap::AllocateSRVsDescriptorArray(uint DescriptorCount)
+{
+	const uint DescriptorCountToAllocate = DescriptorCount;
+	ATLASSERT(mCpuDescriptorHeap != nullptr);
+	ATLASSERT((mFrameDescriptorCount + DescriptorCount) <= mMaxFrameDescriptorCount);
+
+	SRVsDescriptorArray NewDescriptorArray;
+	NewDescriptorArray.mDescriptorCountAllocated = DescriptorCount;
+
+	NewDescriptorArray.mCPUHandle = mCpuDescriptorHeap->getCPUHandle();
+	NewDescriptorArray.mCPUHandle.ptr += mFrameDescriptorCount * g_dx12Device->getCbSrvUavDescriptorSize();
+
+	NewDescriptorArray.mGPUHandle = g_dx12Device->getFrameDispatchDrawCallGpuDescriptorHeap()->getGPUHandle();
+	NewDescriptorArray.mGPUHandle.ptr += mFrameDescriptorCount * g_dx12Device->getCbSrvUavDescriptorSize();
+
+	mFrameDescriptorCount += DescriptorCountToAllocate;
+
+	return NewDescriptorArray;
+}
+
 
 DispatchDrawCallCpuDescriptorHeap::Call::Call()
 {
@@ -923,9 +1001,8 @@ void DispatchDrawCallCpuDescriptorHeap::Call::SetSRV(uint Register, RenderResour
 	ATLASSERT(Resource.getSRVCPUHandle().ptr != INVALID_DESCRIPTOR_HANDLE);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE Destination = mCPUHandle;
-	Destination.ptr += mUsedSRVs * g_dx12Device->getCbSrvUavDescriptorSize();
+	Destination.ptr += Register * g_dx12Device->getCbSrvUavDescriptorSize();
 	g_dx12Device->getDevice()->CopyDescriptorsSimple(1, Destination, Resource.getSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	mUsedSRVs++;
 }
 void DispatchDrawCallCpuDescriptorHeap::Call::SetUAV(uint Register, RenderResource& Resource)
 {
@@ -933,11 +1010,22 @@ void DispatchDrawCallCpuDescriptorHeap::Call::SetUAV(uint Register, RenderResour
 	ATLASSERT(Resource.getUAVCPUHandle().ptr != INVALID_DESCRIPTOR_HANDLE);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE Destination = mCPUHandle;
-	Destination.ptr += (mRootSig->getRootDescriptorTable0SRVCount() + mUsedUAVs) * g_dx12Device->getCbSrvUavDescriptorSize();
+	Destination.ptr += (mRootSig->getRootDescriptorTable0SRVCount() + Register) * g_dx12Device->getCbSrvUavDescriptorSize();
 	g_dx12Device->getDevice()->CopyDescriptorsSimple(1, Destination, Resource.getUAVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	mUsedSRVs++;
 }
 
+DispatchDrawCallCpuDescriptorHeap::SRVsDescriptorArray::SRVsDescriptorArray()
+{
+}
+void DispatchDrawCallCpuDescriptorHeap::SRVsDescriptorArray::SetSRV(uint RegisterOffsetFromBase, RenderResource& Resource)
+{
+	ATLASSERT(RegisterOffsetFromBase >= 0 && RegisterOffsetFromBase < mDescriptorCountAllocated);
+	ATLASSERT(Resource.getSRVCPUHandle().ptr != INVALID_DESCRIPTOR_HANDLE);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE Destination = mCPUHandle;
+	Destination.ptr += RegisterOffsetFromBase * g_dx12Device->getCbSrvUavDescriptorSize();
+	g_dx12Device->getDevice()->CopyDescriptorsSimple(1, Destination, Resource.getSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+}
 
 
 FrameConstantBuffers::FrameConstantBuffers(uint64 SizeByte)
@@ -1383,6 +1471,7 @@ DXGI_FORMAT getTextureResourceFormat(D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT for
 }
 
 D3D12_RESOURCE_DESC getRenderTextureResourceDesc(
+	D3D12_RESOURCE_DIMENSION Dimension,
 	unsigned int width, unsigned int height, unsigned int depth,
 	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags)
 {
@@ -1391,7 +1480,7 @@ D3D12_RESOURCE_DESC getRenderTextureResourceDesc(
 	const bool IsDepthTexture = getIsDepthTexture(flags);
 	DXGI_FORMAT ResourceFormat = getTextureResourceFormat(flags, format);
 
-	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Dimension = Dimension;
 	resourceDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 	resourceDesc.Width = width;
 	resourceDesc.Height = height;
@@ -1414,7 +1503,8 @@ RenderTexture::RenderTexture(
 	: RenderResource()
 	, mRTVHeap(nullptr)
 {
-	ATLASSERT(ClearValue==nullptr || (ClearValue->Format == format));
+	ATLASSERT(ClearValue == nullptr || (ClearValue->Format == format));
+	ATLASSERT(depth >= 1);
 	ID3D12Device* dev = g_dx12Device->getDevice();
 	D3D12_HEAP_PROPERTIES defaultHeap = getGpuOnlyMemoryHeapProperties();
 
@@ -1425,7 +1515,7 @@ RenderTexture::RenderTexture(
 	const bool IsDepthTexture = getIsDepthTexture(flags);
 	DXGI_FORMAT ViewFormat = getTextureViewFormat(flags, format);
 	DXGI_FORMAT ResourceFormat = getTextureResourceFormat(flags, format);
-	D3D12_RESOURCE_DESC resourceDesc = getRenderTextureResourceDesc(width, height, depth, format, flags);
+	D3D12_RESOURCE_DESC resourceDesc = getRenderTextureResourceDesc(dimension, width, height, depth, format, flags);
 
 	if (ClearValue)
 	{
@@ -1464,8 +1554,16 @@ RenderTexture::RenderTexture(
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.Format = ViewFormat;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
+	if (dimension == D3D12_RESOURCE_DIMENSION_TEXTURE2D)
+	{
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+	}
+	else
+	{
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+		srvDesc.Texture3D.MipLevels = 1;
+	}
 	dev->CreateShaderResourceView(mResource, &srvDesc, mSRVCPUHandle);
 
 	if (initData)
@@ -1478,18 +1576,20 @@ RenderTexture::RenderTexture(
 		uploadBufferDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
 		uploadBufferDesc.Width = textureUploadBufferSize;
 		uploadBufferDesc.Height = uploadBufferDesc.DepthOrArraySize = uploadBufferDesc.MipLevels = 1;
+		uploadBufferDesc.MipLevels = 1;
 		uploadBufferDesc.Format = DXGI_FORMAT_UNKNOWN;
 		uploadBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		uploadBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 		uploadBufferDesc.SampleDesc.Count = 1;
 		uploadBufferDesc.SampleDesc.Quality = 0;
 		D3D12_HEAP_PROPERTIES uploadHeapProperties = getUploadMemoryHeapProperties();
-		dev->CreateCommittedResource(&uploadHeapProperties,
+		HRESULT hr = dev->CreateCommittedResource(&uploadHeapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&uploadBufferDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ,
 			nullptr,
 			IID_PPV_ARGS(&mUploadHeap));
+		ATLASSERT(hr == S_OK);
 		setDxDebugName(mUploadHeap, L"RenderTextureUploadHeap");
 
 #if 0
@@ -1556,7 +1656,7 @@ RenderTexture::RenderTexture(
 			uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
 			uavDesc.Texture3D.MipSlice = 0;
 			uavDesc.Texture3D.FirstWSlice = 0;
-			uavDesc.Texture3D.WSize = 1;
+			uavDesc.Texture3D.WSize = depth;
 		}
 		else
 		{
@@ -1745,18 +1845,11 @@ RootSignature::RootSignature(RootSignatureType InRootSignatureType)
 	HRESULT hr;
 	ID3D12Device* dev = g_dx12Device->getDevice();
 
-	// https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signature-limits
-	// A root signature can be up to 64 DWORD
-	// if ia is used, only 63 are available
-	// Descriptor tables: 1 DWORD
-	// Root constants   : 1 DWORD
-	// Root descriptors : 2 DWORD		// CBV, SRV, UAV, restiction on what those can be: see https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-descriptors-directly-in-the-root-signature
-
-
 	// ROOT DESCRIPTORS
 	// Current DWORD layout for graphics and compute is
 	//  0 - 1 : root descriptor		constant buffer			b0 only
 	//  2 - 2 : descriptor table	SRV/UAV					t0 - t7 and u0 - u3, no UAVs for local root signature
+	//  3 - 3 : descriptor table	Bindless SRVs			t64- t127 for now, see ROOT_BINDLESS_SRV_COUNT
 	//
 	//	Static samplers aside
 
@@ -1772,41 +1865,73 @@ RootSignature::RootSignature(RootSignatureType InRootSignatureType)
 	// Otherwise, RT and regular root signatures have the same footprint.
 	const uint RegisterSpace = InRootSignatureType == RootSignatureType_Global_RT ? 1 : 0;
 
-	// Ase described above, SRV and UAVs are stored in descriptor tables (texture SRV must be set in tables for instance)
-	// We only allocate a slot a single constant buffer
-	D3D12_ROOT_PARAMETER paramCBV0;
-	paramCBV0.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-	paramCBV0.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	paramCBV0.Descriptor.RegisterSpace = RegisterSpace;
-	paramCBV0.Descriptor.ShaderRegister = 0;	// b0
-	rootParameters.push_back(paramCBV0);
-	ATLASSERT(mRootSignatureDWordUsed * DWORD_BYTE_COUNT == RootParameterByteOffset_CBV0);
-	mRootSignatureDWordUsed += 2;				// Root descriptor
+//	{
+		ATLASSERT(rootParameters.size() == RootParameterIndex_CBV0);
 
-	// SRV/UAV simple descriptor table, dx11 style
-	D3D12_DESCRIPTOR_RANGE  descriptorTable0Ranges[2];
-	descriptorTable0Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-	descriptorTable0Ranges[0].BaseShaderRegister = 0;
-	descriptorTable0Ranges[0].NumDescriptors = mDescriptorTable0SRVCount;
-	descriptorTable0Ranges[0].RegisterSpace = RegisterSpace;
-	descriptorTable0Ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	descriptorTable0Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-	descriptorTable0Ranges[1].BaseShaderRegister = 0;
-	descriptorTable0Ranges[1].NumDescriptors = mDescriptorTable0UAVCount;
-	descriptorTable0Ranges[1].RegisterSpace = RegisterSpace;
-	descriptorTable0Ranges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		// Ase described above, SRV and UAVs are stored in descriptor tables (texture SRV must be set in tables for instance)
+		// We only allocate a single slot a single constant buffer
+		D3D12_ROOT_PARAMETER paramCBV0;
+		paramCBV0.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		paramCBV0.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		paramCBV0.Descriptor.RegisterSpace = RegisterSpace;
+		paramCBV0.Descriptor.ShaderRegister = 0;	// b0
+		rootParameters.push_back(paramCBV0);
+		ATLASSERT(mRootSignatureDWordUsed * DWORD_BYTE_COUNT == RootParameterByteOffset_CBV0);
+		mRootSignatureDWordUsed += ROOTSIG_DESCRIPTOR_DWORD_COUNT;
+//	}
 
-	D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable0;
-	descriptorTable0.NumDescriptorRanges = DescriptorTable0RangeCount;
-	descriptorTable0.pDescriptorRanges = &descriptorTable0Ranges[0];
+//	{
+		ATLASSERT(rootParameters.size() == RootParameterIndex_DescriptorTable0);
 
-	D3D12_ROOT_PARAMETER paramDescriptorTable0;
-	paramDescriptorTable0.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	paramDescriptorTable0.DescriptorTable = descriptorTable0;
-	paramDescriptorTable0.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParameters.push_back(paramDescriptorTable0);
-	ATLASSERT(mRootSignatureDWordUsed * DWORD_BYTE_COUNT == RootParameterByteOffset_DescriptorTable0);
-	mRootSignatureDWordUsed += 1;				// Descriptor table
+		// SRV/UAV simple descriptor table, dx11 style
+		D3D12_DESCRIPTOR_RANGE  descriptorTable0Ranges[2];
+		descriptorTable0Ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+		descriptorTable0Ranges[0].BaseShaderRegister = 0;
+		descriptorTable0Ranges[0].NumDescriptors = mDescriptorTable0SRVCount;
+		descriptorTable0Ranges[0].RegisterSpace = RegisterSpace;
+		descriptorTable0Ranges[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+		descriptorTable0Ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+		descriptorTable0Ranges[1].BaseShaderRegister = 0;
+		descriptorTable0Ranges[1].NumDescriptors = mDescriptorTable0UAVCount;
+		descriptorTable0Ranges[1].RegisterSpace = RegisterSpace;
+		descriptorTable0Ranges[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE descriptorTable0;
+		descriptorTable0.NumDescriptorRanges = DescriptorTable0RangeCount;
+		descriptorTable0.pDescriptorRanges = &descriptorTable0Ranges[0];
+
+		D3D12_ROOT_PARAMETER paramDescriptorTable0;
+		paramDescriptorTable0.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		paramDescriptorTable0.DescriptorTable = descriptorTable0;
+		paramDescriptorTable0.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		rootParameters.push_back(paramDescriptorTable0);
+		ATLASSERT(mRootSignatureDWordUsed * DWORD_BYTE_COUNT == RootParameterByteOffset_DescriptorTable0);
+		mRootSignatureDWordUsed += ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT;
+//	}
+
+//	{
+		ATLASSERT(rootParameters.size() == RootParameterIndex_BindlessSRVs);
+
+		// Now adding an optional slot for a single array of bindless SRV
+		D3D12_DESCRIPTOR_RANGE  descriptorTableBindlessSRVsRanges[1];
+		descriptorTableBindlessSRVsRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;		// Dedicated to SRVs
+		descriptorTableBindlessSRVsRanges[0].BaseShaderRegister = ROOT_BINDLESS_SRV_START;
+		descriptorTableBindlessSRVsRanges[0].NumDescriptors = ROOT_BINDLESS_SRV_COUNT;	
+		descriptorTableBindlessSRVsRanges[0].RegisterSpace = RegisterSpace;
+		descriptorTableBindlessSRVsRanges[0].OffsetInDescriptorsFromTableStart = 0;
+
+		D3D12_ROOT_DESCRIPTOR_TABLE descriptorTableBindlessSRVs;
+		descriptorTableBindlessSRVs.NumDescriptorRanges = 1;
+		descriptorTableBindlessSRVs.pDescriptorRanges = &descriptorTableBindlessSRVsRanges[0];
+
+		D3D12_ROOT_PARAMETER paramDescriptorTableBindlessSRVs;
+		paramDescriptorTableBindlessSRVs.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+		paramDescriptorTableBindlessSRVs.DescriptorTable = descriptorTableBindlessSRVs;
+		paramDescriptorTableBindlessSRVs.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+		rootParameters.push_back(paramDescriptorTableBindlessSRVs);
+		ATLASSERT(mRootSignatureDWordUsed * DWORD_BYTE_COUNT == RootParameterByteOffset_DescriptorTableBindlessSRVs);
+		mRootSignatureDWordUsed += ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT;
+//	}
 
 	// Check bound correctness
 	ATLASSERT(mRootSignatureDWordUsed * DWORD_BYTE_COUNT == RootParameterByteOffset_Total);
@@ -1891,7 +2016,7 @@ RootSignature::RootSignature(RootSignatureType InRootSignatureType)
 	rootSignDesc.Flags = InRootSignatureType == RootSignatureType_Global_IA ? D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT	: D3D12_ROOT_SIGNATURE_FLAG_NONE;
 	rootSignDesc.Flags = InRootSignatureType == RootSignatureType_Local_RT	? D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE				: rootSignDesc.Flags;
 
-	ID3DBlob* rootSignBlob;
+	ID3DBlob* rootSignBlob = nullptr;
 	hr = D3D12SerializeRootSignature(&rootSignDesc, D3D_ROOT_SIGNATURE_VERSION_1, &rootSignBlob, nullptr);
 	ATLENSURE(hr == S_OK);
 	hr = dev->CreateRootSignature(0, rootSignBlob->GetBufferPointer(), rootSignBlob->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));

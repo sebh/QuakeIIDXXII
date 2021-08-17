@@ -3,7 +3,7 @@
 #define DX_DEBUG_EVENT 1
 #define DX_DEBUG_RESOURCE_NAME 1
 
-// Windows and Dx11 includes
+// Windows and Dx12 includes
 #include <map>
 #include <string>
 #include <vector>
@@ -69,7 +69,7 @@ public:
 	IDxcCompiler*							getDxcCompiler() const { return mDxcCompiler; }
 	IDxcIncludeHandler*						getDxcIncludeHandler() const { return mDxcIncludeHandler; }
 
-	ID3D12Resource*							getBackBuffer() const { return mBackBuffeRtv[mFrameIndex]; }
+	ID3D12Resource*							getBackBuffer() const { return mBackBufferResource[mFrameIndex]; }
 	D3D12_CPU_DESCRIPTOR_HANDLE				getBackBufferDescriptor() const;
 
 	// The single command list per frame since we do not prepare command in parallel yet
@@ -126,6 +126,8 @@ public:
 	void AppendToGarbageCollector(RayTracingPipelineStateClosestAndAnyHit* ToBeRemoved) { mFrameGarbageCollector[mFrameIndex].mRayTracingPipelineStateClosestAndAnyHit.push_back(ToBeRemoved); }
 #endif
 
+	void updateSwapChain(bool bRecreate, uint newWidth, uint newHeight, const HWND* OutputWindowhWnd = nullptr);
+
 private:
 	Dx12Device();
 	Dx12Device(Dx12Device&);
@@ -147,8 +149,8 @@ private:
 	ID3D12CommandAllocator*						mCommandAllocator[frameBufferCount];		// Command allocator in GPU memory. Need a many as frameCount as cannot rest while in use by GPU
 	ID3D12GraphicsCommandList4*					mCommandList[1];							// A command list to record commands into. No multi-thread so only one is needed
 
-	DescriptorHeap*								mBackBuffeRtvDescriptorHeap;				// a descriptor heap to hold back buffers ressource descriptors (equivalent to views)
-	ID3D12Resource*								mBackBuffeRtv[frameBufferCount];			// back buffer render target view
+	DescriptorHeap*								mBackBufferRTVDescriptorHeap;				// a descriptor heap to hold back buffers ressource descriptors (equivalent to views)
+	ID3D12Resource*								mBackBufferResource[frameBufferCount];			// back buffer render target view
 
 	ID3D12Fence*								mFrameFence[frameBufferCount];				// locked while commandlist is being executed by the gpu.
 	HANDLE										mFrameFenceEvent;							// a handle to an event when our fence is unlocked by the gpu
@@ -413,15 +415,28 @@ public:
 		const RootSignature* mRootSig;
 		D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle;	// From the upload heap
 		D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle; // From the GPU heap
-
-		uint mUsedSRVs = 0;
-		uint mUsedUAVs = 0;
-
-		uint mSRVOffset = 0;
-		uint mUAVOffset = 0;
 	};
 
 	Call AllocateCall(const RootSignature& RootSig);
+
+	struct SRVsDescriptorArray
+	{
+		SRVsDescriptorArray();
+
+		void SetSRV(uint RegisterOffsetFromBase, RenderResource& Resource);
+
+		D3D12_GPU_DESCRIPTOR_HANDLE getRootDescriptorTableGpuHandle() { return mGPUHandle; }
+
+	private:
+		friend class DispatchDrawCallCpuDescriptorHeap;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE mCPUHandle;	// From the upload heap
+		D3D12_GPU_DESCRIPTOR_HANDLE mGPUHandle; // From the GPU heap
+
+		uint mDescriptorCountAllocated = 0;
+	};
+
+	SRVsDescriptorArray AllocateSRVsDescriptorArray(uint DescriptorCount);
 
 private:
 	DispatchDrawCallCpuDescriptorHeap();
@@ -516,6 +531,7 @@ D3D12_HEAP_PROPERTIES getUploadMemoryHeapProperties();
 D3D12_HEAP_PROPERTIES getReadbackMemoryHeapProperties();
 
 D3D12_RESOURCE_DESC getRenderTextureResourceDesc(
+	D3D12_RESOURCE_DIMENSION Dimension,
 	unsigned int width, unsigned int height, unsigned int depth,
 	DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags);
 
@@ -572,7 +588,7 @@ public:
 		D3D12_CLEAR_VALUE* ClearValue = nullptr,
 		unsigned int RowPitchByte = 0, unsigned int SlicePitchByte = 0, void* initData = nullptr);
 
-	//RenderTexture(const wchar_t* szFileName, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
+	RenderTexture(const wchar_t* szFileName, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
 	virtual ~RenderTexture();
 
@@ -605,24 +621,40 @@ enum RootSignatureType
 // Static assignement of root parameters
 enum RootParameterIndex
 {
-	RootParameterIndex_CBV0 = 0,
-	RootParameterIndex_DescriptorTable0 = 1,
-	RootParameterIndex_Count = 2
+	RootParameterIndex_CBV0 = 0,					// Main constanve buffer
+	RootParameterIndex_DescriptorTable0 = 1,		// Main SRVs/UAVs
+	RootParameterIndex_BindlessSRVs = 2,			// Bindless texture array 
+	RootParameterIndex_Count = 3
 };
+
+// This is the default bindless texture SRV count for the dedicated descriptor table allocated in the root parameters.
+// It can be changed and you need your shaders to be updated accordingly.
+// This is also just an implementation exemple.
+#define ROOT_BINDLESS_SRV_START	64
+#define ROOT_BINDLESS_SRV_COUNT	64
 
 
 // https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signature-limits
+// A root signature can be up to 64 DWORD
+// if ia is used, only 63 are available
+// Descriptor tables: 1 DWORD
+// Root constants   : 1 DWORD
+// Root descriptors : 2 DWORD		// CBV, SRV, UAV, restiction on what those can be: see https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-descriptors-directly-in-the-root-signature
 #define DWORD_BYTE_COUNT 4
-#define ROOTSIG_CONSTANT_DWORD_COUNT		(1*DWORD_BYTE_COUNT)
-#define ROOTSIG_DESCRIPTOR_DWORD_COUNT		(2*DWORD_BYTE_COUNT)	// restiction on what those can be: see https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-descriptors-directly-in-the-root-signature
-#define ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT	(1*DWORD_BYTE_COUNT) 
+#define ROOTSIG_CONSTANT_DWORD_COUNT				(1)
+#define ROOTSIG_DESCRIPTOR_DWORD_COUNT				(2)
+#define ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT			(1) 
+#define ROOTSIG_CONSTANT_DWORD_BYTE_COUNT			(ROOTSIG_CONSTANT_DWORD_COUNT*DWORD_BYTE_COUNT)
+#define ROOTSIG_DESCRIPTOR_DWORD_BYTE_COUNT			(ROOTSIG_DESCRIPTOR_DWORD_COUNT*DWORD_BYTE_COUNT)
+#define ROOTSIG_DESCRIPTORTABLE_DWORD_BYTE_COUNT	(ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT*DWORD_BYTE_COUNT) 
 
 // Static assignement of root parameters
 enum RootParameterByteOffset
 {
-	RootParameterByteOffset_CBV0				= (ROOTSIG_CONSTANT_DWORD_COUNT * 0 + ROOTSIG_DESCRIPTOR_DWORD_COUNT * 0 + ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT * 0),
-	RootParameterByteOffset_DescriptorTable0	= (ROOTSIG_CONSTANT_DWORD_COUNT * 0 + ROOTSIG_DESCRIPTOR_DWORD_COUNT * 1 + ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT * 0),
-	RootParameterByteOffset_Total				= (ROOTSIG_CONSTANT_DWORD_COUNT * 0 + ROOTSIG_DESCRIPTOR_DWORD_COUNT * 1 + ROOTSIG_DESCRIPTORTABLE_DWORD_COUNT * 1)
+	RootParameterByteOffset_CBV0						= (ROOTSIG_CONSTANT_DWORD_BYTE_COUNT * 0 + ROOTSIG_DESCRIPTOR_DWORD_BYTE_COUNT * 0 + ROOTSIG_DESCRIPTORTABLE_DWORD_BYTE_COUNT * 0),
+	RootParameterByteOffset_DescriptorTable0			= (ROOTSIG_CONSTANT_DWORD_BYTE_COUNT * 0 + ROOTSIG_DESCRIPTOR_DWORD_BYTE_COUNT * 1 + ROOTSIG_DESCRIPTORTABLE_DWORD_BYTE_COUNT * 0),
+	RootParameterByteOffset_DescriptorTableBindlessSRVs	= (ROOTSIG_CONSTANT_DWORD_BYTE_COUNT * 0 + ROOTSIG_DESCRIPTOR_DWORD_BYTE_COUNT * 1 + ROOTSIG_DESCRIPTORTABLE_DWORD_BYTE_COUNT * 1),
+	RootParameterByteOffset_Total						= (ROOTSIG_CONSTANT_DWORD_BYTE_COUNT * 0 + ROOTSIG_DESCRIPTOR_DWORD_BYTE_COUNT * 1 + ROOTSIG_DESCRIPTORTABLE_DWORD_BYTE_COUNT * 2)
 };
 
 class RootSignature
