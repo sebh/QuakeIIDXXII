@@ -669,16 +669,23 @@ void VID_CheckChanges (void)
 		vid_fullscreen->modified = true;
 		cl.refresh_prepped = false;
 		cls.disable_screen = true;
-		
+
+#ifdef _WIN64
+		// SebH soft does not compile under x64 so far
+#define FALLBACK_REF "gl"
+#else
+#define FALLBACK_REF "soft"
+#endif
+
 		//Com_sprintf( name, sizeof(name), "ref_%s.dll", vid_ref->string );
 		Com_sprintf( name, sizeof(name), "ref_dx12.dll" );	// SebH force dx12 backend for now
 		if ( !VID_LoadRefresh( name ) )
 		{
 			DWORD LastError = GetLastError();
 
-			if ( strcmp (vid_ref->string, "soft") == 0 )
-				Com_Error (ERR_FATAL, "Couldn't fall back to software refresh!");
-			Cvar_Set( "vid_ref", "soft" );
+			if ( strcmp (vid_ref->string, FALLBACK_REF) == 0 )
+				Com_Error (ERR_FATAL, "Couldn't fall back to default lower refresh backend!");
+			Cvar_Set("vid_ref", FALLBACK_REF);
 
 			/*
 			** drop the console if we fail to load a refresh

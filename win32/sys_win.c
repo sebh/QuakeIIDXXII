@@ -475,7 +475,8 @@ void *Sys_GetGameAPI (void *parms)
 	char	name[MAX_OSPATH];
 	char	*path;
 	char	cwd[MAX_OSPATH];
-#if defined _M_IX86
+#if defined _M_IX86 || defined _WIN64
+	// SebH: added x64 support
 	const char *gamename = "gamex86.dll";
 
 #ifdef NDEBUG
@@ -654,7 +655,11 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 //			Con_Printf ("time:%5.2f - %5.2f = %5.2f\n", newtime, oldtime, time);
 
 		//	_controlfp( ~( _EM_ZERODIVIDE /*| _EM_INVALID*/ ), _MCW_EM );
-		_controlfp( _PC_24, _MCW_PC );
+
+#ifndef _WIN64
+		// SebH: added x64 support
+		_controlfp( _PC_24, _MCW_PC ); // cannot be called on x64 platforms
+#endif
 		Qcommon_Frame (time);
 
 		oldtime = newtime;

@@ -24,9 +24,14 @@ Build the solution
 1. Open the solution in Visual Studio
 2. Make sure you select a windows SDK and platform toolset you have locally for each projects
 3. Select Quake2 as the startup project
-4. Select the _x86_ platform and either _Debug_ or _Release_ configuration.
-5. Change _Quake 2_ project the _Application_ project _Working Directory_ from `$(ProjectDir)` to your local full game folder. For instance: D:\Apps\Steam\steamapps\common\Quake 2
+4. Select the _x86_ (or _x64_) platform and either _Debug_ or _Release_ configuration.
+5. Change in _Quake 2_ project properties, the _Application_ project _Working Directory_ from `$(ProjectDir)` to the folder containing the game data, for instance: D:\Projects\Git\QuakeIIDXXII\QUAKE2DATA
 6. Open *dx_shader.cpp* and update the full path to the shader file. (this really needs to be fixed)
 7. Hit F5
+
+Note:
+- When switching between x86 and x64, a full rebuild of the solution is required.
+- QUAKE2DATA in the main data folder. It must contain baseq2 copied from where you hgave installed the game.
+- When building thje solution, gamex86.dll will be copied into QUAKE2DATA.The appropriate dx dlls will also be copied in QUAKE2DATA.
 
 Seb

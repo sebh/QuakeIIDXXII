@@ -26,7 +26,11 @@
 #endif
 
 // Disable because PIX markers are only supported on x64 platforms
+#ifdef _WIN64
+#define D_ENABLE_PIX 1
+#else
 #define D_ENABLE_PIX 0
+#endif
 #if D_ENABLE_PIX
 // See https://devblogs.microsoft.com/pix/winpixeventruntime/
 #define USE_PIX 1
@@ -34,7 +38,12 @@
 #endif
 
 // This is interesting to disable in case one wants to capture using renderdoc. Otherwise, NSight Graphics will be required.
+// Also, DXR is not supported on non x64 platforms
+#ifdef _WIN64
+#define D_ENABLE_DXR 1
+#else
 #define D_ENABLE_DXR 0
+#endif
 
 // Truncate to SIZE_T to handle 32 and 64 bits systems
 #define INVALID_DESCRIPTOR_HANDLE ((SIZE_T)0xFFFFFFFFFFFFFFFF)

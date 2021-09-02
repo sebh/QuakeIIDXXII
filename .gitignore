@@ -1,3 +1,4 @@
+
 quake2.VC.db
 quake2.VC.VC.opendb
 releaseAXP
@@ -20,7 +21,6 @@ ref_dx12/debugAXP
 ref_dx12/release
 ref_dx12/releaseAXP
 .vs
-baseq2
 
 
 
@@ -383,10 +383,14 @@ MigrationBackup/
 # for instance, these dlls can be found in C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x86
 
 debug/*
-!debug/dxcompiler.dll
-!debug/dxil.dll
 
 release/*
-!release/dxcompiler.dll
-!release/dxil.dll
+
+
+
+QUAKE2DATA/baseq2
+!QUAKE2DATA/dx32/dxcompiler.dll
+!QUAKE2DATA/dx32/dxil.dll
+!QUAKE2DATA/dx64/dxcompiler.dll
+!QUAKE2DATA/dx64/dxil.dll
 

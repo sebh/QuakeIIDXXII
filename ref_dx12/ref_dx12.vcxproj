@@ -50,8 +50,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
-    <CharacterSet>
-    </CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -124,6 +123,9 @@
       <ModuleDefinitionFile>.\ref_dx12.def</ModuleDefinitionFile>
       <OutputFile>.\..\release\ref_dx12.dll</OutputFile>
     </Link>
+    <PostBuildEvent>
+      <Command>call "..\ref_dx12postbuild_x86.bat"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -153,6 +155,9 @@
       <DataExecutionPrevention>false</DataExecutionPrevention>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
+    <PostBuildEvent>
+      <Command>call "..\ref_dx12postbuild_x86.bat"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -161,7 +166,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;REFDX12_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>.\debug\</AssemblerListingLocation>
       <ObjectFileName>.\debug\</ObjectFileName>
@@ -175,6 +180,9 @@
       <ModuleDefinitionFile>.\ref_dx12.def</ModuleDefinitionFile>
       <ImportLibrary>.\..\debug\ref_dx12.lib</ImportLibrary>
     </Link>
+    <PostBuildEvent>
+      <Command>call "..\ref_dx12postbuild_x64.bat"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -183,13 +191,19 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>
+      </SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;NDEBUG;REFDX12_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>.\release\</AssemblerListingLocation>
       <ObjectFileName>.\release\</ObjectFileName>
       <ProgramDataBaseFileName>.\release\</ProgramDataBaseFileName>
+      <StringPooling>true</StringPooling>
+      <MinimalRebuild>true</MinimalRebuild>
+      <OmitFramePointers>false</OmitFramePointers>
+      <PrecompiledHeaderOutputFile>.\release\ref_dx12.pch</PrecompiledHeaderOutputFile>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -205,6 +219,9 @@
       <ModuleDefinitionFile>.\ref_dx12.def</ModuleDefinitionFile>
       <OutputFile>.\..\release\ref_dx12.dll</OutputFile>
     </Link>
+    <PostBuildEvent>
+      <Command>call "..\ref_dx12postbuild_x64.bat"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\client\ref.h" />

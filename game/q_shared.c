@@ -261,7 +261,7 @@ float Q_fabs (float f)
 #endif
 }
 
-#if defined _M_IX86 && !defined C_ONLY
+#if defined _M_IX86 && !defined C_ONLY && !defined(Q_ftol) // SebH: see q_shared.h also declaring Q_ftol
 #pragma warning (disable:4035)
 __declspec( naked ) long Q_ftol( float f )
 {

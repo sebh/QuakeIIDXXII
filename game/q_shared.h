@@ -148,12 +148,17 @@ extern vec3_t vec3_origin;
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
+#if 0
 // microsoft's fabs seems to be ungodly slow...
 //float Q_fabs (float f);
 //#define	fabs(f) Q_fabs(f)
 #if !defined C_ONLY && !defined __linux__ && !defined __sgi
 extern long Q_ftol( float f );
 #else
+#define Q_ftol( f ) ( long ) (f)
+#endif
+#else
+// SebH: force simple function
 #define Q_ftol( f ) ( long ) (f)
 #endif
 

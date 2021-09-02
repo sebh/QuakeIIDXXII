@@ -440,6 +440,10 @@ int CDAudio_Init(void)
 	int				n;
 
 	cd_nocd = Cvar_Get ("cd_nocd", "0", CVAR_ARCHIVE );
+
+	// SebH nocd==0 crashes on x64. TODO investigate why, for now disabling that feature.
+	Cvar_SetValue("cd_nocd", 1);
+
 	cd_loopcount = Cvar_Get ("cd_loopcount", "4", 0);
 	cd_looptrack = Cvar_Get ("cd_looptrack", "11", 0);
 	if ( cd_nocd->value)
