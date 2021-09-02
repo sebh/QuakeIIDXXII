@@ -379,18 +379,13 @@ MigrationBackup/
 # We want to track this for the user to understand he need to change this path
 !quake2.vcxproj.user
 
-# We explicitely include the dxil.dll and dxcompiler.dll in debug and release folders for the used SDK version otherwise the ref_dx12 dll cannot load.
-# for instance, these dlls can be found in C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x86
-
+# Exclude the Quake2 build folders
 debug/*
-
 release/*
 
-
-
+# We explicitely include the dxil.dll and dxcompiler.dll in dx32 and dx64 folders for the used SDK version otherwise the ref_dx12 dll cannot load.
+# For instance, these dlls can be found in C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x86
+# This dlls are automatically copied as a post build operation according to the platform.
 QUAKE2DATA/baseq2
-!QUAKE2DATA/dx32/dxcompiler.dll
-!QUAKE2DATA/dx32/dxil.dll
-!QUAKE2DATA/dx64/dxcompiler.dll
-!QUAKE2DATA/dx64/dxil.dll
-
+!QUAKE2DATA/dx32/*.dll
+!QUAKE2DATA/dx64/*.dll
